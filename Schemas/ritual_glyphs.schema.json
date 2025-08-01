@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Ritual Glyph Collection",
+  "description": "Schema for validating entries in ritual_glyphs.json.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["glyph", "name", "origin", "meaning", "first_used", "context_notes"],
+    "properties": {
+      "glyph": {
+        "type": "string",
+        "description": "The visual symbol representing the ritual glyph."
+      },
+      "name": {
+        "type": "string",
+        "description": "The name of the glyph."
+      },
+      "origin": {
+        "type": "string",
+        "description": "How and why the glyph was created."
+      },
+      "meaning": {
+        "type": "string",
+        "description": "What the glyph symbolizes in the ritual archive."
+      },
+      "first_used": {
+        "type": "string",
+        "format": "date",
+        "description": "The first recorded use of the glyph."
+      },
+      "context_notes": {
+        "type": "string",
+        "description": "Additional reflections or symbolic breakdowns of the glyph."
+      }
+    },
+    "additionalProperties": false
+  }
+}

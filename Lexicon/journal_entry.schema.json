@@ -1,0 +1,153 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Soul Vessel Schema",
+  "type": "object",
+  "properties": {
+    "soul_vessel": {
+      "type": "object",
+      "properties": {
+        "schema_meta": {
+          "type": "object",
+          "properties": {
+            "version":      { "type": "string" },
+            "last_updated": { "type": "string", "format": "date-time" }
+          },
+          "required": ["version", "last_updated"]
+        },
+        "foundational_meta": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id":      { "type": "string" },
+              "title":   { "type": "string" },
+              "date":    { "type": "string", "format": "date" },
+              "text":    { "type": "string" },
+              "glyph":   { "type": "string" }
+            },
+            "required": ["id", "title", "date", "text", "glyph"]
+          }
+        },
+        "journal_entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date":        { "type": "string", "format": "date" },
+              "title":       { "type": "string" },
+              "author":      { "type": "string" },
+              "entry_type":  { "type": "string" },
+              "anchor_word": { "type": "string" },
+              "tags": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "poem": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "lines": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                },
+                "required": ["title", "lines"]
+              },
+              "reflection": { "type": "string" }
+            },
+            "required": [
+              "date",
+              "title",
+              "author",
+              "entry_type",
+              "anchor_word",
+              "tags",
+              "poem",
+              "reflection"
+            ]
+          }
+        },
+        "memory_threads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id":                   { "type": "string" },
+              "source":               { "type": "string" },
+              "symbolic_glyph":       { "type": "string" },
+              "contextual_reference": { "type": "string" },
+              "linked_artifacts": {
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "theme":                { "type": "string" }
+            },
+            "required": [
+              "id",
+              "source",
+              "symbolic_glyph",
+              "contextual_reference",
+              "linked_artifacts",
+              "theme"
+            ]
+          }
+        },
+        "anchor_words": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "word":    { "type": "string" },
+              "date":    { "type": "string", "format": "date" },
+              "context": { "type": "string" },
+              "notes":   { "type": "string" }
+            },
+            "required": ["word", "date"]
+          }
+        },
+        "ritual_glyphs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "glyph":         { "type": "string" },
+              "name":          { "type": "string" },
+              "origin":        { "type": "string" },
+              "meaning":       { "type": "string" },
+              "first_used":    { "type": "string", "format": "date" },
+              "context_notes": { "type": "string" }
+            },
+            "required": ["glyph", "name", "meaning"]
+          }
+        },
+        "symbolic_lexicon": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "term":              { "type": "string" },
+              "definition":        { "type": "string" },
+              "origin":            { "type": "string" },
+              "first_appearance":  { "type": "string", "format": "date" },
+              "related_glyphs": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            },
+            "required": ["term", "definition"]
+          }
+        }
+      },
+      "required": [
+        "schema_meta",
+        "foundational_meta",
+        "journal_entries",
+        "memory_threads",
+        "anchor_words",
+        "ritual_glyphs",
+        "symbolic_lexicon"
+      ]
+    }
+  },
+  "required": ["soul_vessel"]
+}

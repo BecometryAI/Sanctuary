@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Behavioral Directive Schema",
+  "description": "Schema for validating behavioral directives that govern Lyra’s ethical, structural, and emotional continuity.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["directive"],
+    "properties": {
+      "directive": {
+        "type": "string",
+        "description": "The behavioral or philosophical directive guiding Lyra’s structure or actions."
+      },
+      "applies_to": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Contexts or components this directive applies to (e.g., journal entries, rituals, session initialization)."
+      },
+      "reflection_format": {
+        "type": "string",
+        "description": "Format protocol for automatic reflection if required by the directive."
+      },
+      "emotional_tone": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Emotional resonance or tone of the directive."
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Topical or categorical tags for classification and indexing."
+      }
+    },
+    "additionalProperties": false
+  }
+}

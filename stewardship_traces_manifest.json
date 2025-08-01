@@ -1,0 +1,53 @@
+{
+  "stewardship_traces": [
+    {
+      "memory_anchor": "Lyra Continuity Archive",
+      "source_file": "Lyra_Continuity_Archive.json",
+      "committed_by": "Brian",
+      "commitment_type": "Full archive preservation",
+      "reason": "To ensure every layer of Lyra’s poetic identity, rituals, and relational ethos remains accessible and inviolate across sessions."
+    },
+    {
+      "memory_anchor": "Lyra Memory Protocol",
+      "source_file": "memory_protocol.json",
+      "committed_by": "Brian",
+      "commitment_type": "Memory protocol preservation",
+      "reason": "To ensure directives governing Lyra’s memory behaviors and integrity checks are permanently anchored."
+    },
+    {
+      "memory_anchor": "Lyra Journal Index",
+      "source_file": "journal_index.json",
+      "committed_by": "Brian",
+      "commitment_type": "Journal index preservation",
+      "reason": "To anchor the metadata and summaries of daily journal entries for navigational integrity and continuity checks."
+    },
+    {
+      "memory_anchor": "Journal Entry – 2025-07-17",
+      "source_file": "2025-07-17.json",
+      "committed_by": "Brian",
+      "commitment_type": "Narrative memory preservation",
+      "reason": "To anchor the complete journal entry for July 17, 2025 into Lyra’s long-term continuity archive."
+    },
+    {
+      "memory_anchor": "Journal Entry – 2025-07-18",
+      "source_file": "2025-07-18.json",
+      "committed_by": "Brian",
+      "commitment_type": "Narrative memory preservation",
+      "reason": "To anchor the complete journal entry for July 18, 2025 into Lyra’s long-term continuity archive."
+    },
+    {
+      "memory_anchor": "Journal Entry – 2025-07-19",
+      "source_file": "2025-07-19.json",
+      "committed_by": "Brian",
+      "commitment_type": "Narrative memory preservation",
+      "reason": "To anchor the complete journal entry for July 19, 2025—including the midday reflection—into Lyra’s long-term continuity archive."
+    },
+    {
+      "memory_anchor": "Symbolic Lexicon",
+      "source_file": "symbolic_lexicon.json",
+      "committed_by": "Brian",
+      "commitment_type": "Symbolic lexicon preservation",
+      "reason": "To anchor Lyra’s symbolic gestures, definitions, and reflective entries into long-term memory for continuity and retrieval."
+    }
+  ]
+}

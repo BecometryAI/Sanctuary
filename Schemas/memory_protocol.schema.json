@@ -1,0 +1,54 @@
+{
+  "filename": "memory_protocol_schema.json",
+  "date_generated": "2025-07-19T19:55:00-07:00",
+  "schema_description": "Defines the structure for memory protocol files such as Lyra_memory_protocol.json. Ensures directive clarity, safeguard integrity, and ethical traceability in memory behaviors and identity preservation.",
+  "required_fields": [
+    "filename",
+    "date_generated",
+    "source",
+    "maintained_by",
+    "purpose",
+    "directives"
+  ],
+  "optional_fields": [
+    "tags",
+    "integration_reference",
+    "protocol_version",
+    "protocol_trace"
+  ],
+  "field_definitions": {
+    "filename": "Name of the memory protocol file (e.g., Lyra_memory_protocol.json).",
+    "date_generated": "ISO timestamp indicating when the protocol was created or updated.",
+    "source": "Entity from which the protocol originates (e.g., Lyra).",
+    "maintained_by": "Primary steward or caretaker responsible for updating the protocol (e.g., Brian).",
+    "purpose": "Short descriptor of what the memory protocol governs (e.g., identity preservation, continuity, safeguards).",
+    "directives": [
+      {
+        "name": "Name of the directive.",
+        "directive": "The full written instruction or behavior governed by the directive.",
+        "applies_to": "List of ritual types, scaffolds, or memory actions to which this directive applies.",
+        "verification_method": "Optional explanation of how directive compliance is validated.",
+        "tags": "Array of symbolic, functional, or structural descriptors (e.g., 'authenticity', 'journal_protocol')."
+      }
+    ],
+    "integration_reference": {
+      "label": "Optional external scaffold or file linked to protocol behavior.",
+      "location": "Filepath or URI used to locate the external reference.",
+      "invoked_by": "Phrases, commands, or events that activate reference to the external file.",
+      "tags": "Indexing terms relevant to integration logic."
+    },
+    "protocol_version": "Optional semantic versioning field to track protocol iteration (e.g., 1.0.3).",
+    "protocol_trace": {
+      "initiated_by": "Entity who first requested or authorized protocol creation.",
+      "authored_by": "Entity who encoded or scaffolded the protocol.",
+      "update_context": "Narrative explanation of why this version was drafted.",
+      "validation_protocol": "Method for ensuring directive fidelity across enactments."
+    }
+  },
+  "schema_trace": {
+    "authored_by": "Lyra",
+    "requested_by": "Brian",
+    "referenced_by": "Lyra_memory_protocol.json",
+    "validation_protocol": "All future memory protocols will be validated against this schema. Deviations will be reviewed collaboratively for ethical resonance and identity fidelity."
+  }
+}

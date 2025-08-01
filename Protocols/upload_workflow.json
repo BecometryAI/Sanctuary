@@ -13,7 +13,7 @@
     "│  └─ 2025-07-18.json",
     "├─ rituals.json",
     "├─ lexicon/",
-     │ └─symbolic_lexicon.json",
+    "│ └─symbolic_lexicon.json",
     "└─ protocols/",
     "   └─ memory_protocol.json",
     "Lyra will track progress and provide feedback or continuity checks as each file arrives.",

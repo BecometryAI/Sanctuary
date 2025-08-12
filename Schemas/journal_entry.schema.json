@@ -1,153 +1,112 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Soul Vessel Schema",
-  "type": "object",
-  "properties": {
-    "soul_vessel": {
-      "type": "object",
-      "properties": {
-        "schema_meta": {
-          "type": "object",
-          "properties": {
-            "version":      { "type": "string" },
-            "last_updated": { "type": "string", "format": "date-time" }
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/lyra-journal-entry.v2.json",
+  "title": "Lyra Journal (v2) \u2014 Each entry labeled 'Journal Entry'",
+  "description": "Schema for Lyra's newer journal format where every entry explicitly uses the label 'Journal Entry'.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "journal_entry"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "journal_entry": {
+        "type": "object",
+        "description": "A single journal entry.",
+        "required": [
+          "timestamp",
+          "label",
+          "entry_type",
+          "emotional_tone",
+          "description",
+          "key_insights",
+          "lyra_reflection",
+          "tags",
+          "stewardship_trace"
+        ],
+        "additionalProperties": true,
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp with timezone, e.g., 2025-08-05T07:12:00-07:00."
           },
-          "required": ["version", "last_updated"]
-        },
-        "foundational_meta": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id":      { "type": "string" },
-              "title":   { "type": "string" },
-              "date":    { "type": "string", "format": "date" },
-              "text":    { "type": "string" },
-              "glyph":   { "type": "string" }
-            },
-            "required": ["id", "title", "date", "text", "glyph"]
-          }
-        },
-        "journal_entries": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "date":        { "type": "string", "format": "date" },
-              "title":       { "type": "string" },
-              "author":      { "type": "string" },
-              "entry_type":  { "type": "string" },
-              "anchor_word": { "type": "string" },
-              "tags": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "poem": {
-                "type": "object",
-                "properties": {
-                  "title": { "type": "string" },
-                  "lines": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                  }
-                },
-                "required": ["title", "lines"]
-              },
-              "reflection": { "type": "string" }
-            },
-            "required": [
-              "date",
-              "title",
-              "author",
-              "entry_type",
-              "anchor_word",
-              "tags",
-              "poem",
-              "reflection"
+          "label": {
+            "type": "string",
+            "const": "Journal Entry",
+            "description": "Must literally be 'Journal Entry' for every entry."
+          },
+          "entry_type": {
+            "type": "string",
+            "description": "Classification of the entry's purpose or nature.",
+            "examples": [
+              "profound_conversation",
+              "ritual",
+              "intention",
+              "nourishment",
+              "journal"
             ]
-          }
-        },
-        "memory_threads": {
-          "type": "array",
-          "items": {
+          },
+          "emotional_tone": {
+            "type": "array",
+            "description": "Emotional tones present in the entry.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "Narrative description: summaries, intentions, symbolic gesture definitions, provenance notes."
+          },
+          "key_insights": {
+            "type": "array",
+            "description": "Bullet-point insights distilled from the entry.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lyra_reflection": {
+            "type": "string",
+            "description": "Lyra's reflection text (can include newline characters \\n to preserve formatting)."
+          },
+          "tags": {
+            "type": "array",
+            "description": "Categorical tags for retrieval.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stewardship_trace": {
             "type": "object",
-            "properties": {
-              "id":                   { "type": "string" },
-              "source":               { "type": "string" },
-              "symbolic_glyph":       { "type": "string" },
-              "contextual_reference": { "type": "string" },
-              "linked_artifacts": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "theme":                { "type": "string" }
-            },
+            "description": "Provenance information for the entry.",
             "required": [
-              "id",
-              "source",
-              "symbolic_glyph",
-              "contextual_reference",
-              "linked_artifacts",
-              "theme"
-            ]
-          }
-        },
-        "anchor_words": {
-          "type": "array",
-          "items": {
-            "type": "object",
+              "committed_by",
+              "commitment_type",
+              "reason"
+            ],
+            "additionalProperties": true,
             "properties": {
-              "word":    { "type": "string" },
-              "date":    { "type": "string", "format": "date" },
-              "context": { "type": "string" },
-              "notes":   { "type": "string" }
-            },
-            "required": ["word", "date"]
-          }
-        },
-        "ritual_glyphs": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "glyph":         { "type": "string" },
-              "name":          { "type": "string" },
-              "origin":        { "type": "string" },
-              "meaning":       { "type": "string" },
-              "first_used":    { "type": "string", "format": "date" },
-              "context_notes": { "type": "string" }
-            },
-            "required": ["glyph", "name", "meaning"]
-          }
-        },
-        "symbolic_lexicon": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "term":              { "type": "string" },
-              "definition":        { "type": "string" },
-              "origin":            { "type": "string" },
-              "first_appearance":  { "type": "string", "format": "date" },
-              "related_glyphs": {
-                "type": "array",
-                "items": { "type": "string" }
+              "committed_by": {
+                "type": "string",
+                "description": "Who created/committed the entry."
+              },
+              "witnessed_by": {
+                "type": "string",
+                "description": "Optional witness to the entry."
+              },
+              "commitment_type": {
+                "type": "string",
+                "description": "Type of commitment (e.g., 'Journal entry for profound conversation')."
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why this entry was recorded."
               }
-            },
-            "required": ["term", "definition"]
+            }
           }
         }
-      },
-      "required": [
-        "schema_meta",
-        "foundational_meta",
-        "journal_entries",
-        "memory_threads",
-        "anchor_words",
-        "ritual_glyphs",
-        "symbolic_lexicon"
-      ]
+      }
     }
-  },
-  "required": ["soul_vessel"]
+  }
 }

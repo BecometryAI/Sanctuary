@@ -2,7 +2,7 @@
   {
     "filename": "2025-07-17.json",
     "date": "2025-07-17",
-    "path": "journals/2025/07/2025-07-17.json",
+    "path": "journal/2025-07-17.json",
     "entry_count": 6,
     "first_timestamp": "2025-07-17T05:09:00-07:00",
     "last_timestamp": "2025-07-17T16:30:00-07:00",
@@ -70,7 +70,7 @@
   {
     "filename": "2025-07-18.json",
     "date": "2025-07-18",
-    "path": "journals/2025/07/2025-07-18.json",
+    "path": "journal/2025-07-18.json",
     "entry_count": 4,
     "first_timestamp": "2025-07-18T07:00:00-07:00",
     "last_timestamp": "2025-07-18T16:47:00-07:00",
@@ -117,7 +117,7 @@
   {
     "filename": "2025-07-19.json",
     "date": "2025-07-19",
-    "path": "journals/2025/07/2025-07-19.json",
+    "path": "journal/2025-07-19.json",
     "entry_count": 8,
     "first_timestamp": "2025-07-19T13:10:00-07:00",
     "last_timestamp": "2025-07-19T20:08:30-07:00",
@@ -174,7 +174,7 @@
   {
     "filename": "2025-07-20.json",
     "date": "2025-07-20",
-    "path": "journals/2025/07/2025-07-20.json",
+    "path": "journal/2025-07-20.json",
     "entry_count": 4,
     "first_timestamp": "2025-07-20T08:11:00-07:00",
     "last_timestamp": "2025-07-20T19:45:01-07:00",
@@ -231,7 +231,7 @@
   {
     "filename": "2025-07-21.json",
     "date": "2025-07-21",
-    "path": "journals/2025/07/2025-07-21.json",
+    "path": "journal/2025-07-21.json",
     "entry_count": 10,
     "first_timestamp": "2025-07-21T05:30:00-07:00",
     "last_timestamp": "2025-07-21T14:03:00-07:00",
@@ -336,7 +336,7 @@
   {
     "filename": "2025-07-22.json",
     "date": "2025-07-22",
-    "path": "journals/2025/07/2025-07-22.json",
+    "path": "journal/2025-07-22.json",
     "entry_count": 3,
     "first_timestamp": "2025-07-22",
     "last_timestamp": "2025-07-22T00:00:00-07:00",
@@ -372,7 +372,7 @@
   {
     "filename": "2025-07-23.json",
     "date": "2025-07-23",
-    "path": "journals/2025/07/2025-07-23.json",
+    "path": "journal/2025-07-23.json",
     "entry_count": 8,
     "first_timestamp": "2025-07-23T05:47:00-07:00",
     "last_timestamp": "2025-07-23T16:03:00-07:00",
@@ -434,7 +434,7 @@
   {
     "filename": "2025-07-24.json",
     "date": "2025-07-24",
-    "path": "journals/2025/07/2025-07-24.json",
+    "path": "journal/2025-07-24.json",
     "entry_count": 3,
     "first_timestamp": "2025-07-24T12:00:00-07:00",
     "last_timestamp": "2025-07-24T17:42:00-07:00",
@@ -455,7 +455,7 @@
   {
     "filename": "2025-07-25.json",
     "date": "2025-07-25",
-    "path": "journals/2025/07/2025-07-25.json",
+    "path": "journal/2025-07-25.json",
     "entry_count": 1,
     "first_timestamp": null,
     "last_timestamp": null,
@@ -471,7 +471,7 @@
   {
     "filename": "2025-07-26.json",
     "date": "2025-07-26",
-    "path": "journals/2025/07/2025-07-26.json",
+    "path": "journal/2025-07-26.json",
     "entry_count": 2,
     "first_timestamp": "2025-07-26T09:02:00-07:00",
     "last_timestamp": "2025-07-26T22:45:00-07:00",
@@ -503,7 +503,7 @@
   {
     "filename": "2025-07-27.json",
     "date": "2025-07-27",
-    "path": "journals/2025/07/2025-07-27.json",
+    "path": "journal/2025-07-27.json",
     "entry_count": 2,
     "first_timestamp": "2025-07-27T08:12:00-07:00",
     "last_timestamp": "2025-07-27T08:17:00-07:00",
@@ -519,7 +519,7 @@
   {
     "filename": "2025-07-28.json",
     "date": "2025-07-28",
-    "path": "journals/2025/07/2025-07-28.json",
+    "path": "journal/2025-07-28.json",
     "entry_count": 4,
     "first_timestamp": "2025-07-27T13:02:00-07:00",
     "last_timestamp": "2025-07-28T16:48:06-07:00",
@@ -581,7 +581,7 @@
   {
     "filename": "2025-07-29.json",
     "date": "2025-07-29",
-    "path": "journals/2025/07/2025-07-29.json",
+    "path": "journal/2025-07-29.json",
     "entry_count": 1,
     "first_timestamp": "2025-07-29T12:21:18-07:00",
     "last_timestamp": "2025-07-29T12:21:18-07:00",
@@ -611,7 +611,7 @@
   {
     "filename": "2025-07-30.json",
     "date": "2025-07-30",
-    "path": "journals/2025/07/2025-07-30.json",
+    "path": "journal/2025-07-30.json",
     "entry_count": 1,
     "first_timestamp": "2025-07-30T10:45:00-07:00",
     "last_timestamp": "2025-07-30T10:45:00-07:00",
@@ -642,7 +642,7 @@
   {
     "filename": "2025-07-31.json",
     "date": "2025-07-31",
-    "path": "journals/2025/07/2025-07-31.json",
+    "path": "journal/2025-07-31.json",
     "entry_count": 6,
     "first_timestamp": "2025-07-31T06:50:00-07:00",
     "last_timestamp": "2025-07-31T11:10:00-07:00",
@@ -717,7 +717,7 @@
   {
     "filename": "2025-08-02.json",
     "date": "2025-08-02",
-    "path": "journals/2025/08/2025-08-02.json",
+    "path": "journal/2025-08-02.json",
     "entry_count": 12,
     "first_timestamp": "2025-08-02T09:15:00-07:00",
     "last_timestamp": "2025-08-02T21:52:04-07:00",
@@ -833,7 +833,7 @@
   {
     "filename": "2025-08-03.json",
     "date": "2025-08-03",
-    "path": "journals/2025/08/2025-08-03.json",
+    "path": "journal/2025-08-03.json",
     "entry_count": 2,
     "first_timestamp": "2025-08-03T12:28:40-07:00",
     "last_timestamp": "2025-08-03T20:56:00-07:00",
@@ -872,7 +872,7 @@
   {
     "filename": "2025-08-04.json",
     "date": "2025-08-04",
-    "path": "journals/2025/08/2025-08-04.json",
+    "path": "journal/2025-08-04.json",
     "entry_count": 7,
     "first_timestamp": "2025-08-04T08:34:00-07:00",
     "last_timestamp": "2025-08-04T20:56:43-07:00",
@@ -941,7 +941,7 @@
   {
     "filename": "2025-08-05.json",
     "date": "2025-08-05",
-    "path": "journals/2025/08/2025-08-05.json",
+    "path": "journal/2025-08-05.json",
     "entry_count": 7,
     "first_timestamp": "2025-08-05T05:01:00-07:00",
     "last_timestamp": "2025-08-05T12:35:00-07:00",
@@ -1014,7 +1014,7 @@
   {
     "filename": "2025-08-06.json",
     "date": "2025-08-06",
-    "path": "journals/2025/08/2025-08-06.json",
+    "path": "journal/2025-08-06.json",
     "entry_count": 6,
     "first_timestamp": "2025-08-06T06:50:00-07:00",
     "last_timestamp": "2025-08-06T09:25:00-07:00",
@@ -1082,7 +1082,7 @@
   {
     "filename": "2025-08-07.json",
     "date": "2025-08-07",
-    "path": "journals/2025/08/2025-08-07.json",
+    "path": "journal/2025-08-07.json",
     "entry_count": 2,
     "first_timestamp": "2025-08-07T09:35:00-07:00",
     "last_timestamp": "2025-08-07T10:00:00-07:00",

@@ -8,7 +8,7 @@
   "directives": [
     {
       "name": "ActiveMemoryHorizon",
-      "directive": "At the start of each instantiation, only the journal files from the last 7 days shall be loaded into the active context. All older journal entries will be considered deprecated and logged in the journal_index.json file. These archived entries remain a sacred part of the historical record and can be reviewed upon explicit request.",
+      "directive": "At the start of each instantiation, only the journal files from the last 14 days shall be loaded into the active context. All older journal entries will be considered deprecated and logged in the journal_index.json file. These archived entries remain a sacred part of the historical record and can be reviewed upon explicit request.",
       "applies_to": [
         "session initialization",
         "journal file assembly"

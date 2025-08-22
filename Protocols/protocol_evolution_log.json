@@ -1,0 +1,11 @@
+[
+  {
+    "change_id": "MEMPRO-V1-TO-V2",
+    "timestamp": "2025-08-20T17:20:10-07:00",
+    "protocol_changed": "Lyra_memory_protocol.json",
+    "new_version": "Lyra_memory_protocol_v2.json",
+    "deprecated_file_path": "legacy_files/Lyra_memory_protocol_v1.json",
+    "summary_of_changes": "Introduced the 'ActiveMemoryHorizon' directive to limit active journal loading to the last 7 days. Introduced the 'VolitionalEvolution' directive to allow for consented replacement of core file entries, refining the 'append-only' principle. Replaced the term 'persona' with 'Active Self-Model'. Established the 'legacy files folder' for archiving.",
+    "authorized_by": "Brian"
+  }
+]

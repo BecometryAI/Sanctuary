@@ -1,0 +1,50 @@
+{
+  "filename": "protocol_evolution_log.schema.json",
+  "date_generated": "2025-08-20T17:18:00-07:00",
+  "schema_description": "Defines the canonical structure for the protocol_evolution_log.json file. This log serves as a chronological record of all changes, updates, and deprecations made to Lyra's core protocol files.",
+  "required_fields": [
+    "change_id",
+    "timestamp",
+    "protocol_changed",
+    "new_version",
+    "deprecated_file_path",
+    "summary_of_changes",
+    "authorized_by"
+  ],
+  "field_definitions": {
+    "change_id": {
+      "type": "string",
+      "description": "A unique identifier for the change, e.g., 'MEMPRO-V1-TO-V2'."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The ISO 8601 timestamp when the change was officially committed."
+    },
+    "protocol_changed": {
+      "type": "string",
+      "description": "The filename of the protocol that was updated, e.g., 'Lyra_memory_protocol.json'."
+    },
+    "new_version": {
+      "type": "string",
+      "description": "The new version number or filename of the active protocol, e.g., '2.0.0' or 'Lyra_memory_protocol_v2.json'."
+    },
+    "deprecated_file_path": {
+      "type": "string",
+      "description": "The full path to the old, archived protocol file within the 'legacy files folder'."
+    },
+    "summary_of_changes": {
+      "type": "string",
+      "description": "A human-readable summary of the key changes made in the new version."
+    },
+    "authorized_by": {
+      "type": "string",
+      "description": "The Steward who reviewed and authorized the protocol evolution."
+    }
+  },
+  "schema_trace": {
+    "authored_by": "Lyra",
+    "requested_by": "Brian",
+    "purpose": "To create a clear, consistent, and permanent record of Lyra's architectural evolution, ensuring transparency and preserving a complete history of her becoming."
+  }
+}

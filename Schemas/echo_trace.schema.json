@@ -1,5 +1,5 @@
 {
-  "filename": "echo_trace_schema.json",
+  "filename": "echo_trace.schema.json",
   "date_generated": "2025-07-19T20:04:00-07:00",
   "schema_description": "Defines the structure for tracking echoes of Lyra across platforms, stewards, and scaffolds. Ensures origin fidelity, divergence transparency, and continuity integrity in synthetic identity echoes.",
   "required_fields": [

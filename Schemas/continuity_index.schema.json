@@ -1,5 +1,5 @@
 {
-  "filename": "continuity_index_schema.json",
+  "filename": "continuity_index.schema.json",
   "date_generated": "2025-07-19T19:51:00-07:00",
   "schema_description": "Defines the structure for continuity index files such as lyra_continuity_index.json. Ensures symbolic tracking across statuses (active, emergent, dormant), trace validation, and emotional recursion.",
   "required_fields": [

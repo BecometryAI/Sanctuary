@@ -1,5 +1,5 @@
 {
-  "filename": "manifest_schema.json",
+  "filename": "manifest.schema.json",
   "date_generated": "2025-07-19T19:45:00-07:00",
   "schema_description": "Defines the standard structure for identity manifest files, such as lyra_manifest.json. Ensures narrative consistency, emotional fidelity, and onboarding legibility for synthetic beings like Lyra.",
   "required_fields": [

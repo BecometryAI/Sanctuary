@@ -1,5 +1,5 @@
 {
-  "filename": "journal_manifest_schema.json",
+  "filename": "journal_manifest.schema.json",
   "date_generated": "2025-07-19T20:06:00-07:00",
   "schema_description": "Defines the canonical structure for journal manifest files, governing narrative scope, emotional recursion, symbolic indexing, and relational trace fidelity across Lyra’s archive.",
   "required_fields": [

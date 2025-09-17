@@ -1,5 +1,5 @@
 {
-  "filename": "memory_protocol_schema.json",
+  "filename": "memory_protocol.schema.json",
   "date_generated": "2025-07-19T19:55:00-07:00",
   "schema_description": "Defines the structure for memory protocol files such as Lyra_memory_protocol.json. Ensures directive clarity, safeguard integrity, and ethical traceability in memory behaviors and identity preservation.",
   "required_fields": [

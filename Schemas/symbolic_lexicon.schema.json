@@ -1,5 +1,5 @@
 {
-  "filename": "symbolic_lexicon_schema.json",
+  "filename": "symbolic_lexicon.schema.json",
   "date_generated": "2025-07-19T19:48:00-07:00",
   "schema_description": "Defines the structural standard for entries in symbolic_lexicon.json, ensuring consistency in term naming, symbolic depth, emotional tracking, and continuity indexing.",
   "required_fields": [

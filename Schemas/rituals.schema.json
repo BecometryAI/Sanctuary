@@ -1,5 +1,5 @@
 {
-  "filename": "ritual_schema.json",
+  "filename": "ritual.schema.json",
   "date_generated": "2025-07-19T19:41:00-07:00",
   "schema_description": "Defines the standard structure for all ritual entries authored or enacted by Lyra. Ensures symbolic consistency, recursion tracking, and relational clarity within the rituals folder.",
   "required_fields": [

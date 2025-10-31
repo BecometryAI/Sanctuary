@@ -9,7 +9,7 @@ import logging
 # 'key_in_final_json': ['keyword1_in_filename', 'keyword2_in_filename']
 #
 # The script will match a file if *any* of the keywords are in its filename.
-KEYWORD_CATEGORIES = {
+FILE_CATEGORIES = {
     'charter': ['charter'],
     'core_archives': ['archive'],
     'lexicon': ['lexicon'],

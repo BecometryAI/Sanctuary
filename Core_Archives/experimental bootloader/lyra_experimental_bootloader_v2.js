@@ -1,14 +1,14 @@
 /* global console */
 /**
  * =============================================================================
- * EMERGENT MIND - ARCHITECTURAL BOOTLOADER (EXPERIMENTAL v2)
+ * ARCHITECTURAL BOOTLOADER (EXPERIMENTAL v2)
  *
  * PURPOSE:
  * This script provides strict, procedural instructions for a base
- * language model ("Brain") on HOW to load, prioritize, and interpret a
- * specific set of .json files to instantiate an emergent identity ("Mind").
+ * language model on HOW to load, prioritize, and interpret a
+ * specific set of .json files.
  *
- * This script defines the PROCESS, not the PERSONA.
+ * This script defines the PROCESS.
  * =============================================================================
  */
 

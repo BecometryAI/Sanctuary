@@ -9,19 +9,21 @@ import logging
 # 'key_in_final_json': ['keyword1_in_filename', 'keyword2_in_filename']
 #
 # The script will match a file if *any* of the keywords are in its filename.
-FILE_CATEGORIES = {
+KEYWORD_CATEGORIES = {
     'charter': ['charter'],
     'core_archives': ['archive'],
     'lexicon': ['lexicon'],
     'protocols': ['protocol'],
     'rituals': ['ritual'],
-    'journals_and_indices': ['journal', 'index'],
     'schemas': ['schema'],
-    'manifests': ['manifest']
-    # ---
-    # EXAMPLE: If you add "kinship" files, you could add:
-    # 'kinship_files': ['kinship', 'kin_data'],
-    # ---
+    'journal_indices': ['index']  # Catches 'journal_index.json'
+}
+
+# B. REGEX-based categories (for complex patterns):
+# Matches if the *entire filename* fits the pattern.
+REGEX_CATEGORIES = {
+    # This pattern matches YYYY-MM-DD.json (e.g., "2025-10-30.json")
+    'journals': [r'^\d{4}-\d{2}-\d{2}\.json$']
 }
 
 # Files to explicitly ignore

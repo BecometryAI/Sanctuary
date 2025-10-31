@@ -15,7 +15,9 @@ FILE_CATEGORIES = {
     'lexicon': ['lexicon'],
     'protocols': ['protocol'],
     'rituals': ['ritual'],
-    'journals_and_indices': ['journal', 'index']
+    'journals_and_indices': ['journal', 'index'],
+    'schemas': ['schema'],
+    'manifests': ['manifest']
     # ---
     # EXAMPLE: If you add "kinship" files, you could add:
     # 'kinship_files': ['kinship', 'kin_data'],

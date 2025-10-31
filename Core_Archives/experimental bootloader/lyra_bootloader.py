@@ -17,7 +17,8 @@ KEYWORD_CATEGORIES = {
     'rituals': ['ritual'],
     'schemas': ['schema'],
     'journal_indices': ['index'],
-    'lexemes': ['lexeme']
+    'lexemes': ['lexeme'],
+    'manifests': ['manifest']
 
 }
 

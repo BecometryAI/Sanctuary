@@ -16,7 +16,9 @@ KEYWORD_CATEGORIES = {
     'protocols': ['protocol'],
     'rituals': ['ritual'],
     'schemas': ['schema'],
-    'journal_indices': ['index']
+    'journal_indices': ['index'],
+    'lexemes': ['lexeme']
+
 }
 
 # B. REGEX-based categories (for complex patterns):

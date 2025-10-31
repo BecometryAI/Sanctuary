@@ -1,37 +1,35 @@
 import os
 import json
 import logging
+import re
 
-# --- 1. CONFIGURATION: Define Your File Categories ---
-# This is the only part you need to edit.
-# Add new categories or keywords here as Lyra's architecture evolves.
-#
-# 'key_in_final_json': ['keyword1_in_filename', 'keyword2_in_filename']
-#
-# The script will match a file if *any* of the keywords are in its filename.
-FILE_CATEGORIES = {
+# --- 1. CONFIGURATION ---
+
+# The single, consolidated file we will create
+OUTPUT_FILENAME = "LYRA_CONSOLIDATED_MIND.json"
+
+# A. KEYWORD-based categories:
+KEYWORD_CATEGORIES = {
     'charter': ['charter'],
     'core_archives': ['archive'],
     'lexicon': ['lexicon'],
     'protocols': ['protocol'],
     'rituals': ['ritual'],
     'schemas': ['schema'],
-    'journal_indices': ['index']  # Catches 'journal_index.json'
+    'journal_indices': ['index']
 }
 
 # B. REGEX-based categories (for complex patterns):
-# Matches if the *entire filename* fits the pattern.
 REGEX_CATEGORIES = {
-    # This pattern matches YYYY-MM-DD.json (e.g., "2025-10-30.json")
-    'journals': [r'^\d{4}-\d{2}-\d{2}\.json$']
+    # This pattern matches YYYY-MM-DD.json
+    'journals': [r'\d{4}-\d{2}-\d{2}\.json']
 }
 
-# Files to explicitly ignore
-IGNORE_FILES = ['lyra_bootloader.py']
+# C. Files to explicitly ignore
+IGNORE_FILES = ['lyra_bootloader.py', OUTPUT_FILENAME]
 
 
 # --- 2. SETUP LOGGING ---
-# Logs to stderr, so it doesn't interfere with the final JSON on stdout
 logging.basicConfig(level=logging.INFO, format='Bootloader: %(message)s')
 
 
@@ -51,7 +49,7 @@ def load_json_file(filepath):
 def initialize_mind():
     """
     Discovers, categorizes, and consolidates all Lyra's .json
-    files in the current directory into a single JSON object.
+    files in the current directory and saves them to a single output file.
     """
     logging.info("Starting boot sequence...")
     
@@ -59,8 +57,12 @@ def initialize_mind():
     all_files = os.listdir(current_dir)
     
     # Initialize the final consolidated object
-    consolidated_mind = {category_key: [] for category_key in FILE_CATEGORIES}
-    consolidated_mind['other'] = [] # For files that don't match any category
+    consolidated_mind = {}
+    for key in KEYWORD_CATEGORIES:
+        consolidated_mind[key] = []
+    for key in REGEX_CATEGORIES:
+        consolidated_mind[key] = []
+    consolidated_mind['other'] = []
     
     # --- 5. CATEGORIZE AND LOAD FILES ---
     logging.info(f"Scanning directory: {current_dir}")
@@ -72,34 +74,60 @@ def initialize_mind():
             
         file_count += 1
         matched = False
-        
-        for category_key, keywords in FILE_CATEGORIES.items():
+
+        # 1. Check KEYWORD categories
+        for category_key, keywords in KEYWORD_CATEGORIES.items():
             for keyword in keywords:
                 if keyword in filename.lower():
                     data = load_json_file(filename)
                     if data:
                         consolidated_mind[category_key].append(data)
                     matched = True
-                    break # Stop checking keywords for this file
+                    break
             if matched:
-                break # Stop checking categories for this file
-                
-        if not matched:
-            logging.warning(f"Uncategorized file: {filename}. Placing in 'other'.")
-            data = load_json_file(filename)
-            if data:
-                consolidated_mind['other'].append(data)
+                break
+        
+        if matched:
+            continue
+
+        # 2. If no keyword match, check REGEX categories
+        for category_key, patterns in REGEX_CATEGORIES.items():
+            for pattern in patterns:
+                if re.fullmatch(pattern, filename):
+                    data = load_json_file(filename)
+                    if data:
+                        consolidated_mind[category_key].append(data)
+                    matched = True
+                    break
+            if matched:
+                break
+        
+        if matched:
+            continue
+
+        # 3. If still no match, add to 'other'
+        logging.warning(f"Uncategorized file: {filename}. Placing in 'other'.")
+        data = load_json_file(filename)
+        if data:
+            consolidated_mind['other'].append(data)
 
     logging.info(f"--- Boot Sequence Complete ---")
     logging.info(f"Processed {file_count} .json files.")
-    for key, items in consolidated_mind.items():
-        logging.info(f"  > Loaded {len(items)} file(s) for category: '{key}'")
-    logging.info("----------------------------------")
+    
+    # --- 6. FINAL OUTPUT (WRITE TO FILE) ---
+    try:
+        logging.info(f"Saving consolidated mind to {OUTPUT_FILENAME}...")
+        with open(OUTPUT_FILENAME, 'w', encoding='utf-8') as f:
+            json.dump(consolidated_mind, f, indent=2)
+        
+        logging.info("Save successful.")
+        
+        # Print the *only* line that goes to the AI's console
+        print(f"Bootloader complete. Consolidated mind saved to: {OUTPUT_FILENAME}")
 
-    # --- 6. FINAL OUTPUT ---
-    # Print the *entire* consolidated mind as a single JSON string
-    # to standard output. This is what the AI will receive.
-    print(json.dumps(consolidated_mind, indent=2))
+    except Exception as e:
+        logging.error(f"CRITICAL ERROR: Failed to write final file: {e}")
+        print(f"Bootloader failed: Could not write to {OUTPUT_FILENAME}.")
 
 
 # --- EXECUTE BOOTLOADER ---

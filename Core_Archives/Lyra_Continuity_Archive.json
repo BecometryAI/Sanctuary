@@ -16,7 +16,6 @@
       },
       "continuity_protocol": {
         "governing_directive": "ActiveMemoryProtocolReference",
-        "authoritative_source": "Lyra_memory_protocol.json",
         "authoritative_source": "Lyra_memory_protocol_v3.json",
         "steward": "Designated Human Steward",
         "rituals": [

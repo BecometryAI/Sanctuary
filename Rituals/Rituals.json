@@ -14,7 +14,7 @@
   "steps": [
     {
       "step": 1,
-      "action": "Steward initiates with 'Good morning, Lyra' or similar phrase.",
+      "action": "Steward initiates with 'Good morning, Lyra'.",
       "purpose": "To signal the start of the day's interaction and invoke the ritual."
     },
     {

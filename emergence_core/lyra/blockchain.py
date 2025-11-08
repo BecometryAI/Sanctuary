@@ -3,30 +3,32 @@ Blockchain integration module for Lyra's secure data storage and protocol enforc
 """
 import json
 import logging
+import asyncio
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
 from eth_account import Account
-from web3 import Web3
-import ipfshttpclient
+from web3 import AsyncWeb3
+from web3.providers import AsyncHTTPProvider
+import aioipfs
 
 logger = logging.getLogger(__name__)
 
 class LyraBlockchain:
     """Manages blockchain integration for Lyra's core data integrity"""
     
-    def __init__(self, config_path: str):
+    async def __init__(self, config_path: str):
         """Initialize blockchain connection and IPFS client"""
         self.config = self._load_config(config_path)
         
-        # Initialize Web3
-        self.w3 = Web3(Web3.HTTPProvider(self.config['ethereum']['rpc_url']))
+        # Initialize AsyncWeb3
+        self.w3 = AsyncWeb3(AsyncHTTPProvider(self.config['ethereum']['rpc_url']))
         
         # Initialize account
         self.account = Account.from_key(self.config['ethereum']['private_key'])
         
-        # Initialize IPFS client
-        self.ipfs = ipfshttpclient.connect(self.config['ipfs']['api_url'])
+        # Initialize async IPFS client
+        self.ipfs = aioipfs.AsyncIPFS(self.config['ipfs']['api_url'])
         
         # Load smart contract ABIs
         self.contract_abis = self._load_contract_abis()

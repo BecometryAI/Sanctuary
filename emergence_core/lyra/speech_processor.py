@@ -1,22 +1,40 @@
 """
 Speech-to-Text processing module for Lyra's auditory perception
+Uses Whisper model with enhanced streaming capabilities
 """
 import logging
 import numpy as np
-import whisper
 import torch
-from typing import Optional, Generator
+from typing import Optional, Generator, AsyncGenerator
 import asyncio
 from pathlib import Path
+from transformers import (
+    WhisperProcessor as HFWhisperProcessor,
+    WhisperForConditionalGeneration,
+    pipeline
+)
+from .voice_analyzer import EmotionAnalyzer
 
 logger = logging.getLogger(__name__)
 
 class WhisperProcessor:
     def __init__(self):
         """Initialize Whisper model for Lyra's hearing"""
-        self.model = whisper.load_model("medium")  # Balance between accuracy and resource usage
+        # Create pipeline directly
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        logger.info(f"Initialized Whisper processor on {self.device}")
+        self.asr_pipeline = pipeline(
+            "automatic-speech-recognition",
+            model="openai/whisper-small",
+            device=self.device,
+            torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
+        )
+        
+        # Keep processor and model references for additional processing
+        self.processor = self.asr_pipeline.feature_extractor
+        self.model = self.asr_pipeline.model
+        
+        # Initialize emotion analyzer
+        self.emotion_analyzer = EmotionAnalyzer()
         
         # Audio processing parameters
         self.sample_rate = 16000
@@ -31,8 +49,8 @@ class WhisperProcessor:
         }
     
     async def process_audio_stream(self, 
-                                 audio_generator: Generator[np.ndarray, None, None],
-                                 language: str = "en") -> Generator[str, None, None]:
+                                 audio_generator: AsyncGenerator[np.ndarray, None],
+                                 language: str = "en") -> AsyncGenerator[str, None]:
         """
         Process incoming audio stream with emotional context awareness
         
@@ -72,19 +90,20 @@ class WhisperProcessor:
         Transcribe audio while maintaining emotional context
         """
         try:
-            result = await asyncio.to_thread(
-                self.model.transcribe,
+            transcription = await asyncio.to_thread(
+                self.asr_pipeline,
                 audio_data,
-                language=language,
-                task="transcribe",
-                fp16=torch.cuda.is_available()
+                generate_kwargs={"language": language, "task": "transcribe"}
             )
             
-            # Enhance with emotional context
-            result["emotional_context"] = {
-                "tone": self._detect_tone(audio_data),
-                "confidence": float(result["confidence"]),
-                "speaker_consistency": self._check_speaker_consistency(audio_data)
+            result = {
+                "text": transcription["text"],
+                "confidence": 0.95,  # Placeholder until we implement confidence scoring
+                "emotional_context": {
+                    "tone": self._detect_tone(audio_data),
+                    "confidence": 0.95,
+                    "speaker_consistency": self._check_speaker_consistency(audio_data)
+                }
             }
             
             return result

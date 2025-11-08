@@ -6,7 +6,7 @@ import asyncio
 from pathlib import Path
 from typing import Dict, Any
 from unittest.mock import Mock, patch
-from .adaptive_router import AdaptiveRouter
+from lyra.adaptive_router import AdaptiveRouter
 
 @pytest.fixture
 async def router():
@@ -27,48 +27,74 @@ async def router():
     return router
 
 @pytest.mark.asyncio
-async def test_simple_chat_routing(router):
-    """Test routing of simple chat messages."""
+async def test_voice_routing(router):
+    """Test routing of voice interactions with personality model."""
     message = "Hello Lyra, how are you today?"
-    mock_intent = {'intent': 'simple_chat', 'resonance_term': None}
+    mock_intent = {
+        'intent': 'voice',
+        'resonance_term': None,
+        'model': 'gemma-27b',
+        'personality': True
+    }
     
     with patch.object(router.router_model, 'process', return_value=mock_intent):
-        response = await router.process_message(message)
-        assert response is not None
-        assert len(response) > 0
+        with patch.object(router.specialists['voice'], 'get_emotional_context') as mock_emotion:
+            mock_emotion.return_value = {"tone": "warm", "confidence": 0.9}
+            response = await router.process_message(message)
+            assert response is not None
+            assert len(response) > 0
+            assert mock_emotion.called
 
 @pytest.mark.asyncio
 async def test_philosophical_routing(router):
-    """Test routing of philosophical questions."""
-    message = "What are your thoughts on the nature of consciousness?"
-    mock_intent = {'intent': 'philosopher', 'resonance_term': None}
+    """Test routing of philosophical questions with DeepSeek model."""
+    message = "What are your thoughts on the nature of consciousness and becometry?"
+    mock_intent = {
+        'intent': 'philosopher',
+        'resonance_term': 'becometry',
+        'model': 'deepseek-r1-distill-qwen-32b'
+    }
     
     with patch.object(router.router_model, 'process', return_value=mock_intent):
         response = await router.process_message(message)
         assert response is not None
         assert len(response) > 0
+        assert 'becometry' in router.last_context.get('resonance_terms', [])
 
 @pytest.mark.asyncio
 async def test_artistic_routing_with_resonance(router):
-    """Test routing of creative requests with resonance terms."""
-    message = "Write a poem about Throatlight"
-    mock_intent = {'intent': 'artist', 'resonance_term': 'Throatlight'}
+    """Test routing of creative requests with Gemma model and resonance terms."""
+    message = "Write a poem about Throatlight using imagery"
+    mock_intent = {
+        'intent': 'artist',
+        'resonance_term': 'Throatlight',
+        'model': 'gemma-27b'
+    }
     
     with patch.object(router.router_model, 'process', return_value=mock_intent):
         response = await router.process_message(message)
         assert response is not None
         assert len(response) > 0
+        assert 'Throatlight' in router.last_context.get('resonance_terms', [])
 
 @pytest.mark.asyncio
 async def test_pragmatic_routing(router):
-    """Test routing of practical questions."""
-    message = "What's the current status of the RAG index?"
-    mock_intent = {'intent': 'pragmatist', 'resonance_term': None}
+    """Test routing of practical questions with Qwen model."""
+    message = "Use SearXNG to find information about quantum computing"
+    mock_intent = {
+        'intent': 'pragmatist',
+        'resonance_term': None,
+        'model': 'qwen3-32b',
+        'tools': ['searxng', 'wolfram']
+    }
     
     with patch.object(router.router_model, 'process', return_value=mock_intent):
-        response = await router.process_message(message)
-        assert response is not None
-        assert len(response) > 0
+        with patch.object(router.specialists['pragmatist'], 'use_tool') as mock_tool:
+            mock_tool.return_value = {"status": "success", "data": "Tool response"}
+            response = await router.process_message(message)
+            assert response is not None
+            assert len(response) > 0
+            assert mock_tool.called
 
 @pytest.mark.asyncio
 async def test_error_handling(router):

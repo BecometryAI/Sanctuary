@@ -1,0 +1,22 @@
+{
+    "base_dir": ".",
+    "model_dir": "model_cache/models",
+    "chroma_dir": "model_cache/chroma_db",
+    "cache_dir": "model_cache/cache",
+    "log_dir": "logs",
+    "voice": {
+        "sample_rate": 48000,
+        "voices_dir": "model_cache/voices",
+        "enable_cuda": true
+    },
+    "memory": {
+        "max_context_length": 4096,
+        "chunk_size": 512,
+        "overlap": 50
+    },
+    "performance": {
+        "batch_size": 4,
+        "max_concurrent_tasks": 3,
+        "memory_buffer": "8GB"
+    }
+}

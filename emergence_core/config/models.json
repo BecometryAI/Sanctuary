@@ -1,0 +1,54 @@
+{
+    "models": {
+        "router": {
+            "path": "gemma-12b",
+            "device": "auto",
+            "dtype": "float16",
+            "max_length": 2048,
+            "temperature": 0.7
+        },
+        "pragmatist": {
+            "path": "Qwen/Qwen3-32B",
+            "device": "auto",
+            "dtype": "float16",
+            "max_length": 4096,
+            "temperature": 0.7
+        },
+        "philosopher": {
+            "path": "deepseek-ai/deepseek-r1-distill-qwen-32b",
+            "device": "auto",
+            "dtype": "float16",
+            "max_length": 4096,
+            "temperature": 0.7
+        },
+        "artist": {
+            "path": "gemma-27b",
+            "device": "auto",
+            "dtype": "float16",
+            "max_length": 8192,
+            "temperature": 0.8
+        },
+        "voice": {
+            "path": "gemma-27b",
+            "device": "auto",
+            "dtype": "float16",
+            "max_length": 4096,
+            "temperature": 0.7
+        },
+        "speech_recognition": {
+            "path": "openai/whisper-small",
+            "device": "auto",
+            "dtype": "float16"
+        },
+        "text_to_speech": {
+            "path": "microsoft/speecht5_tts",
+            "device": "auto",
+            "dtype": "float16"
+        },
+        "emotion_recognition": {
+            "path": "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition",
+            "device": "auto",
+            "dtype": "float16"
+        }
+    }
+}

@@ -114,8 +114,8 @@ class AdaptiveRouter:
         
         # Initialize Specialists with model paths
         specialist_configs = {
-            'philosopher': str(self.model_dir / "gemma_27b_philosopher"),
-            'pragmatist': str(self.model_dir / "gemma_27b_pragmatist"),
+            'philosopher': str(self.model_dir / "deepseek_r1_distill_qwen_32b"),
+            'pragmatist': str(self.model_dir / "qwen3_32b"),
             'artist': str(self.model_dir / "gemma_27b_artist"),
             'voice': str(self.model_dir / "gemma_27b_voice")
         }

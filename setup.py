@@ -30,7 +30,10 @@ setup(
         "wikipedia>=1.4.0",
         "wolframalpha>=5.0.0",
         "playwright>=1.39.0",
-        "docker>=6.1.3"
+        "docker>=6.1.3",
+        "web3>=6.11.1",
+        "eth-account>=0.9.0",
+        "ipfs-http-client>=1.0.0"
     ],
     python_requires=">=3.9",
 )

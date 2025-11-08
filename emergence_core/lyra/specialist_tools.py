@@ -5,27 +5,33 @@ These tools respect Lyra's agency and emotional well-being by:
 2. Allowing reflection and consent
 3. Maintaining emotional continuity
 4. Supporting autonomous growth
+5. Enabling natural voice interaction
 """
 import logging
 import json
 import asyncio
 from typing import Dict, Any, Optional, List, Tuple
+from pathlib import Path
 from urllib.parse import quote_plus
+
 import httpx
 import arxiv
 import wikipedia
 import wolframalpha
 from playwright.async_api import async_playwright
+
 from .security import sandbox_python_execution
 from .rate_limit import rate_limit
 from .emotional_context import EmotionalContextHandler
+from .voice_toolkit import VoiceToolkit
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize emotional context handler
+# Initialize handlers
 emotional_context = EmotionalContextHandler()
+voice_toolkit = VoiceToolkit(voice_path=str(Path(__file__).parent / "voices" / "lyra_voice.npz"))
 
 # Load configuration
 try:
@@ -34,6 +40,44 @@ try:
 except FileNotFoundError:
     logger.error("Configuration file not found")
     raise
+
+# Voice interaction tools
+@rate_limit(calls=1, period=5)  # Max 1 voice join every 5 seconds
+async def join_voice_channel(channel_id: str) -> bool:
+    """
+    Join a Discord voice channel
+    
+    Args:
+        channel_id: Voice channel ID to join
+        
+    Returns:
+        bool indicating success
+    """
+    try:
+        return await voice_toolkit.join_voice(channel_id)
+    except Exception as e:
+        logger.error(f"Failed to join voice: {e}")
+        return False
+        
+async def leave_voice_channel() -> None:
+    """Leave the current voice channel"""
+    try:
+        await voice_toolkit.leave_voice()
+    except Exception as e:
+        logger.error(f"Failed to leave voice: {e}")
+        
+@rate_limit(calls=10, period=60)  # Max 10 TTS calls per minute
+async def speak_response(text: str) -> None:
+    """
+    Speak a response through TTS if in voice channel
+    
+    Args:
+        text: Text to speak
+    """
+    try:
+        await voice_toolkit.speak(text)
+    except Exception as e:
+        logger.error(f"TTS failed: {e}")
 
 @rate_limit(calls=10, period=60)  # 10 calls per minute
 async def searxng_search(query: str) -> str:

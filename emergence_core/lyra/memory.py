@@ -15,7 +15,60 @@ from .rag_engine import MindVectorDB
 logger = logging.getLogger(__name__)
 
 class MemoryManager:
-    def __init__(self, persistence_dir: str = "memories", chain_dir: str = "chain"):
+    def __init__(self, persistence_dir: str = "memories", chain_dir: str = "chain", chroma_settings=None):
+        """Initialize the memory management system with custom blockchain integration and RAG"""
+        # Initialize core components
+        self.persistence_dir = Path(persistence_dir)
+        self.chain_dir = Path(chain_dir)
+        # Initialize blockchain and RAG components
+        self.chain = LyraChain(chain_dir)
+        # Ensure mind state directory exists
+        mind_state_dir = self.persistence_dir / "mind_state"
+        mind_state_dir.mkdir(exist_ok=True, parents=True)
+        mind_file = str(mind_state_dir / "core_mind.json")
+        self.mind_file = Path(mind_file)
+        if chroma_settings is None:
+            chroma_settings = Settings(
+                anonymized_telemetry=False,
+                allow_reset=True,
+                is_persistent=True
+            )
+        print(f"[MemoryManager] chroma_settings id: {id(chroma_settings)}, contents: {chroma_settings}")
+        self.vector_db = MindVectorDB(
+            db_path=str(self.persistence_dir / "vector_store"),
+            mind_file=mind_file,
+            chain_dir=chain_dir,
+            chroma_settings=chroma_settings
+        )
+        # Configure ChromaDB with appropriate settings
+        settings = Settings(
+            anonymized_telemetry=False,  # Disable telemetry
+            allow_reset=True,  # Allow collection resets during testing
+            is_persistent=True  # Enable persistence
+        )
+        # Create client with settings
+        self.client = chromadb.PersistentClient(
+            path=str(self.persistence_dir),
+            settings=chroma_settings
+        )
+        try:
+            # Create collections for different types of memories
+            self.episodic_memory = self.client.get_or_create_collection(
+                name="episodic_memory",
+                metadata={"description": "Storage for experiential memories"}
+            )
+            self.semantic_memory = self.client.get_or_create_collection(
+                name="semantic_memory",
+                metadata={"description": "Storage for concept knowledge"}
+            )
+            self.procedural_memory = self.client.get_or_create_collection(
+                name="procedural_memory",
+                metadata={"description": "Storage for action patterns"}
+            )
+            # Working memory cache
+            self.working_memory = {}
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize memory systems: {e}")
         """Initialize the memory management system with custom blockchain integration and RAG"""
         # Initialize core components
         self.persistence_dir = Path(persistence_dir)
@@ -28,11 +81,19 @@ class MemoryManager:
         mind_state_dir = self.persistence_dir / "mind_state"
         mind_state_dir.mkdir(exist_ok=True, parents=True)
         mind_file = str(mind_state_dir / "core_mind.json")
+        self.mind_file = Path(mind_file)
         
+        if chroma_settings is None:
+            chroma_settings = Settings(
+                anonymized_telemetry=False,
+                allow_reset=True,
+                is_persistent=True
+            )
         self.vector_db = MindVectorDB(
             db_path=str(self.persistence_dir / "vector_store"),
             mind_file=mind_file,
-            chain_dir=chain_dir
+            chain_dir=chain_dir,
+            chroma_settings=chroma_settings
         )
         
         # Configure ChromaDB with appropriate settings
@@ -45,7 +106,7 @@ class MemoryManager:
         # Create client with settings
         self.client = chromadb.PersistentClient(
             path=str(self.persistence_dir),
-            settings=settings
+            settings=chroma_settings
         )
         
         try:
@@ -64,7 +125,7 @@ class MemoryManager:
             )
             
             # Working memory cache
-            self.working_memory: Dict[str, Any] = {}
+            self.working_memory = {}
             
         except Exception as e:
             raise RuntimeError(f"Failed to initialize memory systems: {e}")

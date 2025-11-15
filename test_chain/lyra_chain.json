@@ -1,0 +1,485 @@
+[
+  {
+    "index": 0,
+    "timestamp": 1763084749.9835281,
+    "data": {
+      "type": "genesis",
+      "message": "Lyra Emergence Protocol - Genesis Block",
+      "timestamp": "2025-11-13T17:45:49.983528"
+    },
+    "previous_hash": "0",
+    "nonce": 0,
+    "hash": "7520038c91abcc35d24b87bd0aa6f9b620abc267d955a288e64354105bcb9d3f"
+  },
+  {
+    "index": 1,
+    "timestamp": 1763084762.4874852,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T17:46:02.487485",
+      "type": "memory"
+    },
+    "previous_hash": "7520038c91abcc35d24b87bd0aa6f9b620abc267d955a288e64354105bcb9d3f",
+    "nonce": 11,
+    "hash": "0df6eddf40acc397628f372e5cb45951d29e9979fdcc6f4a24d5a63890709c85"
+  },
+  {
+    "index": 2,
+    "timestamp": 1763084915.36856,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T17:48:35.101413",
+      "type": "memory",
+      "block_hash": "0fecada5c8d04e556a4539992fa123188ba80aa708fe1b2d974756c628c8abb9",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T17:48:35.101413",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0df6eddf40acc397628f372e5cb45951d29e9979fdcc6f4a24d5a63890709c85",
+    "nonce": 4,
+    "hash": "007e17dfb2278312a9b7239e8fadee4db69864bd0cffddb405d02ffea38f89e2"
+  },
+  {
+    "index": 3,
+    "timestamp": 1763085356.9054353,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T17:48:35.101413",
+      "type": "memory",
+      "block_hash": "0fecada5c8d04e556a4539992fa123188ba80aa708fe1b2d974756c628c8abb9",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T17:48:35.101413",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "007e17dfb2278312a9b7239e8fadee4db69864bd0cffddb405d02ffea38f89e2",
+    "nonce": 28,
+    "hash": "0d661c99cc5a6b33eee86814f79d3ff694efd12d68f8ae7245c10d0554b334e9"
+  },
+  {
+    "index": 4,
+    "timestamp": 1763085356.9064348,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T17:55:56.634843",
+      "type": "memory",
+      "block_hash": "05996f0ae3e0e2bc7535538939fd076690e19ac090365225339003e4e91accb3",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T17:55:56.634843",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0d661c99cc5a6b33eee86814f79d3ff694efd12d68f8ae7245c10d0554b334e9",
+    "nonce": 46,
+    "hash": "084111589d9407b9e6d50b7ea1df564995171692639b73e6ac67dc4fce2f401a"
+  },
+  {
+    "index": 5,
+    "timestamp": 1763085691.0433154,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T17:48:35.101413",
+      "type": "memory",
+      "block_hash": "0fecada5c8d04e556a4539992fa123188ba80aa708fe1b2d974756c628c8abb9",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T17:48:35.101413",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "084111589d9407b9e6d50b7ea1df564995171692639b73e6ac67dc4fce2f401a",
+    "nonce": 18,
+    "hash": "03cf17f821e3ed449aa32034543bd0cda87d8d7418c0fd7c0c005700d21d5ea6"
+  },
+  {
+    "index": 6,
+    "timestamp": 1763085691.0443144,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T17:55:56.634843",
+      "type": "memory",
+      "block_hash": "05996f0ae3e0e2bc7535538939fd076690e19ac090365225339003e4e91accb3",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T17:55:56.634843",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "03cf17f821e3ed449aa32034543bd0cda87d8d7418c0fd7c0c005700d21d5ea6",
+    "nonce": 2,
+    "hash": "009fe1130d61e8f02019fdd4a22368179b9c4d0c37c77c75bcc4b799a30a1b26"
+  },
+  {
+    "index": 7,
+    "timestamp": 1763085691.0453134,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T18:01:30.768257",
+      "type": "memory",
+      "block_hash": "09ec17ae348f3e53217a58d05d2fbf52131e7c2c464a09e28c3cf4dee55f6225",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T18:01:30.768257",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "009fe1130d61e8f02019fdd4a22368179b9c4d0c37c77c75bcc4b799a30a1b26",
+    "nonce": 2,
+    "hash": "0448b81649b71ed361f777423808aa83189fde7d88da7b53683c47fbbe06f5b0"
+  },
+  {
+    "index": 8,
+    "timestamp": 1763085810.2265363,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T17:48:35.101413",
+      "type": "memory",
+      "block_hash": "0fecada5c8d04e556a4539992fa123188ba80aa708fe1b2d974756c628c8abb9",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T17:48:35.101413",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0448b81649b71ed361f777423808aa83189fde7d88da7b53683c47fbbe06f5b0",
+    "nonce": 25,
+    "hash": "05dca6d6f74bae6c1eda2d3685cdd88deb2a83cd9c6893728ffcb2e04083d4bd"
+  },
+  {
+    "index": 9,
+    "timestamp": 1763085810.2285345,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T17:55:56.634843",
+      "type": "memory",
+      "block_hash": "05996f0ae3e0e2bc7535538939fd076690e19ac090365225339003e4e91accb3",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T17:55:56.634843",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "05dca6d6f74bae6c1eda2d3685cdd88deb2a83cd9c6893728ffcb2e04083d4bd",
+    "nonce": 3,
+    "hash": "084c13569c0b2332d21545bbf32dbc527d7714add338d381bcf42e72d8237642"
+  },
+  {
+    "index": 10,
+    "timestamp": 1763085810.229536,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T18:01:30.768257",
+      "type": "memory",
+      "block_hash": "09ec17ae348f3e53217a58d05d2fbf52131e7c2c464a09e28c3cf4dee55f6225",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T18:01:30.768257",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "084c13569c0b2332d21545bbf32dbc527d7714add338d381bcf42e72d8237642",
+    "nonce": 13,
+    "hash": "0dd134acc519e56be73b0caca6d596599cef8e049de145b426cd107a9a99382d"
+  },
+  {
+    "index": 11,
+    "timestamp": 1763085810.2305346,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T18:03:29.908597",
+      "type": "memory",
+      "block_hash": "0835385f71e15dfc5dc624415a0fd9169e10708fd08f4a6372776560b3f99e36",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T18:03:29.908597",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0dd134acc519e56be73b0caca6d596599cef8e049de145b426cd107a9a99382d",
+    "nonce": 5,
+    "hash": "0af4bf63a4203da0f216babd8de998dd2e9e5784f9749e3d4373805631b9297f"
+  },
+  {
+    "index": 12,
+    "timestamp": 1763085923.235322,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T18:05:22.961286",
+      "type": "memory",
+      "block_hash": "032c62452948341ffa699f1583a2b6af9f2be317d1662bbf1858af18059ec8de",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T18:05:22.961286",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0af4bf63a4203da0f216babd8de998dd2e9e5784f9749e3d4373805631b9297f",
+    "nonce": 11,
+    "hash": "0668ffdf57b41dbdc06da7630f937f85a29da1f56fd390c035a782156a6057b5"
+  },
+  {
+    "index": 13,
+    "timestamp": 1763088747.2936025,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T18:52:26.795086",
+      "type": "memory",
+      "block_hash": "0778654ba05fa01438364466916ff3a2a255453752af8fe40b53faa0872c7c39",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T18:52:26.795086",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0668ffdf57b41dbdc06da7630f937f85a29da1f56fd390c035a782156a6057b5",
+    "nonce": 16,
+    "hash": "093d9ac88489c79580822775278790cdfeee7d3b8bc5db8f3eadbb762fb9fb98"
+  },
+  {
+    "index": 14,
+    "timestamp": 1763088952.7851684,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T18:55:52.272372",
+      "type": "memory",
+      "block_hash": "0497f32bf578eed13675bd678f099815652be4f1e8fcd705e7e17594f5cc8baf",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T18:55:52.272372",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "093d9ac88489c79580822775278790cdfeee7d3b8bc5db8f3eadbb762fb9fb98",
+    "nonce": 40,
+    "hash": "05152c48e79a7ebf67cc47ef92b4cb6e6077c6e043efb89469fb393183bfd685"
+  },
+  {
+    "index": 15,
+    "timestamp": 1763089601.3396263,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T19:06:40.987920",
+      "type": "memory",
+      "block_hash": "0d30685f412091e0e3778af4061db2537c21d12b2de76394eefa6fd478634b3e",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T19:06:40.987920",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "05152c48e79a7ebf67cc47ef92b4cb6e6077c6e043efb89469fb393183bfd685",
+    "nonce": 2,
+    "hash": "07c4dbe1076f20249bd84e53e6772bbfaaac19ab37a579541b17ab4d08db4b5e"
+  },
+  {
+    "index": 16,
+    "timestamp": 1763094065.37945,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T20:21:04.962470",
+      "type": "memory",
+      "block_hash": "08f0ae606a8802cc795a80d0b1b860b0dd6cfa7f6e5510c2847f154804d4b9b0",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T20:21:04.962470",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "07c4dbe1076f20249bd84e53e6772bbfaaac19ab37a579541b17ab4d08db4b5e",
+    "nonce": 9,
+    "hash": "07eefba5926e66c197ff5d82db47e2a8afcf2ee033f3239cf5b44edb0be535e3"
+  },
+  {
+    "index": 17,
+    "timestamp": 1763094157.8893764,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T20:22:37.581325",
+      "type": "memory",
+      "block_hash": "045b2a6cbe963b91d645af7e0d9c824db129cf96c20d0b17ad443c264e7442e1",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T20:22:37.581325",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "07eefba5926e66c197ff5d82db47e2a8afcf2ee033f3239cf5b44edb0be535e3",
+    "nonce": 27,
+    "hash": "0169ad8d15971a2111896157239bb49496fb0d5867ef96aae62f33ef04c9898a"
+  },
+  {
+    "index": 18,
+    "timestamp": 1763094212.9734898,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T20:23:32.672871",
+      "type": "memory",
+      "block_hash": "0d4d9c82f4479afdfbcc17b5e2ebb3e6e0638c3e30101e141b4cefd3e3f4c6d6",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T20:23:32.672871",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0169ad8d15971a2111896157239bb49496fb0d5867ef96aae62f33ef04c9898a",
+    "nonce": 9,
+    "hash": "0c4a72b78360a6de6906bd18472cef237757340282e7e7701387c49a1412f1e7"
+  },
+  {
+    "index": 19,
+    "timestamp": 1763094305.5811555,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T20:25:05.268152",
+      "type": "memory",
+      "block_hash": "0905b191341f6780d7fd102cb0fdbb4ef6330ff333bbdd8ca912136b4865390d",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T20:25:05.268152",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0c4a72b78360a6de6906bd18472cef237757340282e7e7701387c49a1412f1e7",
+    "nonce": 0,
+    "hash": "02f0ab36831640953d75ec74492b179caf8fb9accb96af625ad2782ed4697c54"
+  },
+  {
+    "index": 20,
+    "timestamp": 1763094343.9964905,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T20:25:43.675957",
+      "type": "memory",
+      "block_hash": "0023371c2afe3d8616b8a50772ea986548b8279d0c1e0a527c9a5634f56cb70c",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T20:25:43.675957",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "02f0ab36831640953d75ec74492b179caf8fb9accb96af625ad2782ed4697c54",
+    "nonce": 4,
+    "hash": "0bcafd10eb0a22aa72c21f201ca4ba51044b259b7b5ca9090d2a11809a034450"
+  },
+  {
+    "index": 21,
+    "timestamp": 1763094383.2833421,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T20:26:22.909665",
+      "type": "memory",
+      "block_hash": "035975a74259cf6b6d5317e13861a007a83ded8fe0d8d2808784d514c534089e",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T20:26:22.909665",
+        "status": "verified"
+      }
+    },
+    "previous_hash": "0bcafd10eb0a22aa72c21f201ca4ba51044b259b7b5ca9090d2a11809a034450",
+    "nonce": 17,
+    "hash": "0f37370435ad8b1778415e51d939c8dc64bfc07314ffe2b86470ea8817bd9a9e"
+  },
+  {
+    "index": 22,
+    "timestamp": 1763094446.253001,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T20:27:26.253000",
+      "type": "memory"
+    },
+    "previous_hash": "0f37370435ad8b1778415e51d939c8dc64bfc07314ffe2b86470ea8817bd9a9e",
+    "nonce": 1,
+    "hash": "04417b827060803f2fa329626dbd51df9f745c6023d342dc676879abf70465e2"
+  },
+  {
+    "index": 23,
+    "timestamp": 1763094675.1007195,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T20:31:15.100719",
+      "type": "memory"
+    },
+    "previous_hash": "04417b827060803f2fa329626dbd51df9f745c6023d342dc676879abf70465e2",
+    "nonce": 40,
+    "hash": "06153060e994c82e6e9e151f6c56bc95c8a59c485596cea0125a1b7c8ef52228"
+  },
+  {
+    "index": 24,
+    "timestamp": 1763225834.9222536,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T08:57:14.922253",
+      "type": "memory"
+    },
+    "previous_hash": "06153060e994c82e6e9e151f6c56bc95c8a59c485596cea0125a1b7c8ef52228",
+    "nonce": 16,
+    "hash": "045cb22b609717a4a32bec060ece7ff13a4b02c04a458c5b04580a4ee4b5847d"
+  },
+  {
+    "index": 25,
+    "timestamp": 1763226223.2107844,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:03:43.210784",
+      "type": "memory"
+    },
+    "previous_hash": "045cb22b609717a4a32bec060ece7ff13a4b02c04a458c5b04580a4ee4b5847d",
+    "nonce": 7,
+    "hash": "012175dc6d75ced7f93f6a283f66eb4048ef979bfdddaff3aef62cba75949466"
+  },
+  {
+    "index": 26,
+    "timestamp": 1763226485.1557868,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:08:05.155786",
+      "type": "memory"
+    },
+    "previous_hash": "012175dc6d75ced7f93f6a283f66eb4048ef979bfdddaff3aef62cba75949466",
+    "nonce": 61,
+    "hash": "037c263547fb862de78b206ee276bb365d525ff2359b3f593928e7cd7ec73750"
+  },
+  {
+    "index": 27,
+    "timestamp": 1763226623.626488,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:10:23.626488",
+      "type": "memory"
+    },
+    "previous_hash": "037c263547fb862de78b206ee276bb365d525ff2359b3f593928e7cd7ec73750",
+    "nonce": 7,
+    "hash": "07e9468ecf723069c2d4b52377794d17b9f1ad64c3339c59ad2c5bde1289aba6"
+  }
+]

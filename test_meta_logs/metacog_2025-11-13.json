@@ -1,0 +1,22 @@
+{
+  "events": [
+    {
+      "timestamp": "2025-11-13T17:41:08.655010",
+      "type": "decision",
+      "details": {
+        "action": "respond",
+        "input": "Hello Lyra!"
+      }
+    }
+  ],
+  "reflections": [
+    {
+      "timestamp": "2025-11-13T17:41:08.662010",
+      "summary": "Test reflection",
+      "insights": [
+        "Learned to log events.",
+        "Reflection works."
+      ]
+    }
+  ]
+}

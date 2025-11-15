@@ -34,6 +34,24 @@ EMOTIONS = {
     "neutral": {"valence": 0.0, "arousal": 0.0, "dominance": 0.0}
 }
 
+# Map model labels to EMOTIONS keys
+EMOTION_LABEL_MAP = {
+    "happy": "happiness",
+    "sad": "sadness",
+    "angry": "anger",
+    "fearful": "fear",
+    "disgusted": "disgust",
+    "surprised": "surprise",
+    "neutral": "neutral",
+    # Also include direct mappings
+    "happiness": "happiness",
+    "sadness": "sadness", 
+    "anger": "anger",
+    "fear": "fear",
+    "disgust": "disgust",
+    "surprise": "surprise"
+}
+
 logger = logging.getLogger(__name__)
 
 class VoiceProcessor:
@@ -275,21 +293,24 @@ class VoiceProcessor:
             detected_emotion = emotion["label"].lower()  # Normalize emotion label
             confidence = float(emotion["score"])
             
+            # Map model label to EMOTIONS dictionary key
+            mapped_emotion = EMOTION_LABEL_MAP.get(detected_emotion, "neutral")
+            
             # Update emotional context
-            self.emotional_context["current_emotion"] = detected_emotion
-            self.emotional_context["emotion_history"].append(detected_emotion)
+            self.emotional_context["current_emotion"] = mapped_emotion
+            self.emotional_context["emotion_history"].append(mapped_emotion)
             if len(self.emotional_context["emotion_history"]) > 10:
                 self.emotional_context["emotion_history"].pop(0)
                 
             # Update emotional metrics
-            metrics = EMOTIONS[detected_emotion]
+            metrics = EMOTIONS[mapped_emotion]
             alpha = confidence  # Use confidence as weight for update
             self.emotional_context["valence"] = (1 - alpha) * self.emotional_context["valence"] + alpha * metrics["valence"]
             self.emotional_context["arousal"] = (1 - alpha) * self.emotional_context["arousal"] + alpha * metrics["arousal"]
             self.emotional_context["dominance"] = (1 - alpha) * self.emotional_context["dominance"] + alpha * metrics["dominance"]
             
             return {
-                "emotion": detected_emotion,
+                "emotion": mapped_emotion,
                 "confidence": confidence,
                 "metrics": self.emotional_context
             }

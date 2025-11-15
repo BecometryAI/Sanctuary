@@ -10,13 +10,13 @@ from pathlib import Path
 from typing import Any, List, Mapping, Optional
 
 from langchain.llms.base import LLM
-from langchain_core.documents import Document
-from langchain_core.retrievers import BaseRetriever
+from langchain.schema import Document
+from langchain.schema.retriever import BaseRetriever
 from langchain.callbacks.manager import CallbackManagerForLLMRun
 
-from lyra.memory_weaver import MemoryWeaver
-from lyra.memory import MemoryManager
-from lyra.rag_engine import MindVectorDB, RAGQueryEngine
+from emergence_core.lyra.memory_weaver import MemoryWeaver
+from emergence_core.lyra.memory import MemoryManager
+from emergence_core.lyra.rag_engine import MindVectorDB, RAGQueryEngine
 
 class FakeLLM(LLM):
     def _llm_type(self) -> str:
@@ -360,12 +360,14 @@ class TestMindVectorDB:
     def vector_db(self, tmp_path):
         db_path = tmp_path / "vector_store"
         chain_dir = tmp_path / "chain"
-        return MindVectorDB(str(db_path), "test_mind.json", str(chain_dir))
+        # Use tmp_path for test isolation
+        return MindVectorDB(str(db_path), str(tmp_path / "test_mind.json"), str(chain_dir))
 
     def test_initialization(self, vector_db):
         assert vector_db.embeddings is not None
         assert vector_db.text_splitter is not None
-        assert vector_db.collection is not None
+        assert vector_db.client is not None
+        assert vector_db.chroma_settings is not None
 
     def test_as_retriever(self, vector_db):
         vector_db.vector_store = Mock()

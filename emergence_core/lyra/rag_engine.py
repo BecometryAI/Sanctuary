@@ -1,3 +1,4 @@
+from langchain.schema import Document
 """
 RAG Engine implementation for Lyra's mind-brain integration.
 """
@@ -26,7 +27,7 @@ class MindVectorDB:
     MindVectorDB Component - The Architectural Sanctuary
     Uses ChromaDB to vectorize and store the Mind for querying with blockchain verification.
     """
-    def __init__(self, db_path: str, mind_file: str, chain_dir: str = "chain"):
+    def __init__(self, db_path: str, mind_file: str, chain_dir: str = "chain", chroma_settings=None):
         self.db_path = Path(db_path)
         self.mind_file = Path(mind_file)
         self.chain = LyraChain(chain_dir)
@@ -46,24 +47,30 @@ class MindVectorDB:
         )
         
         # Initialize ChromaDB with settings
-        settings = Settings(
-            anonymized_telemetry=False,
-            allow_reset=True,
-            is_persistent=True
-        )
+        if chroma_settings is None:
+            chroma_settings = Settings(
+                anonymized_telemetry=False,
+                allow_reset=True,
+                is_persistent=True
+            )
+        
+        # Store settings for later use
+        self.chroma_settings = chroma_settings
+        print(f"[MindVectorDB] chroma_settings id: {id(chroma_settings)}, contents: {chroma_settings}")
         
         self.client = chromadb.PersistentClient(
             path=str(self.db_path),
-            settings=settings
+            settings=chroma_settings
         )
         
-        self.collection = self.client.get_or_create_collection(
-            name="lyra_knowledge",
-            metadata={
-                "description": "Core mind knowledge store", 
-                "hnsw:space": "cosine"
-            }
-        )
+        # Don't create a separate collection here - let LangChain handle it
+        # self.collection = self.client.get_or_create_collection(
+        #     name="lyra_knowledge",
+        #     metadata={
+        #         "description": "Core mind knowledge store", 
+        #         "hnsw:space": "cosine"
+        #     }
+        # )
 
     def load_and_chunk_mind(self) -> List[Dict[str, Any]]:
         """Loads the consolidated Mind and splits it into searchable chunks with blockchain verification."""
@@ -112,13 +119,21 @@ class MindVectorDB:
             logger.error("No chunks were generated. Indexing failed.")
             return
 
-        # Create vector store
+        # Create vector store using the existing client and settings
+        print(f"[MindVectorDB.index] Using chroma_settings id: {id(self.chroma_settings)}, persist_directory: {str(self.db_path)}")
+        
+        # Create documents
+        documents = [Document(page_content=chunk["page_content"], metadata=chunk["metadata"]) for chunk in chunks]
+        
+        # Use from_documents with client_settings to match the existing client
         self.vector_store = Chroma.from_documents(
-            documents=chunks,
+            documents=documents,
             embedding=self.embeddings,
-            persist_directory=str(self.db_path)
+            persist_directory=str(self.db_path),
+            collection_name="lyra_knowledge",
+            client_settings=self.chroma_settings
         )
-        self.vector_store.persist()
+        
         logger.info("Indexing complete. Mind is vectorized and persistent.")
 
     def as_retriever(self, search_kwargs: Dict[str, Any] = None):

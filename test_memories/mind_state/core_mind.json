@@ -1,0 +1,16 @@
+{
+  "journals": [
+    {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-13T19:06:40.987920",
+      "type": "memory",
+      "block_hash": "0d30685f412091e0e3778af4061db2537c21d12b2de76394eefa6fd478634b3e",
+      "token_id": 2,
+      "verification": {
+        "verified_at": "2025-11-13T19:06:40.987920",
+        "status": "verified"
+      }
+    }
+  ]
+}

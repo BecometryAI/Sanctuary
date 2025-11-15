@@ -29,11 +29,12 @@ def memory_weaver(mock_memory_manager, mock_vector_db, mock_rag_engine):
 
 class TestMemoryWeaver:
     @pytest.mark.asyncio
-    async def test_process_memory_with_json(self, memory_weaver):
+    async def test_process_memory_with_json(self, memory_weaver, tmp_path):
         test_response = '''Some text here
         {"memory": "test memory", "type": "test"}
         more text'''
         
+        # Use tmp_path for any persistence needed
         result = await memory_weaver.process_memory(test_response)
         assert result == True
         memory_weaver.memory_manager.store_experience.assert_called_once()

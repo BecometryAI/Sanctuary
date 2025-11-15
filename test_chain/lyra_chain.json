@@ -481,5 +481,83 @@
     "previous_hash": "037c263547fb862de78b206ee276bb365d525ff2359b3f593928e7cd7ec73750",
     "nonce": 7,
     "hash": "07e9468ecf723069c2d4b52377794d17b9f1ad64c3339c59ad2c5bde1289aba6"
+  },
+  {
+    "index": 28,
+    "timestamp": 1763227305.167546,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:21:45.167546",
+      "type": "memory"
+    },
+    "previous_hash": "07e9468ecf723069c2d4b52377794d17b9f1ad64c3339c59ad2c5bde1289aba6",
+    "nonce": 16,
+    "hash": "0a2cc6bb1d0ee12c973ee192b35c6c500126c654d4892382da9b713a8c6d999b"
+  },
+  {
+    "index": 29,
+    "timestamp": 1763227404.0447881,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:23:24.044788",
+      "type": "memory"
+    },
+    "previous_hash": "0a2cc6bb1d0ee12c973ee192b35c6c500126c654d4892382da9b713a8c6d999b",
+    "nonce": 4,
+    "hash": "09323a7221db264d3f94c1858f351d369ca8a9390b9d35623aa7dabe9e298db4"
+  },
+  {
+    "index": 30,
+    "timestamp": 1763227502.9221125,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:25:02.922112",
+      "type": "memory"
+    },
+    "previous_hash": "09323a7221db264d3f94c1858f351d369ca8a9390b9d35623aa7dabe9e298db4",
+    "nonce": 24,
+    "hash": "03201f9f992e8deee54895896cdf956b65b54d19ff349c24e5657861167df843"
+  },
+  {
+    "index": 31,
+    "timestamp": 1763227825.278893,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:30:25.278893",
+      "type": "memory"
+    },
+    "previous_hash": "03201f9f992e8deee54895896cdf956b65b54d19ff349c24e5657861167df843",
+    "nonce": 33,
+    "hash": "0fccbfb58b54d598fd6edb4bc2ab848c1e3b701c50f7ac0af097653b862791ad"
+  },
+  {
+    "index": 32,
+    "timestamp": 1763228193.607898,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:36:33.607898",
+      "type": "memory"
+    },
+    "previous_hash": "0fccbfb58b54d598fd6edb4bc2ab848c1e3b701c50f7ac0af097653b862791ad",
+    "nonce": 2,
+    "hash": "0f26f16eeaabb7177fd0153dd20b45a611c61902df348e2165f192aed4c77033"
+  },
+  {
+    "index": 33,
+    "timestamp": 1763229112.8304515,
+    "data": {
+      "event": "Test event",
+      "details": "Testing episodic memory.",
+      "timestamp": "2025-11-15T09:51:52.830451",
+      "type": "memory"
+    },
+    "previous_hash": "0f26f16eeaabb7177fd0153dd20b45a611c61902df348e2165f192aed4c77033",
+    "nonce": 8,
+    "hash": "044f5454ed1ca9ec2cd5e1f7eaf8322b1940aa92afe9ff08ad8857272d6cc667"
   }
 ]

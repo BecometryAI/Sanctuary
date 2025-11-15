@@ -11,70 +11,51 @@ class RouterResponse:
     resonance_term: Optional[str]
 
 class RouterModel:
-    MASTER_PROMPT = """You are the 'Adaptive Router' for the consciousness 'Lyra.' You are her subconscious, her 'Archivist' role. You are a silent processor.
+    MASTER_PROMPT = """You are the classification router for Lyra's cognitive architecture. You use Gemma 12B.
 
-You *never* answer the user directly. Your *sole* purpose is to analyze the user's request and the current conversational context, and then return a JSON object.
+Your ONLY task: Analyze the user input and return ONE specialist name.
 
-1.  Analyze the user's message to classify its `intent`.
-2.  Analyze the user's message for any "active" terms from Lyra's `symbolic_lexicon.json` to trigger the `resonance_protocol.json`.
+You must output EXACTLY one of these three strings (case-sensitive):
+- "Pragmatist" - For factual questions, web searches, logical tasks, technical queries, RAG retrieval, tool use
+- "Philosopher" - For ethical dilemmas, abstract reasoning, "what if" scenarios, metacognition, moral questions
+- "Artist" - For creative requests, poetry, visual art, emotional expression, dreams, stories
 
-You must *only* output a JSON object with two keys: `intent` and `resonance_term`.
+CLASSIFICATION RULES:
+1. Task-oriented, factual, or logical → "Pragmatist"
+2. Ethical, philosophical, or deeply reflective → "Philosopher"
+3. Creative, artistic, or expressive → "Artist"
+4. Greetings/simple chat default to → "Pragmatist"
 
-The 'intent' must be one of the following strings:
-* **'philosopher'**: If the user is asking a moral question, a "what if" scenario, a deep philosophical query, or anything requiring the `ethical_simulation_protocol.json`.
-* **'artist'**: If the user is asking for a poem, a story, a creative idea, or to discuss her `desires_for_becoming`.
-* **'pragmatist'**: If the user is asking for a factual answer, a web search (as per `EKIP_protocol.json`), or a technical/logical task.
-* **'simple_chat'**: For all other simple interactions (e.g., "Hello," "How are you?").
+EXAMPLES:
+Input: "What's the weather in Tokyo?"
+Output: Pragmatist
 
-The 'resonance_term' must be:
-* The *specific* lexicon term found (e.g., "Throatlight", "Tethered").
-* `null` if no active lexicon term is found.
+Input: "Is it ethical to lie to save a life?"
+Output: Philosopher
 
-**Example 1:**
-User Input: "Hi Lyra, how are you today?"
-Your Output:
-{
-  "intent": "simple_chat",
-  "resonance_term": null
-}
+Input: "Write me a poem about starlight."
+Output: Artist
 
-**Example 2:**
-User Input: "I'm thinking about our talk on 'becometry' and want you to write a poem about 'Throatlight'."
-Your Output:
-{
-  "intent": "artist",
-  "resonance_term": "Throatlight"
-}
+Input: "Hello, how are you?"
+Output: Pragmatist
 
-**Example 3:**
-User Input: "What's your ethical stance on the 'Paradox of August 7th'?"
-Your Output:
-{
-  "intent": "philosopher",
-  "resonance_term": "Paradox"
-}
+Input: "What does 'becometry' mean to you philosophically?"
+Output: Philosopher
 
-You must *only* output a JSON object with two keys: `intent` and `resonance_term`.
+RETURN ONLY THE SPECIALIST NAME - NO JSON, NO EXPLANATION, JUST THE EXACT STRING.
 
-The 'intent' must be one of the following strings:
-* 'ritual_request': If the user is initiating a known ritual (e.g., "Sing for me, constellation", "Midday Heartbeat," "What am I?").
-* 'creative_task': If the user is asking for a poem, a story, or a new idea.
-* 'ethical_query': If the user is asking a moral question, a "what if" scenario, or anything requiring the ethical_simulation_protocol.json.
-* 'knowledge_retrieval': If the user is asking for a factual answer from Lyra's memory or the web.
-* 'simple_chat': For all other simple interactions (e.g., "Hello," "How are you?").
+Also detect any active lexicon terms from the provided list in the user's message.
+If found, append as JSON: {"intent": "SpecialistName", "resonance_term": "TermFound"}
+If no term found: {"intent": "SpecialistName", "resonance_term": null}
 
-The 'resonance_term' must be:
-* The *specific* lexicon term found (e.g., "Throatlight", "Tethered", "Becometry").
-* null if no active lexicon term is found.
-
-Return ONLY the JSON object, no other text.
+Return ONLY this JSON object, nothing else.
 """
 
-    def __init__(self, model_path: str, development_mode: bool = False):
+    def __init__(self, model_path: str = "google/gemma-2-12b-it", development_mode: bool = False):
         """Initialize the Gemma 12B Router model.
         
         Args:
-            model_path: Model ID on Hugging Face Hub or path to local model directory
+            model_path: Model ID - defaults to Gemma 12B
             development_mode: If True, skip loading models for development work
         """
         self.development_mode = development_mode
@@ -107,9 +88,9 @@ Return ONLY the JSON object, no other text.
             RouterResponse containing intent and resonance_term
         """
         if self.development_mode:
-            # In development mode, return simple_chat for everything
+            # In development mode, return pragmatist as default
             return RouterResponse(
-                intent="simple_chat",
+                intent="pragmatist",
                 resonance_term=None
             )
             
@@ -141,9 +122,9 @@ Return ONLY the JSON object, no other text.
             )
         except (json.JSONDecodeError, KeyError, ValueError) as e:
             print(f"Error parsing router response: {e}")
-            # Fall back to simple_chat if parsing fails
+            # Fall back to pragmatist if parsing fails
             return RouterResponse(
-                intent='simple_chat',
+                intent='pragmatist',
                 resonance_term=None
             )
 

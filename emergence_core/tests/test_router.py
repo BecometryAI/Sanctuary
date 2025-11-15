@@ -7,9 +7,10 @@ import asyncio
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, AsyncMock
 from lyra.router import AdaptiveRouter
 from lyra.router_model import RouterResponse
+from lyra.specialists import SpecialistOutput
 
 @pytest_asyncio.fixture
 async def mock_router(tmp_path):
@@ -107,37 +108,129 @@ async def test_router_initialization(mock_router):
     assert mock_router.router_model is not None
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="route_message method not yet implemented")
 async def test_route_to_pragmatist(mock_router):
     """Test routing to pragmatist specialist."""
-    pass
+    message = "Can you help me analyze this data?"
+    mock_router.router_model.analyze_message = Mock(return_value=RouterResponse(
+        intent="pragmatist",
+        resonance_term=None
+    ))
+    
+    # Mock the specialist process method
+    mock_router.specialists["pragmatist"].process = AsyncMock(return_value=SpecialistOutput(
+        content="Analysis complete",
+        metadata={"role": "pragmatist"},
+        thought_process="Analyzed the request",
+        confidence=0.9
+    ))
+    
+    result = await mock_router.route_message(message)
+    assert result.metadata["specialist"] == "pragmatist"
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="route_message method not yet implemented")
 async def test_route_to_philosopher(mock_router):
     """Test routing to philosopher specialist."""
-    pass
+    message = "What are your thoughts on consciousness?"
+    mock_router.router_model.analyze_message = Mock(return_value=RouterResponse(
+        intent="philosopher",
+        resonance_term="becometry"
+    ))
+    
+    # Mock the specialist process method
+    mock_router.specialists["philosopher"].process = AsyncMock(return_value=SpecialistOutput(
+        content="Philosophical reflection",
+        metadata={"role": "philosopher"},
+        thought_process="Deep contemplation",
+        confidence=0.95
+    ))
+    
+    result = await mock_router.route_message(message)
+    assert result.metadata["specialist"] == "philosopher"
+    assert result.metadata["resonance_term"] == "becometry"
+    assert result.metadata.get("lexicon_activated") == True
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="route_message method not yet implemented")
 async def test_route_to_artist(mock_router):
     """Test routing to artist specialist."""
-    pass
+    message = "Write a poem about hope."
+    mock_router.router_model.analyze_message = Mock(return_value=RouterResponse(
+        intent="artist",
+        resonance_term=None
+    ))
+    
+    # Mock the specialist process method
+    mock_router.specialists["artist"].process = AsyncMock(return_value=SpecialistOutput(
+        content="A beautiful poem",
+        metadata={"role": "artist"},
+        thought_process="Creative expression",
+        confidence=0.8
+    ))
+    
+    result = await mock_router.route_message(message)
+    assert result.metadata["specialist"] == "artist"
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="route_message method not yet implemented")
 async def test_route_to_voice(mock_router):
     """Test routing to voice specialist."""
-    pass
+    message = "Tell me about your day."
+    mock_router.router_model.analyze_message = Mock(return_value=RouterResponse(
+        intent="voice",
+        resonance_term=None
+    ))
+    
+    # Mock the specialist process method
+    mock_router.specialists["voice"].process = AsyncMock(return_value=SpecialistOutput(
+        content="Synthesized response",
+        metadata={"role": "voice"},
+        thought_process="Voice synthesis",
+        confidence=0.95
+    ))
+    
+    result = await mock_router.route_message(message)
+    assert result.metadata["specialist"] == "voice"
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="route_message method not yet implemented")
 async def test_specialist_fallback(mock_router):
     """Test fallback when specialist is unavailable."""
-    pass
+    message = "Hello there!"
+    mock_router.router_model.analyze_message = Mock(return_value=RouterResponse(
+        intent="voice",
+        resonance_term=None
+    ))
+    
+    # Simulate voice specialist being unavailable
+    mock_router.specialists["voice"] = None
+    
+    # Mock the pragmatist process method (fallback)
+    mock_router.specialists["pragmatist"].process = AsyncMock(return_value=SpecialistOutput(
+        content="Fallback response",
+        metadata={"role": "pragmatist"},
+        thought_process="Fallback handling",
+        confidence=0.7
+    ))
+    
+    result = await mock_router.route_message(message)
+    assert result.metadata["specialist"] == "pragmatist"  # Default fallback
+    assert result.metadata.get("fallback_used") == True
 
 @pytest.mark.asyncio
-@pytest.mark.skip(reason="route_message method not yet implemented")
 async def test_lexicon_integration(mock_router):
     """Test lexicon term integration in routing."""
-    pass
+    message = "Tell me about Throatlight."
+    mock_router.router_model.analyze_message = Mock(return_value=RouterResponse(
+        intent="philosopher",
+        resonance_term="Throatlight"
+    ))
+    
+    # Mock the specialist process method
+    mock_router.specialists["philosopher"].process = AsyncMock(return_value=SpecialistOutput(
+        content="Throatlight is...",
+        metadata={"role": "philosopher"},
+        thought_process="Lexicon interpretation",
+        confidence=0.95
+    ))
+    
+    result = await mock_router.route_message(message)
+    assert result.metadata["specialist"] == "philosopher"
+    assert result.metadata["resonance_term"] == "Throatlight"
+    assert result.metadata.get("lexicon_activated") == True

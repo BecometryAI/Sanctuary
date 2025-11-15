@@ -181,9 +181,10 @@ class AdaptiveRouter:
             # In development mode, return mock data
             if hasattr(self, "development_mode") and self.development_mode:
                 logger.warning("Development mode enabled - returning mock data")
-                if "symbolic_lexicon.json" in relative_path:
+                path_str = str(relative_path)
+                if "symbolic_lexicon.json" in path_str:
                     return {"terms": []}
-                elif "Rituals.json" in relative_path:
+                elif "Rituals.json" in path_str:
                     return []
                 else:
                     return {}
@@ -275,6 +276,82 @@ class AdaptiveRouter:
             raise RuntimeError(msg) from e
         finally:
             self.voice_state["speaking"] = False
+    
+    async def route_message(self, message: str, context: Optional[Dict[str, Any]] = None) -> SpecialistOutput:
+        """
+        SEQUENTIAL WORKFLOW: Route message through specialist then Voice synthesis.
+        
+        Workflow:
+        1. User input → Router (Gemma 12B) classification
+        2. Router selects ONE specialist: Pragmatist, Philosopher, or Artist  
+        3. Selected specialist processes the message
+        4. Specialist output → Voice (LLaMA 3 70B) for synthesis
+        5. Voice returns final first-person response
+        
+        Args:
+            message: The user's message
+            context: Optional context dictionary
+            
+        Returns:
+            SpecialistOutput containing Lyra's synthesized response
+        """
+        if context is None:
+            context = {}
+            
+        # STEP 1: Router classification with Gemma 12B
+        router_response = self.router_model.analyze_message(message, self.active_lexicon_terms)
+        
+        # Determine which specialist to use (lowercase for dict lookup)
+        specialist_type = router_response.intent.lower()
+        
+        # Validate specialist type
+        if specialist_type not in ['pragmatist', 'philosopher', 'artist']:
+            logger.warning(f"Invalid specialist type '{specialist_type}', defaulting to pragmatist")
+            specialist_type = 'pragmatist'
+        
+        # Check if resonance term was detected
+        if router_response.resonance_term:
+            context["resonance_term"] = router_response.resonance_term
+            context["lexicon_activated"] = True
+        
+        # STEP 2: Get the ONE selected specialist (with fallback to pragmatist)
+        specialist = self.specialists.get(specialist_type)
+        if specialist is None:
+            logger.warning(f"Specialist {specialist_type} unavailable, falling back to pragmatist")
+            specialist = self.specialists.get("pragmatist")
+            specialist_type = "pragmatist"
+            context["fallback_used"] = True
+        
+        logger.info(f"Sequential workflow: {message[:50]}... → {specialist_type.upper()} → Voice")
+        
+        # STEP 3: Process message with the SINGLE specialist
+        specialist_output = await specialist.process(message, context)
+        
+        # Add routing metadata to specialist output
+        specialist_output.metadata["specialist"] = specialist_type
+        specialist_output.metadata["resonance_term"] = router_response.resonance_term
+        if "lexicon_activated" in context:
+            specialist_output.metadata["lexicon_activated"] = context["lexicon_activated"]
+        if "fallback_used" in context:
+            specialist_output.metadata["fallback_used"] = context["fallback_used"]
+        
+        # STEP 4: Pass specialist output to Voice for final synthesis
+        voice_specialist = self.specialists.get("voice")
+        if voice_specialist is None:
+            logger.warning("Voice specialist unavailable, returning specialist output directly")
+            return specialist_output
+        
+        # STEP 5: Voice synthesizes into first-person Lyra response
+        final_response = await voice_specialist.synthesize(
+            original_query=message,
+            specialist_output=specialist_output,
+            specialist_name=specialist_type.title(),  # Capitalize for display
+            context=context
+        )
+        
+        logger.info(f"Sequential workflow complete: {specialist_type} → Voice → User")
+        
+        return final_response
             
     def _load_active_lexicon_terms(self) -> List[str]:
         """Load active terms from the symbolic lexicon."""

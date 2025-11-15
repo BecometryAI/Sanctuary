@@ -25,7 +25,10 @@ class VoiceCustomizer:
     def __init__(self, cache_dir: Optional[str] = None):
         """Initialize voice customization system"""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.cache_dir = cache_dir or Path.home() / ".lyra" / "voices"
+        if cache_dir is None:
+            self.cache_dir = Path.home() / ".lyra" / "voices"
+        else:
+            self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize vocoder

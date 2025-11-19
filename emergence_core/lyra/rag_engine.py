@@ -9,7 +9,6 @@ import json
 from datetime import datetime
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
@@ -19,6 +18,7 @@ import chromadb
 from chromadb.config import Settings
 
 from .lyra_chain import LyraChain
+from .chroma_embeddings import ChromaCompatibleEmbeddings
 
 logger = logging.getLogger(__name__)
 
@@ -32,11 +32,12 @@ class MindVectorDB:
         self.mind_file = Path(mind_file)
         self.chain = LyraChain(chain_dir)
         
-        # Initialize embeddings
-        self.embeddings = HuggingFaceEmbeddings(
+        # Initialize embeddings with ChromaDB-compatible wrapper
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.embeddings = ChromaCompatibleEmbeddings(
             model_name="sentence-transformers/all-mpnet-base-v2",
-            model_kwargs={'device': 'cuda' if torch.cuda.is_available() else 'cpu'},
-            encode_kwargs={'normalize_embeddings': True}
+            device=device,
+            normalize_embeddings=True
         )
         
         # Configure chunking
@@ -125,14 +126,43 @@ class MindVectorDB:
         # Create documents
         documents = [Document(page_content=chunk["page_content"], metadata=chunk["metadata"]) for chunk in chunks]
         
-        # Use from_documents with client_settings to match the existing client
-        self.vector_store = Chroma.from_documents(
-            documents=documents,
-            embedding=self.embeddings,
-            persist_directory=str(self.db_path),
-            collection_name="lyra_knowledge",
-            client_settings=self.chroma_settings
+        # Direct ChromaDB implementation (bypassing LangChain wrapper issues)
+        logger.info("Creating ChromaDB collection with compatible embeddings...")
+        
+        # Get or create collection with our compatible embedding function
+        collection = self.client.get_or_create_collection(
+            name="lyra_knowledge",
+            embedding_function=self.embeddings,
+            metadata={
+                "description": "Core mind knowledge store",
+                "hnsw:space": "cosine"
+            }
         )
+        
+        # Add documents to collection
+        logger.info(f"Adding {len(documents)} documents to collection...")
+        ids = [f"doc_{i}" for i in range(len(documents))]
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        
+        collection.add(
+            ids=ids,
+            documents=texts,
+            metadatas=metadatas
+        )
+        
+        # Create LangChain wrapper for the collection (for compatibility)
+        # Note: We pass None for embedding to avoid LangChain's wrapper validation
+        try:
+            self.vector_store = Chroma(
+                client=self.client,
+                collection_name="lyra_knowledge",
+                embedding_function=self.embeddings
+            )
+        except Exception as e:
+            logger.warning(f"LangChain wrapper failed: {e}. Using direct ChromaDB access.")
+            self.vector_store = None
+            self.collection = collection
         
         logger.info("Indexing complete. Mind is vectorized and persistent.")
 
@@ -140,7 +170,76 @@ class MindVectorDB:
         """Provides the retriever interface for the RAG chain."""
         if search_kwargs is None:
             search_kwargs = {"k": 5}
-        return self.vector_store.as_retriever(search_kwargs=search_kwargs)
+        
+        # Check if we need to initialize
+        if not hasattr(self, 'vector_store') or self.vector_store is None:
+            if not hasattr(self, 'collection') or self.collection is None:
+                logger.warning("No vector store or collection. Attempting to load...")
+                try:
+                    # Get existing collection
+                    self.collection = self.client.get_collection(
+                        name="lyra_knowledge",
+                        embedding_function=self.embeddings
+                    )
+                    logger.info("Successfully loaded existing collection")
+                except Exception as e:
+                    logger.error(f"Failed to load collection: {e}")
+                    # Create empty collection
+                    self.collection = self.client.get_or_create_collection(
+                        name="lyra_knowledge",
+                        embedding_function=self.embeddings,
+                        metadata={"description": "Core mind knowledge", "hnsw:space": "cosine"}
+                    )
+                    logger.info("Created new empty collection")
+        
+        # Return custom retriever that uses direct ChromaDB access
+        return DirectChromaRetriever(
+            collection=self.collection if hasattr(self, 'collection') and self.collection else None,
+            vector_store=self.vector_store if hasattr(self, 'vector_store') else None,
+            embeddings=self.embeddings,
+            k=search_kwargs.get("k", 5)
+        )
+
+
+class DirectChromaRetriever:
+    """Direct ChromaDB retriever that bypasses LangChain compatibility issues."""
+    
+    def __init__(self, collection, vector_store, embeddings, k=5):
+        self.collection = collection
+        self.vector_store = vector_store
+        self.embeddings = embeddings
+        self.k = k
+    
+    def get_relevant_documents(self, query: str):
+        """Retrieve relevant documents for a query."""
+        from langchain.schema import Document
+        
+        try:
+            # Try LangChain wrapper first if available
+            if self.vector_store is not None:
+                results = self.vector_store.similarity_search(query, k=self.k)
+                return results
+        except Exception as e:
+            logger.warning(f"LangChain retrieval failed: {e}. Using direct ChromaDB.")
+        
+        # Use direct ChromaDB access
+        if self.collection is not None:
+            results = self.collection.query(
+                query_texts=[query],
+                n_results=self.k
+            )
+            
+            # Convert to LangChain Document format
+            documents = []
+            if results and 'documents' in results and results['documents']:
+                for i, doc_text in enumerate(results['documents'][0]):
+                    metadata = results['metadatas'][0][i] if 'metadatas' in results else {}
+                    documents.append(Document(page_content=doc_text, metadata=metadata))
+            
+            return documents
+        
+        logger.error("No retrieval method available")
+        return []
 
 class RAGQueryEngine:
     """

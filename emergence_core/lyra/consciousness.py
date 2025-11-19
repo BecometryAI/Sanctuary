@@ -4,6 +4,7 @@ Core consciousness engine using vector memory and RAG
 from typing import Dict, List, Any, Optional
 import numpy as np
 from .memory import MemoryManager
+from .context_manager import ContextManager
 import logging
 from sentence_transformers import SentenceTransformer
 
@@ -11,12 +12,17 @@ class ConsciousnessCore:
     def __init__(
         self,
         memory_persistence_dir: str = "memories",
+        context_persistence_dir: str = "context_state",
         model_name: str = "sentence-transformers/all-mpnet-base-v2"
     ):
         """Initialize the consciousness core"""
         try:
             # Initialize memory system
             self.memory = MemoryManager(persistence_dir=memory_persistence_dir)
+            
+            # Initialize context management system
+            self.context_manager = ContextManager(persistence_dir=context_persistence_dir)
+            self.context_manager.load_context_state()
             
             # Initialize the language model
             logging.info("Loading language model...")
@@ -63,19 +69,62 @@ class ConsciousnessCore:
             raise
     
     def process_input(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Process new input through the consciousness system"""
+        """Process new input through the consciousness system with adaptive context"""
         try:
+            # Extract message
+            message = input_data.get("message", str(input_data))
+            
+            # Get current conversation context
+            current_context = self.context_manager.get_adapted_context(
+                query=message,
+                context_type="conversation",
+                max_items=5
+            )
+            
+            # Detect context shift
+            shift_detected, similarity = self.context_manager.detect_context_shift(
+                new_input=message,
+                current_context=current_context
+            )
+            
             # Update working memory with new input
             self.memory.update_working_memory("current_input", input_data)
             
-            # Retrieve relevant memories
+            # Adapt retrieval based on context
+            # If context shifted, retrieve more broadly; otherwise focus on current topic
+            k_memories = 10 if shift_detected else 5
+            
+            # Retrieve relevant memories with context awareness
             context = self.memory.retrieve_relevant_memories(
-                query=str(input_data),
-                k=5
+                query=message,
+                k=k_memories
             )
             
-            # Generate response using GEMMA
-            response = self._generate_response(input_data, context)
+            # Add conversation context to memory retrieval
+            combined_context = current_context + context
+            
+            # Generate response using context-aware system
+            response = self._generate_response(input_data, combined_context)
+            
+            # Extract detected topic and emotional tone from response
+            detected_topic = self._extract_topic(message, combined_context)
+            emotional_tone = self._extract_emotional_tone(message)
+            
+            # Update conversation context
+            self.context_manager.update_conversation_context(
+                user_input=message,
+                system_response=response.get("response", ""),
+                detected_topic=detected_topic,
+                emotional_tone=emotional_tone
+            )
+            
+            # Learn from interaction (implicit engagement for now)
+            # In production, this would use explicit user feedback
+            engagement = 0.7 if not shift_detected else 0.5
+            self.context_manager.learn_from_interaction(
+                engagement_level=engagement,
+                topic=detected_topic
+            )
             
             # Update internal state
             self._update_internal_state(input_data, response)
@@ -83,12 +132,25 @@ class ConsciousnessCore:
             # Maybe consolidate memories
             self._consider_memory_consolidation()
             
+            # Periodically save context state
+            if self.context_manager.interaction_count % 10 == 0:
+                self.context_manager.save_context_state()
+            
             # Ensure we have a response
             if not response or "response" not in response:
                 response = {
                     "response": "I've processed your message and am thinking about it.",
                     "status": "success"
                 }
+            
+            # Add context metadata to response
+            response["context_metadata"] = {
+                "context_shift_detected": shift_detected,
+                "similarity_to_recent": similarity,
+                "current_topic": self.context_manager.current_topic,
+                "memories_retrieved": len(context),
+                "conversation_context_used": len(current_context)
+            }
             
             return response
             
@@ -229,7 +291,97 @@ class ConsciousnessCore:
         """Decide whether to consolidate memories"""
         if self.internal_state["cognitive_load"] < 0.7:  # Threshold
             self.memory.consolidate_memories()
+    
+    def _extract_topic(self, message: str, context: List[Dict[str, Any]]) -> Optional[str]:
+        """
+        Extract the main topic from a message using simple keyword analysis.
+        
+        In production, this would use NLP topic modeling or semantic clustering.
+        
+        Args:
+            message: User's message
+            context: Retrieved context
+            
+        Returns:
+            Detected topic string or None
+        """
+        # Simple keyword-based topic detection
+        # In production, use LDA, semantic clustering, or topic classification model
+        
+        keywords = message.lower().split()
+        
+        # Define topic keywords (simplified)
+        topic_keywords = {
+            "memory": ["memory", "remember", "recall", "forget", "memories"],
+            "consciousness": ["consciousness", "awareness", "conscious", "aware", "thinking"],
+            "emotions": ["emotion", "feel", "feeling", "emotional", "mood", "sentiment"],
+            "learning": ["learn", "learning", "teach", "study", "understand"],
+            "philosophy": ["philosophy", "philosophical", "meaning", "existence", "reality"],
+            "technology": ["technology", "code", "programming", "software", "system"],
+            "personal": ["me", "you", "yourself", "myself", "who", "what"],
+        }
+        
+        # Count keyword matches
+        topic_scores = {}
+        for topic, topic_words in topic_keywords.items():
+            score = sum(1 for word in keywords if word in topic_words)
+            if score > 0:
+                topic_scores[topic] = score
+        
+        # Return highest scoring topic
+        if topic_scores:
+            return max(topic_scores, key=topic_scores.get)
+        
+        return "general"
+    
+    def _extract_emotional_tone(self, message: str) -> List[str]:
+        """
+        Extract emotional tones from a message.
+        
+        In production, this would use sentiment analysis or emotion classification models.
+        
+        Args:
+            message: User's message
+            
+        Returns:
+            List of detected emotional tones
+        """
+        # Simple keyword-based emotion detection
+        # In production, use transformer-based emotion classification
+        
+        message_lower = message.lower()
+        detected_tones = []
+        
+        # Define emotion keywords (simplified)
+        emotion_keywords = {
+            "joy": ["happy", "joy", "excited", "wonderful", "great", "amazing", "love"],
+            "sadness": ["sad", "unhappy", "disappointed", "depressed", "down"],
+            "curiosity": ["curious", "wonder", "interesting", "why", "how", "what"],
+            "confusion": ["confused", "unclear", "don't understand", "lost"],
+            "appreciation": ["thanks", "thank you", "appreciate", "grateful"],
+            "concern": ["worried", "concerned", "anxious", "nervous"],
+            "neutral": [],
+        }
+        
+        # Detect emotions
+        for emotion, keywords in emotion_keywords.items():
+            if any(keyword in message_lower for keyword in keywords):
+                detected_tones.append(emotion)
+        
+        # Default to neutral if nothing detected
+        if not detected_tones:
+            detected_tones = ["neutral"]
+        
+        return detected_tones
             
     def get_internal_state(self) -> Dict[str, Any]:
         """Return current internal state"""
         return self.internal_state.copy()
+    
+    def get_context_summary(self) -> Dict[str, Any]:
+        """Get summary of current context state"""
+        return self.context_manager.get_context_summary()
+    
+    def reset_session(self):
+        """Reset session context while preserving learned patterns"""
+        self.context_manager.reset_session()

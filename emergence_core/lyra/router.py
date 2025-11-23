@@ -73,6 +73,15 @@ class SpecialistResponse:
 # Import our safe JSON loading utility
 from .utils import safe_json_load
 
+# Import PIL for image handling
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError:
+    Image = None
+    HAS_PIL = False
+    logger.warning("PIL not installed - image input unavailable")
+
 class AdaptiveRouter:
     def __init__(self, base_dir: str, chroma_dir: str, model_dir: str, development_mode: bool = False):
         """
@@ -277,26 +286,68 @@ class AdaptiveRouter:
         finally:
             self.voice_state["speaking"] = False
     
-    async def route_message(self, message: str, context: Optional[Dict[str, Any]] = None) -> SpecialistOutput:
+    async def route_message(
+        self, 
+        message: str, 
+        context: Optional[Dict[str, Any]] = None,
+        image: Optional[Image.Image] = None
+    ) -> SpecialistOutput:
         """
-        SEQUENTIAL WORKFLOW: Route message through specialist then Voice synthesis.
+        SEQUENTIAL WORKFLOW: Route message (with optional image) through specialist then Voice synthesis.
         
         Workflow:
-        1. User input → Router (Gemma 12B) classification
-        2. Router selects ONE specialist: Pragmatist, Philosopher, or Artist  
-        3. Selected specialist processes the message
-        4. Specialist output → Voice (LLaMA 3 70B) for synthesis
-        5. Voice returns final first-person response
+        1. (If image) → Perception specialist converts image to text description
+        2. User input → Router (Gemma 12B) classification
+        3. Router selects ONE specialist: Pragmatist, Philosopher, or Artist  
+        4. Selected specialist processes the message
+        5. Specialist output → Voice (LLaMA 3 70B) for synthesis
+        6. Voice returns final first-person response
         
         Args:
             message: The user's message
             context: Optional context dictionary
+            image: Optional PIL Image for vision processing
             
         Returns:
             SpecialistOutput containing Lyra's synthesized response
         """
         if context is None:
             context = {}
+        
+        # PRE-STEP: Vision understanding if image provided
+        if image is not None and HAS_PIL:
+            logger.info("Image detected - invoking Perception specialist")
+            
+            perception = self.specialists.get('perception')
+            if perception:
+                try:
+                    # Get visual description from Perception specialist
+                    vision_output = await perception.process(
+                        image=image,
+                        prompt=f"Analyze this image in context of: {message}" if message else "Describe this image in detail, noting artistic elements and mood",
+                        context=context
+                    )
+                    
+                    # Enhance message with visual context
+                    visual_context = vision_output.content
+                    if message:
+                        message = f"{message}\n\n[Visual Context: {visual_context}]"
+                    else:
+                        message = f"[Image uploaded]\n{visual_context}"
+                    
+                    # Add to context
+                    context['visual_analysis'] = visual_context
+                    context['has_image'] = True
+                    context['image_size'] = vision_output.metadata.get('image_size')
+                    
+                    logger.info(f"Visual analysis complete: {visual_context[:100]}...")
+                    
+                except Exception as e:
+                    logger.error(f"Perception failed: {e}")
+                    context['perception_error'] = str(e)
+            else:
+                logger.warning("Perception specialist not available - image will be ignored")
+                context['perception_unavailable'] = True
             
         # STEP 1: Router classification with Gemma 12B
         router_response = await self.router_model.analyze_message(message, self.active_lexicon_terms)

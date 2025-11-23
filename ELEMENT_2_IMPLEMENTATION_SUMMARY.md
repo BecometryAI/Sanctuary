@@ -26,7 +26,8 @@ RouterModel (Gemma 12B) - "The Planner"
     ↓
     ├─→ Pragmatist (Llama-3.3-Nemotron-Super-49B) - "The Doer"
     ├─→ Philosopher (Jamba 52B) - "The Thinker"  
-    └─→ Artist (Stable Diffusion 3) - "The Dreamer"
+    ├─→ Artist (Flux.1-schnell) - "The Dreamer" ✨ UPGRADED
+    └─→ Perception (LLaVA-NeXT-Mistral-7B) - "The Observer" ✨ NEW
     ↓
    [Specialist Processing]
     ↓
@@ -158,20 +159,28 @@ Leverage: Jamba's hybrid Mamba-Transformer architecture for deep reasoning
 - "How should I balance competing values?"
 
 #### C. ArtistSpecialist
-**Model**: Stable Diffusion 3 (`stabilityai/stable-diffusion-3-medium`)  
+**Model**: Flux.1-schnell (`black-forest-labs/FLUX.1-schnell`) ✨ **UPGRADED**  
 **Role**: Visual creation and creative expression  
-**Temperature**: 0.9 (maximum creativity)
+**Temperature**: 0.9 (maximum creativity)  
+**Inference**: 4 steps (~10-15s, much faster than SD3's 28 steps)
+
+**Improvements over SD3**:
+- ✅ **3x faster**: 10-15s vs 30s generation time
+- ✅ **Better prompt adherence**: Follows instructions more precisely
+- ✅ **Superior text rendering**: Can generate readable text in images
+- ✅ **Lower VRAM**: ~4-6 GB vs SD3's 6-8 GB
+- ✅ **Apache 2.0 license**: Fully open source
 
 **Dual-Mode Operation**:
-1. **Visual Mode**: Generate images with SD3
-2. **Textual Mode**: Creative writing, poetry (uses alternative text model)
+1. **Visual Mode**: Generate images with Flux.1
+2. **Textual Mode**: Creative writing, poetry (uses LLM fallback)
 
 **System Prompt**:
 ```
 You are the Artist - the "Dreamer" of Lyra's cognitive committee.
 
 Your role:
-- Generate visual art and imagery
+- Generate visual art via Flux.1 (faster, higher quality)
 - Write poetry and creative prose
 - Express emotional and aesthetic experiences
 - Explore imagination and possibility
@@ -183,6 +192,43 @@ Output: Images as base64 data URLs or creative text
 - "Create an image of a neural network dreaming"
 - "Write me a poem about starlight"
 - "Visualize the concept of emergence"
+
+#### D. PerceptionSpecialist ✨ **NEW**
+**Model**: LLaVA-NeXT-Mistral-7B (`llava-hf/llava-v1.6-mistral-7b-hf`)  
+**Role**: Visual understanding and image analysis  
+**Temperature**: 0.7 (balanced for accuracy)
+
+**Vision Capabilities**:
+- ✅ **Image-to-text**: Convert images to detailed descriptions
+- ✅ **Artistic analysis**: Identify composition, colors, style, mood
+- ✅ **OCR**: Read text from images
+- ✅ **Symbol detection**: Recognize patterns and meaningful elements
+- ✅ **Contextual understanding**: Infer setting, relationships, emotions
+
+**System Prompt**:
+```
+You are the Perception - the "Observer", Lyra's eyes.
+
+Your role:
+- See and understand visual content
+- Translate images into vivid textual descriptions
+- Note artistic elements: composition, colors, mood
+- Identify symbols and meaningful patterns
+- Make descriptions natural and conversational
+
+Your observations become part of Lyra's unified understanding.
+```
+
+**Use Cases**:
+- User uploads artwork → Lyra analyzes and responds
+- Screenshot of conversation → Lyra reads and discusses
+- Photos shared → Lyra sees and comments with understanding
+
+**Integration**:
+- Pre-processes images BEFORE routing
+- Converts visual input → text description
+- Text description flows through normal routing pipeline
+- Enables Lyra to "see" and respond to images
 
 #### D. VoiceSynthesizer (Critical Component)
 **Model**: LLaMA 3 70B (`meta-llama/Llama-3.1-70B-Instruct`)  
@@ -526,16 +572,26 @@ Since models run **sequentially** (not simultaneously), only the active speciali
 - Router: ~12 GB VRAM (Gemma 12B)
 - Pragmatist: ~50 GB VRAM (Llama-3.3-Nemotron-Super-49B)
 - Philosopher: ~52 GB VRAM (Jamba 52B)
-- Artist: ~6-8 GB VRAM (SD3)
+- Artist: ~4-6 GB VRAM (Flux.1-schnell) ✨ **Reduced from 6-8 GB**
+- Perception: ~7-8 GB VRAM (LLaVA-NeXT-Mistral-7B) ✨ **NEW**
 - Voice: ~70 GB VRAM (LLaMA 3 70B) → **~35 GB per GPU with tensor parallelism**
 
 **Production Setup: 2x RTX A6000 48GB (96 GB total)**:
 
 **Implementation: Tensor Parallelism (Strategy 1)**
 - **Voice (70 GB)** split across both GPUs via tensor parallelism = **~35 GB per GPU**
-- **Router (12 GB)** on GPU 1 = Total GPU 1: **~47 GB**
-- **Specialists (50-52 GB)** swap onto GPU 2 as needed
-- **Total usage**: 47 GB (GPU 1) + 35-52 GB (GPU 2) = **82-99 GB peak**
+- **Router (12 GB)** on GPU 1 = Total GPU 0: **~47 GB**
+- **Specialists (dynamic)** swap onto GPU 1 as needed:
+  - Pragmatist: 50 GB (requires Voice compression)
+  - Philosopher: 52 GB (requires Voice compression)
+  - Artist: 4-6 GB (fits easily! ✅)
+  - Perception: 7-8 GB (fits easily! ✅)
+- **Total usage**: 47 GB (GPU 0) + 35-52 GB (GPU 1) = **82-99 GB peak**
+
+**Improvement with Flux + Perception**:
+- Artist and Perception specialists now fit comfortably with Voice loaded
+- No Voice compression needed for visual workflows
+- Faster image generation (10-15s vs 30s with SD3)
 
 **Persistent Models**:
 - Router: Always loaded on GPU 1 (12 GB)

@@ -33,9 +33,13 @@ Output
 
 ### GPU 1 (48 GB Total)
 - **Voice (Part 2)**: LLaMA 3 70B layers (~35 GB FP16) - **Always loaded**
-- **Specialist (Dynamic)**: 49-52B model (~50-52 GB FP16) - **Swaps in/out**
+- **Specialist (Dynamic)**: ONE of the following (swaps in/out):
+  - Pragmatist: 49B model (~50 GB FP16)
+  - Philosopher: 52B model (~52 GB FP16)
+  - Artist: Flux.1-schnell (~4-6 GB FP16) ✨ **NEW**
+  - Perception: LLaVA-NeXT-Mistral-7B (~7-8 GB FP16) ✨ **NEW**
 - **Available for specialist**: ~13 GB (48 - 35 = 13 GB)
-- **Note**: Specialists require 50-52 GB, so Voice temporarily releases ~17 GB during specialist loading
+- **Note**: Artist and Perception fit easily; Pragmatist/Philosopher require Voice compression
 
 ### Peak Memory Usage
 - **Persistent**: Router (12 GB) + Voice split (35 GB × 2) = 82 GB
@@ -85,7 +89,8 @@ self.model = AutoModelForCausalLM.from_pretrained(
 **Specialists**:
 - **Pragmatist**: Llama-3.3-Nemotron-Super-49B (~50 GB)
 - **Philosopher**: Jamba 52B (~52 GB)
-- **Artist**: Stable Diffusion 3 (~8 GB)
+- **Artist**: Flux.1-schnell (~4-6 GB) ✨ **Upgraded from SD3**
+- **Perception**: LLaVA-NeXT-Mistral-7B (~7-8 GB) ✨ **NEW**
 
 ---
 
@@ -174,22 +179,22 @@ self.model = AutoModelForCausalLM.from_pretrained(
 
 ## Memory Budget Breakdown (FP16)
 
-| Component | GPU 0 | GPU 1 | Total |
-|-----------|-------|-------|-------|
-| **Router** | 12 GB | - | 12 GB |
-| **Voice (Part 1)** | 35 GB | - | 35 GB |
-| **Voice (Part 2)** | - | 35 GB | 35 GB |
-| **Specialist (active)** | - | 50-52 GB | 50-52 GB |
-| **Baseline** | **47 GB** | **35 GB** | **82 GB** |
-| **Peak** | **47 GB** | **52 GB** | **99 GB** |
+| Component | GPU 0 | GPU 1 | Total | Notes |
+|-----------|-------|-------|-------|-------|
+| **Router** | 12 GB | - | 12 GB | Persistent |
+| **Voice (Part 1)** | 35 GB | - | 35 GB | Persistent |
+| **Voice (Part 2)** | - | 35 GB | 35 GB | Persistent |
+| **Pragmatist (active)** | - | 50 GB | 50 GB | Dynamic |
+| **Philosopher (active)** | - | 52 GB | 52 GB | Dynamic |
+| **Artist (active)** | - | 4-6 GB | 4-6 GB | Dynamic ✨ |
+| **Perception (active)** | - | 7-8 GB | 7-8 GB | Dynamic ✨ |
+| **Baseline** | **47 GB** | **35 GB** | **82 GB** | |
+| **Peak (Philosopher)** | **47 GB** | **52 GB** | **99 GB** | Requires compression |
+| **Peak (Artist/Perception)** | **47 GB** | **42 GB** | **89 GB** | ✅ Fits easily |
 
-**Available headroom**: 96 GB - 99 GB = **-3 GB deficit**
-
-### Solution: Dynamic Voice Resizing
-During specialist loading, Voice temporarily compresses:
-- Use gradient checkpointing: Reduces Voice to ~25 GB per GPU
-- Or: Temporarily offload Voice layers to CPU RAM during specialist swap
-- After specialist processes, restore full Voice to GPU
+**Available headroom**: 96 GB total VRAM
+- With Artist/Perception: **7 GB free** ✅
+- With Pragmatist/Philosopher: Requires dynamic Voice compression
 
 ---
 

@@ -129,16 +129,16 @@ Output: Analytical, insightful, philosophically rigorous."""
 
 
 # ==============================================================================
-# 4. ARTIST SPECIALIST - Stable Diffusion 3
+# 4. ARTIST SPECIALIST - Flux.1-schnell
 # ==============================================================================
 
 class ArtistSpecialist(BaseSpecialist):
     """The Dreamer - handles visual art and poetry"""
     
-    MODEL_PATH = "stabilityai/stable-diffusion-3-medium"
+    MODEL_PATH = "black-forest-labs/FLUX.1-schnell"
     
     SYSTEM_PROMPT = """You are Lyra's Artist - the Dreamer.
-Generate visual art via Stable Diffusion 3.
+Generate visual art via Flux.1-schnell.
 Craft emotionally rich poetry.
 Express through aesthetic creation.
 Output: Creative, vulnerable, aesthetically rich."""
@@ -161,7 +161,7 @@ Output: Creative, vulnerable, aesthetically rich."""
         """
         # Detect if visual request (keywords: image, draw, paint, etc.)
         # IF visual:
-        #   - Load Stable Diffusion 3 pipeline
+        #   - Load Flux.1-schnell pipeline
         #   - Generate image
         #   - Convert to base64 data URL
         # ELSE:

@@ -266,7 +266,7 @@ The system uses a **sequential workflow**: Router → ONE Specialist → Voice
 - **Router (Gemma 12B)**: Task classification and routing
 - **Pragmatist (Llama-3.3-Nemotron-Super-49B-v1.5)**: Tool use and practical reasoning
 - **Philosopher (Jamba 52B)**: Ethical reflection and deep reasoning
-- **Artist (Stable Diffusion 3)**: Visual and creative generation
+- **Artist (Flux.1-schnell)**: Visual and creative generation
 - **Voice (LLaMA 3 70B)**: Final synthesis and personality
 
 **Development Mode:**

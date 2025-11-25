@@ -96,6 +96,9 @@ class VoiceProcessor:
         if voice_path:
             self.load_voice(voice_path)
         
+        # Volume control (0.0 to 1.0)
+        self.volume = 1.0
+        
         # Emotional context tracking
         self.emotional_context = {
             "current_emotion": "neutral",
@@ -108,6 +111,20 @@ class VoiceProcessor:
         self.voice_path = voice_path
         logger.info("Voice processor initialized")
         
+    def set_volume(self, volume: float):
+        """
+        Set output volume for speech generation
+        
+        Args:
+            volume: Volume level (0.0 to 1.0, where 1.0 is 100%)
+        """
+        self.volume = max(0.0, min(1.0, volume))
+        logger.info(f"Volume set to {self.volume * 100:.0f}%")
+    
+    def get_volume(self) -> float:
+        """Get current volume level (0.0 to 1.0)"""
+        return self.volume
+    
     async def transcribe_audio(self, audio_path: Union[str, Path]) -> dict:
         """
         Transcribe audio file to text using Whisper and detect emotion
@@ -197,6 +214,9 @@ class VoiceProcessor:
                     int(len(audio) / self.current_voice.characteristics["speed"])
                 )
             
+            # Apply volume control
+            audio = audio * self.volume
+            
             # Save audio file
             sf.write(output_path, audio, speech["sampling_rate"])
             
@@ -205,7 +225,7 @@ class VoiceProcessor:
             # For testing, generate a simple sine wave
             duration = 2  # seconds
             t = np.linspace(0, duration, int(16000 * duration))
-            audio = np.sin(2 * np.pi * 440 * t)  # 440 Hz sine wave
+            audio = np.sin(2 * np.pi * 440 * t) * self.volume  # Apply volume
             sf.write(output_path, audio, 16000)
 
     async def process_stream(self, audio_stream: AsyncGenerator[bytes, None]) -> AsyncGenerator[dict, None]:

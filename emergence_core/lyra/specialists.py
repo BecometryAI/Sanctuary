@@ -67,17 +67,24 @@ FLUX_DEFAULT_STEPS = 4
 FLUX_DEFAULT_SIZE = 1024
 LLAVA_MAX_TOKENS = 512
 
+# PIL import (required for vision)
+try:
+    from PIL import Image
+    HAS_PIL = True
+except ImportError as e:
+    HAS_PIL = False
+    Image = None
+    print(f"Warning: PIL not installed - Image processing unavailable ({e})")
+
 # Diffusion model imports with error handling
-# Note: diffusers and PIL are optional dependencies for visual generation
+# Note: diffusers is optional dependency for visual generation
 try:
     from diffusers import FluxPipeline
-    from PIL import Image
     HAS_DIFFUSERS = True
 except ImportError as e:
     HAS_DIFFUSERS = False
     FluxPipeline = None
-    Image = None
-    print(f"Warning: diffusers or PIL not installed - Artist visual generation unavailable ({e})")
+    print(f"Warning: diffusers not installed - Artist visual generation unavailable ({e})")
 
 # Vision model imports with error handling
 try:

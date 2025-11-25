@@ -27,9 +27,9 @@ All requested modifications have been successfully implemented for the sequentia
 - ✅ **Temperature**: 0.7 for balanced abstract thought
 
 ### 4. Artist Specialist (`specialists.py`)
-- ✅ **Model**: Stable Diffusion 3 (`stabilityai/stable-diffusion-3-medium`)
+- ✅ **Model**: Flux.1-schnell (`black-forest-labs/FLUX.1-schnell`)
 - ✅ **Role**: The "Dreamer" - visual art creation and poetry
-- ✅ **Dual-mode**: Visual (SD3 images) + Textual (creative writing)
+- ✅ **Dual-mode**: Visual (Flux images) + Textual (creative writing)
 - ✅ **Image Output**: Base64-encoded data URLs
 - ✅ **Temperature**: 0.9 for maximum creativity
 
@@ -111,7 +111,7 @@ SEQUENTIAL WORKFLOW VALIDATION
 ✓ RouterModel: Gemma 12B
 ✓ PragmatistSpecialist.MODEL_PATH: nvidia/Llama-3.3-Nemotron-Super-49B-Instruct
 ✓ PhilosopherSpecialist.MODEL_PATH: ai21labs/Jamba-1.5-Large
-✓ ArtistSpecialist.MODEL_PATH: stabilityai/stable-diffusion-3-medium
+✓ ArtistSpecialist.MODEL_PATH: black-forest-labs/FLUX.1-schnell
 ✓ VoiceSynthesizer.MODEL_PATH: meta-llama/Llama-3.1-70B-Instruct
 ```
 

@@ -525,7 +525,7 @@ class RouterResponse(NamedTuple):
 **Choices**:
 - Pragmatist: Llama-3.3-Nemotron-Super-49B (balanced size/performance)
 - Philosopher: Jamba 52B (Mamba architecture for deep reasoning)
-- Artist: SD3 (best-in-class image generation)
+- Artist: Flux.1-schnell (fast, high-quality image generation)
 - Voice: LLaMA 3 70B (large enough for nuanced synthesis)
 
 **Rationale**: Domain-specific best-in-class models instead of one-size-fits-all

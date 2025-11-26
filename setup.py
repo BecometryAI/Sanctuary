@@ -3,6 +3,8 @@ Setup file for Lyra Emergence package
 """
 from setuptools import setup, find_packages
 
+#TODO switch docker to async friendly ver (think aiodocker), Switch to `Quart` from uvicorn/fastapi
+#TODO switch from discord to `interactions`
 setup(
     name="lyra-emergence",
     version="0.1.0",

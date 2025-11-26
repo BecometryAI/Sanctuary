@@ -197,8 +197,32 @@ git clone https://github.com/Nohate81/Lyra-Emergence.git
 cd Lyra-Emergence
 ```
 
-**2. Create Virtual Environment**
+**2. Install Dependencies**
+
+**Option A: Using UV (Recommended)**
+
+UV is a fast Python package manager that makes installation and dependency management easier.
+
 ```bash
+# Install UV (if not already installed)
+# Linux/Mac
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Install dependencies with UV
+uv sync
+
+# Activate the virtual environment
+source .venv/bin/activate  # Linux/Mac
+.\.venv\Scripts\Activate.ps1  # Windows
+```
+
+**Option B: Using pip (Traditional)**
+
+```bash
+# Create Virtual Environment
 # Windows (PowerShell)
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
@@ -206,27 +230,33 @@ python -m venv .venv
 # Linux/Mac
 python3 -m venv .venv
 source .venv/bin/activate
-```
 
-**3. Install Core Dependencies**
-```bash
+# Install Core Dependencies
 cd emergence_core
 pip install -r requirements.txt
 ```
 
-**4. Install Optional Dependencies**
+**3. Install Optional Dependencies**
 
 For Flux.1-schnell (Artist specialist):
 ```bash
+# With UV
+uv pip install diffusers safetensors pillow accelerate
+
+# With pip
 pip install diffusers safetensors pillow accelerate
 ```
 
 For advanced features:
 ```bash
+# With UV
+uv pip install -r test_requirements.txt  # Testing tools
+
+# With pip
 pip install -r test_requirements.txt  # Testing tools
 ```
 
-**5. Verify Installation**
+**4. Verify Installation**
 ```bash
 # Test basic imports
 python -c "from lyra.router import AdaptiveRouter; print('Router OK')"
@@ -236,7 +266,7 @@ python -c "from lyra.specialists import PragmatistSpecialist; print('Specialists
 python tools/verify_flux_setup.py
 ```
 
-**6. Configure Environment**
+**5. Configure Environment**
 
 Create `.env` file in the root directory:
 ```bash
@@ -253,7 +283,7 @@ DEVELOPMENT_MODE=true  # Set to false for production
 LOG_LEVEL=INFO
 ```
 
-**7. Initialize ChromaDB**
+**6. Initialize ChromaDB**
 ```bash
 python -c "from lyra.router import AdaptiveRouter; import asyncio; asyncio.run(AdaptiveRouter('.').initialize())"
 ```

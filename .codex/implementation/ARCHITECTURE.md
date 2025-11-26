@@ -131,7 +131,7 @@ python test_sequential_workflow.py
 
 ## Resources for Contributors
 
-- [Installation Guide](../../README.md#8-installation-and-setup)
+- [Installation Guide](../../README.md#installation-and-setup)
 - [Project Structure](../../PROJECT_STRUCTURE.md)
 - [Sequential Workflow Guide](../../docs/SEQUENTIAL_WORKFLOW_GUIDE.md)
 - [Memory Integration Guide](../../MEMORY_INTEGRATION_GUIDE.md)

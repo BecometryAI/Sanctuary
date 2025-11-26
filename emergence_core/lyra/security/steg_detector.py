@@ -33,7 +33,7 @@ class StegDetector:
         
         # Thresholds for detection
         self.base_entropy_threshold = 4.3      # Normal English text entropy
-        self.suspicious_entropy_threshold = 5.0 # Threshold for suspicious content
+        self.suspicious_entropy_threshold = 5.0  # Threshold for suspicious content
         
     async def analyze_text(self, text: str) -> Dict[str, Any]:
         """

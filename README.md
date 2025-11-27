@@ -250,29 +250,13 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Windows
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# Install dependencies with UV
-uv sync
+# Make virtual environment
+uv venv --python python 3.13
+uv sync --upgrade
 
 # Activate the virtual environment
 source .venv/bin/activate  # Linux/Mac
 .\.venv\Scripts\Activate.ps1  # Windows
-```
-
-**Option B: Using pip (Traditional)**
-
-```bash
-# Create Virtual Environment
-# Windows (PowerShell)
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-
-# Linux/Mac
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install Core Dependencies
-cd emergence_core
-pip install -r requirements.txt
 ```
 
 **3. Install Optional Dependencies**
@@ -280,29 +264,28 @@ pip install -r requirements.txt
 For Flux.1-schnell (Artist specialist):
 ```bash
 # With UV
-uv pip install diffusers safetensors pillow accelerate
-
-# With pip
-pip install diffusers safetensors pillow accelerate
+# Note: diffusers, pillow, and accelerate are already included in the main dependencies.
+# Only safetensors needs to be added separately if not already installed.
+uv pip install safetensors
 ```
 
-For advanced features:
+For testing and development:
 ```bash
 # With UV
-uv pip install -r test_requirements.txt  # Testing tools
-
-# With pip
-pip install -r test_requirements.txt  # Testing tools
+# Note: Test dependencies are kept separate from production dependencies
+# to minimize the installation footprint in production environments.
+# They are defined in pyproject.toml under [tool.uv.dev-dependencies]
+uv sync --dev
 ```
 
 **4. Verify Installation**
 ```bash
 # Test basic imports
-python -c "from lyra.router import AdaptiveRouter; print('Router OK')"
-python -c "from lyra.specialists import PragmatistSpecialist; print('Specialists OK')"
+uv run python -c "from lyra.router import AdaptiveRouter; print('Router OK')"
+uv run python -c "from lyra.specialists import PragmatistSpecialist; print('Specialists OK')"
 
 # Verify Flux setup (optional)
-python tools/verify_flux_setup.py
+uv run python tools/verify_flux_setup.py
 ```
 
 **5. Configure Environment**
@@ -351,8 +334,7 @@ Models will be automatically downloaded from Hugging Face on first use. Ensure y
 
 **Start the Router (Local Testing):**
 ```bash
-cd emergence_core
-python lyra/router.py
+uv run emergence_core/lyra/router.py
 ```
 
 **Run with Cognitive Loop:**
@@ -364,7 +346,7 @@ The autonomous cognitive loop runs automatically when the router initializes:
 **Discord Integration:**
 ```bash
 # Ensure DISCORD_TOKEN is set in .env
-python run_discord_bot.py
+uv run run_discord_bot.py
 ```
 
 #### 8.5. Troubleshooting
@@ -373,7 +355,7 @@ python run_discord_bot.py
 
 1. **CUDA/GPU not detected:**
    ```bash
-   python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+   uv run python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
    ```
    Install appropriate CUDA toolkit for your GPU.
 
@@ -387,32 +369,27 @@ python run_discord_bot.py
    # Reset ChromaDB
    rm -rf model_cache/chroma_db
    # Re-initialize
-   python emergence_core/build_index.py
-   ```
-
-4. **Import errors:**
-   Ensure you're in the virtual environment:
-   ```bash
-   which python  # Should point to .venv/bin/python
+   uv run emergence_core/build_index.py
    ```
 
 #### 8.6. Testing
 
+All testing commands should be run from the project root directory.
+
 **Run Test Suite:**
 ```bash
-cd emergence_core
-pytest tests/
+uv run pytest emergence_core/tests/
 ```
 
 **Test Sequential Workflow:**
 ```bash
-python test_sequential_workflow.py
+uv run python tests/test_sequential_workflow.py
 ```
 
 **Validate JSON Schemas:**
 ```bash
-python scripts/validate_json.py
-python scripts/validate_journal.py
+uv run python scripts/validate_json.py
+uv run python scripts/validate_journal.py
 ```
 
 #### 8.7. LMT Wallet Configuration

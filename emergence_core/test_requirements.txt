@@ -1,7 +1,0 @@
-pytest
-pytest-asyncio
-pytest-mock
-asyncio
-chromadb
-torch
-transformers

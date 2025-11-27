@@ -264,15 +264,17 @@ source .venv/bin/activate  # Linux/Mac
 For Flux.1-schnell (Artist specialist):
 ```bash
 # With UV
-# TODO: Fix this so these are baked in
-uv pip install diffusers safetensors pillow accelerate
+# Note: diffusers, pillow, and accelerate are already included in the main dependencies.
+# Only safetensors needs to be added separately if not already installed.
+uv pip install safetensors
 ```
 
-For advanced features:
+For testing and development:
 ```bash
 # With UV
-# TODO Log the reasoning for not having these in the normal deps
-uv pip install -r test_requirements.txt
+# Note: Test dependencies are kept separate from production dependencies
+# to minimize the installation footprint in production environments
+uv pip install -r emergence_core/test_requirements.txt
 ```
 
 **4. Verify Installation**
@@ -371,24 +373,22 @@ uv run run_discord_bot.py
 
 #### 8.6. Testing
 
-TODO: Switch this to UV off of python
+All testing commands should be run from the project root directory.
+
 **Run Test Suite:**
 ```bash
-cd emergence_core
-pytest tests/
+uv run pytest emergence_core/tests/
 ```
 
-TODO: Switch this to UV off of python
 **Test Sequential Workflow:**
 ```bash
-python test_sequential_workflow.py
+uv run python tests/test_sequential_workflow.py
 ```
 
-TODO: Switch this to UV off of python
 **Validate JSON Schemas:**
 ```bash
-python scripts/validate_json.py
-python scripts/validate_journal.py
+uv run python scripts/validate_json.py
+uv run python scripts/validate_journal.py
 ```
 
 #### 8.7. LMT Wallet Configuration

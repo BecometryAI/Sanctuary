@@ -518,10 +518,10 @@ class MemoryManager:
         Note: This is a placeholder for blockchain integration.
         Actual implementation would connect to Ethereum/IPFS/etc.
         """
+        # Note: Blockchain client integration is a planned feature.
+        # When implemented, will connect to Ethereum/IPFS for immutable timestamps.
+        # Example: from web3 import Web3; self.blockchain_client = Web3(...)
         logger.warning("Blockchain integration is not yet implemented")
-        # TODO: Implement actual blockchain client
-        # from web3 import Web3
-        # self.blockchain_client = Web3(...)
     
     async def _retry_operation(self, operation, *args, **kwargs) -> bool:
         """Retry an operation with exponential backoff.
@@ -711,8 +711,7 @@ class MemoryManager:
             return True
         
         try:
-            # TODO: Implement actual blockchain commit
-            # Example: IPFS hash + Ethereum timestamp
+            # Note: Blockchain commit is a planned feature (IPFS hash + Ethereum timestamp).
             logger.warning(f"Blockchain commit not yet implemented for {entry.id}")
             return True
             

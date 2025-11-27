@@ -651,8 +651,11 @@ class AdaptiveRouter:
         specialist: str,
         **kwargs
     ) -> SpecialistResponse:
-        """Invoke a specialist model with the given context and parameters."""
-        # TODO: Implement actual model invocation
+        """Invoke a specialist model with the given context and parameters.
+        
+        Note: Actual model invocation is a planned feature.
+        Currently returns placeholder response.
+        """
         return SpecialistResponse(
             content="Placeholder response",
             metadata={},

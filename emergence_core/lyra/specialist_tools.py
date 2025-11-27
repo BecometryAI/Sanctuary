@@ -302,10 +302,8 @@ async def playwright_interact(instructions: str) -> str:
             page = await context.new_page()
             
             try:
-                # TODO: Call Gemma router with Playwright agent prompt
-                # to convert instructions to Playwright code
-                
-                # For now, return placeholder
+                # Note: Playwright code generation via Gemma router is a planned feature.
+                # The framework is ready but instruction-to-code conversion needs implementation.
                 return (
                     "Playwright interaction framework is ready, "
                     "but code generation is not yet implemented."

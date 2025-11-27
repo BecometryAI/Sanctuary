@@ -360,9 +360,8 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - run: pip install -r requirements.txt
-      - run: pip install pytest pytest-cov
-      - run: pytest test_validate_*.py --cov=validate_all_data --cov-fail-under=70
+      - run: uv sync --dev
+      - run: uv run pytest test_validate_*.py --cov=validate_all_data --cov-fail-under=70
 ```
 
 **Reasoning**: Automated testing prevents regressions. 70% coverage threshold ensures quality.

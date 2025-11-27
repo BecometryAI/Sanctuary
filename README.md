@@ -273,8 +273,9 @@ For testing and development:
 ```bash
 # With UV
 # Note: Test dependencies are kept separate from production dependencies
-# to minimize the installation footprint in production environments
-uv pip install -r emergence_core/test_requirements.txt
+# to minimize the installation footprint in production environments.
+# They are defined in pyproject.toml under [tool.uv.dev-dependencies]
+uv sync --dev
 ```
 
 **4. Verify Installation**

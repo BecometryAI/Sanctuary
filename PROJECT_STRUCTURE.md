@@ -24,7 +24,6 @@ Lyra-Emergence/
 │   │   └── Rituals/         # Ritual definitions
 │   ├── tests/               # Unit and integration tests
 │   ├── scripts/             # (Subdirectory - moved to root)
-│   ├── requirements.txt     # Python dependencies
 │   └── run.py               # Main entry point
 │
 ├── docs/                    # Documentation

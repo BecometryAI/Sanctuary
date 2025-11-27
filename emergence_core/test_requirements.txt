@@ -1,8 +1,0 @@
-# TODO: Move this into the root pyproject.toml file, regardless of prod or dev, making it easier to build containers for these systems.
-pytest
-pytest-asyncio
-pytest-mock
-asyncio
-chromadb
-torch
-transformers

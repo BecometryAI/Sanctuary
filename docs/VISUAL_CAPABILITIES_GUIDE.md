@@ -336,9 +336,10 @@ Peak: 132 GB ⚠️ Requires Voice compression to ~60 GB total
 
 ```bash
 # Install vision and image generation dependencies
-pip install -r emergence_core/requirements.txt
+# All dependencies are now in pyproject.toml
+uv sync
 
-# Key packages:
+# Key packages (automatically installed):
 # - diffusers>=0.31.0 (Flux support)
 # - transformers>=4.57.1 (LLaVA support)
 # - Pillow>=10.0.0 (image handling)

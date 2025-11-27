@@ -381,7 +381,7 @@ uv run pytest tests/
 
 **Test Sequential Workflow:**
 ```bash
-uv run python test_sequential_workflow.py
+uv run python tests/test_sequential_workflow.py
 ```
 
 **Validate JSON Schemas:**

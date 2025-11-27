@@ -4,10 +4,18 @@ This document contains verified commands for building, testing, and linting the 
 
 ## Environment Setup
 
-### Virtual Environment
+### Virtual Environment (Using UV - Recommended)
 ```bash
-# Create virtual environment
-python3 -m venv .venv
+# Install UV (if not already installed)
+# Linux/Mac
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# Create virtual environment and install dependencies
+uv venv --python python 3.13
+uv sync --upgrade
 
 # Activate (Linux/Mac)
 source .venv/bin/activate
@@ -18,15 +26,14 @@ source .venv/bin/activate
 
 ### Install Dependencies
 ```bash
-# Core dependencies
-cd emergence_core
-pip install -r requirements.txt
+# All production dependencies are defined in pyproject.toml
+# They are installed automatically with 'uv sync'
 
-# Development/testing dependencies
-pip install -r test_requirements.txt
+# For development/testing dependencies
+uv sync --dev
 
-# Optional: Flux.1-schnell for Artist specialist
-pip install diffusers safetensors pillow accelerate
+# Optional: Safetensors if not already installed
+uv pip install safetensors
 ```
 
 ## Testing
@@ -34,13 +41,13 @@ pip install diffusers safetensors pillow accelerate
 ### Run All Tests
 ```bash
 # From project root
-pytest emergence_core/tests/
+uv run pytest emergence_core/tests/
 
 # With verbose output
-pytest emergence_core/tests/ -v
+uv run pytest emergence_core/tests/ -v
 
 # Run specific test file
-pytest emergence_core/tests/test_router.py
+uv run pytest emergence_core/tests/test_router.py
 ```
 
 ### Test Configuration
@@ -54,20 +61,20 @@ Tests are configured in `pyproject.toml`:
 ### JSON Schema Validation
 ```bash
 # Validate JSON files
-python scripts/validate_json.py
+uv run python scripts/validate_json.py
 
 # Validate journal entries
-python scripts/validate_journal.py
+uv run python scripts/validate_journal.py
 ```
 
 ### Sequential Workflow Test
 ```bash
-python test_sequential_workflow.py
+uv run python tests/test_sequential_workflow.py
 ```
 
 ### Flux Setup Verification
 ```bash
-python tools/verify_flux_setup.py
+uv run python tools/verify_flux_setup.py
 ```
 
 ## Code Quality
@@ -80,8 +87,8 @@ python tools/verify_flux_setup.py
 
 ### Pre-commit Checks
 Before submitting a pull request:
-1. Run all tests: `pytest emergence_core/tests/`
-2. Validate JSON files: `python scripts/validate_json.py`
+1. Run all tests: `uv run pytest emergence_core/tests/`
+2. Validate JSON files: `uv run python scripts/validate_json.py`
 3. Check imports and basic syntax
 4. Ensure documentation is updated
 
@@ -95,7 +102,7 @@ which python  # Should point to .venv/bin/python
 
 ### CUDA/GPU Detection
 ```bash
-python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+uv run python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
 ```
 
 ### ChromaDB Errors
@@ -104,7 +111,7 @@ python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
 rm -rf model_cache/chroma_db
 
 # Re-initialize
-python emergence_core/build_index.py
+uv run python emergence_core/build_index.py
 ```
 
 ## Notes

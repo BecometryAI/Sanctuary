@@ -256,7 +256,7 @@ if name == 'pragmatist':
 
 ## Dependencies
 
-All required dependencies are in `requirements.txt`:
+All required dependencies are defined in `pyproject.toml`:
 
 ```
 # Web search and APIs
@@ -269,12 +269,13 @@ wolframalpha>=5.1.3
 # RAG and vector storage
 chromadb>=1.3.4
 
-# Already included in base requirements
+# Already included in base dependencies
 ```
 
 **Verify Installation:**
 ```bash
-pip install -r emergence_core/requirements.txt
+# All dependencies are now in pyproject.toml
+uv sync
 ```
 
 ---

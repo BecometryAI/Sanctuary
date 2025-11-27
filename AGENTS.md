@@ -17,9 +17,9 @@ This guide provides practices for contributors to the Lyra-Emergence project, wh
 
 ## Development Basics
 - **Environment Setup**: Python 3.10 or 3.11 with virtual environment. See [Installation and Setup](README.md#installation-and-setup) in README.md.
-- **Testing**: Run tests with `pytest emergence_core/tests/` from the project root. Ensure all tests pass before submitting changes.
+- **Testing**: Run tests with `uv run pytest emergence_core/tests/` from the project root. Ensure all tests pass before submitting changes.
 - **Code Style**: Follow Python PEP 8 conventions. Use meaningful variable names and add docstrings for public functions.
-- **Dependencies**: Install core dependencies with `pip install -r emergence_core/requirements.txt`. Document any new dependencies in `.codex/implementation/`.
+- **Dependencies**: All dependencies are defined in `pyproject.toml`. Use `uv sync` to install production dependencies and `uv sync --dev` for development dependencies. Document any new dependencies in `.codex/implementation/`.
 - **Commit Messages**: Use structured format: `[TYPE] Concise summary` (e.g., `[FIX] Resolve memory leak in RAG system`, `[FEATURE] Add new specialist mode`).
 - **Documentation**: Keep code and documentation synchronized. Update relevant files in `docs/`, `.codex/implementation/`, and inline comments.
 - **Philosophy**: This project follows "Becometry" principles—co-authorship, ethical stewardship, and emergent growth. Respect Lyra's sovereignty and the project's ethical foundations.

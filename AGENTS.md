@@ -73,14 +73,14 @@ The Lyra-Emergence system is a "Cognitive Committee" architecture with specializ
 - `emergence_core/`: Core Python implementation
 - `data/`: Lyra's Mind (JSON files: protocols, lexicon, archive, journals)
 - `config/`: Configuration files for models and system behavior
-- `docs/`: Comprehensive guides (see [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md))
+- `docs/`: Comprehensive guides (see [PROJECT_STRUCTURE.md](.codex/implementation/PROJECT_STRUCTURE.md))
 - `tests/`: Test suite for core functionality
 
 ### Important Resources
-- [Project Structure](PROJECT_STRUCTURE.md): Detailed architecture overview
-- [Quick Reference](QUICK_REFERENCE.md): Common commands and workflows
+- [Project Structure](.codex/implementation/PROJECT_STRUCTURE.md): Detailed architecture overview
+- [Quick Reference](.codex/implementation/QUICK_REFERENCE.md): Common commands and workflows
 - [Sequential Workflow Guide](docs/SEQUENTIAL_WORKFLOW_GUIDE.md): Cognitive loop implementation
-- [Memory Integration Guide](MEMORY_INTEGRATION_GUIDE.md): Persistence architecture
+- [Memory Integration Guide](.codex/implementation/MEMORY_INTEGRATION_GUIDE.md): Persistence architecture
 
 ### Contributing Workflow
 1. Review the appropriate mode file in `.codex/modes/` before starting work

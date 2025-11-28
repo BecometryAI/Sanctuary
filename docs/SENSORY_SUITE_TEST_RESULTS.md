@@ -249,7 +249,7 @@ None - all components structurally sound. Only missing runtime dependencies.
 
 - **Sensory Suite Status**: `docs/SENSORY_SUITE_STATUS.md`
 - **LMT Wallet Guide**: `docs/LMT_WALLET_GUIDE.md`
-- **Implementation Complete**: `MEMORY_IMPLEMENTATION_COMPLETE.md`
+- **Implementation Complete**: `.codex/implementation/MEMORY_IMPLEMENTATION_COMPLETE.md`
 
 ---
 

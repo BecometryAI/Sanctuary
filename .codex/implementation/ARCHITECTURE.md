@@ -58,8 +58,8 @@ The system combines two approaches:
 ### Important Files
 
 - `README.md`: Main project documentation with installation guide
-- `PROJECT_STRUCTURE.md`: Detailed architecture documentation
-- `QUICK_REFERENCE.md`: Common commands and quick reference
+- `.codex/implementation/PROJECT_STRUCTURE.md`: Detailed architecture documentation
+- `.codex/implementation/QUICK_REFERENCE.md`: Common commands and quick reference
 - `pyproject.toml`: Python project configuration
 - `requirements-lock.txt`: Locked dependency versions
 
@@ -132,9 +132,9 @@ python test_sequential_workflow.py
 ## Resources for Contributors
 
 - [Installation Guide](../../README.md#installation-and-setup)
-- [Project Structure](../../PROJECT_STRUCTURE.md)
+- [Project Structure](PROJECT_STRUCTURE.md)
 - [Sequential Workflow Guide](../../docs/SEQUENTIAL_WORKFLOW_GUIDE.md)
-- [Memory Integration Guide](../../MEMORY_INTEGRATION_GUIDE.md)
+- [Memory Integration Guide](MEMORY_INTEGRATION_GUIDE.md)
 - [Build and Test Commands](BUILD_AND_TEST.md)
 - [Codex Workflow](../instructions/CODEX_WORKFLOW.md)
 

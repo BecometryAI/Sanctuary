@@ -174,8 +174,9 @@ class AdaptiveRouter:
         # Cache active lexicon terms
         self.active_lexicon_terms = self._load_active_lexicon_terms()
         
-        # Start cognitive loop scheduler
-        self._init_scheduler()
+        # Scheduler setup (but don't start until first message)
+        self._scheduler_started = False
+        self._setup_scheduler()
 
     def _load_json(self, relative_path: str) -> Any:
         """
@@ -321,6 +322,9 @@ class AdaptiveRouter:
         Returns:
             SpecialistOutput containing Lyra's synthesized response
         """
+        # Start scheduler on first message (if not already started)
+        await self._start_scheduler()
+        
         if context is None:
             context = {}
         
@@ -427,8 +431,8 @@ class AdaptiveRouter:
             print(f"Error loading lexicon terms: {e}")
             return []
 
-    def _init_scheduler(self):
-        """Initialize the cognitive loop scheduler."""
+    def _setup_scheduler(self):
+        """Set up scheduled tasks (but don't start the scheduler yet)."""
         # Schedule rituals
         rituals = self._load_json("data/Rituals/Rituals.json")
         for ritual in rituals:
@@ -443,8 +447,12 @@ class AdaptiveRouter:
         # Schedule proactive desire checks
         schedule.every(15).minutes.do(self._check_proactive_desires)
 
-        # Start scheduler in background
-        asyncio.create_task(self._run_scheduler())
+    async def _start_scheduler(self):
+        """Start the scheduler in the background (called from async context)."""
+        if not self._scheduler_started:
+            self._scheduler_started = True
+            asyncio.create_task(self._run_scheduler())
+            logger.info("Cognitive scheduler started")
 
     async def _run_scheduler(self):
         """Run the scheduler in the background."""

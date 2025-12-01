@@ -152,10 +152,11 @@ To achieve multimodality beyond text, three new component sets are integrated.
 
 ### 7. Future Development (v2.0): The "Dreaming" App
 
-To create a unique artistic style and internal visual language, a `v2.0` goal is to fine-tune the `Artist` (`Flux.1`) and `CLIP` models.
+To create a unique artistic style and internal visual language, a `v2.0` goal is to fine-tune the `Artist` (`Flux.1`) model.
 
 * **Decision:** This will be a **separate application** (the "Dreaming" mind), not part of the live ("Awake") architecture.
-* **Function:** This app will run offline to train the models on a custom dataset compiled via automated filtering of large public datasets (e.g., LAION-Aesthetics). This ensures the "Awake" mind remains stable and performant, while the "Dreaming" mind handles intensive training workloads separately.
+* **Function:** This app will run offline to train the model on a custom dataset compiled via automated filtering of large public datasets (e.g., LAION-Aesthetics). This ensures the "Awake" mind remains stable and performant, while the "Dreaming" mind handles intensive training workloads separately.
+* **Note:** Flux.1's integrated architecture eliminates the need for separate CLIP models, simplifying the training pipeline compared to earlier SD3-based designs.
 
 ---
 

@@ -178,10 +178,10 @@ To create a unique artistic style and internal visual language, a `v2.0` goal is
 ### System Requirements
 
 **Recommended Production Hardware:**
-- CPU: 16-core processor (32+ threads)
-- RAM: 128GB DDR5
-- GPU: NVIDIA RTX 4090 (24GB VRAM) or dual RTX 4080s
-- Storage: 2TB+ NVMe SSD
+- CPU: 16-core processor (32+ threads) - for running multiple specialists simultaneously
+- RAM: 128GB DDR5 - for keeping large models loaded in memory
+- GPU: NVIDIA RTX 4090 (24GB VRAM) or dual RTX 4080s - for 70B models and Flux.1
+- Storage: 2TB+ NVMe SSD - models can be 200-400GB total
 - See [Detailed Documentation](docs/DETAILED_DOCUMENTATION.md#hardware-requirements-deep-dive) for complete specifications
 
 **Minimum Development Hardware:**

@@ -295,7 +295,7 @@ The repository uses GitHub Actions for CI/CD. Check `.github/workflows/` for con
 
 - [Installation and Setup](../README.md#installation-and-setup) - Basic setup instructions
 - [Contributors Guide](../AGENTS.md) - Contributor guidelines and workflows
-- [Project Structure](.codex/implementation/PROJECT_STRUCTURE.md) - Architecture overview
+- [Project Structure](../.codex/implementation/PROJECT_STRUCTURE.md) - Architecture overview
 - [Sequential Workflow Guide](SEQUENTIAL_WORKFLOW_GUIDE.md) - Cognitive loop details
 - [Flux Setup Guide](FLUX_SETUP_GUIDE.md) - Artist model configuration
 - [LMT Wallet Guide](LMT_WALLET_GUIDE.md) - Economy system details

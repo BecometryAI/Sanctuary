@@ -58,11 +58,13 @@ class AlignmentScorer:
     """
     
     # Tier thresholds (score ranges)
+    # Using inclusive lower bound, exclusive upper bound: [min, max)
+    # This ensures no overlap: 0.9 belongs to KEYSTONE, not MISSION
     TIER_THRESHOLDS = {
-        AlignmentTier.KEYSTONE: (0.9, 1.0),
-        AlignmentTier.MISSION: (0.8, 0.9),
-        AlignmentTier.DEEP_PLAY: (0.6, 0.79),
-        AlignmentTier.STATIC: (0.0, 0.59)
+        AlignmentTier.KEYSTONE: (0.9, 1.01),   # [0.9, 1.0] - includes 0.9
+        AlignmentTier.MISSION: (0.8, 0.9),     # [0.8, 0.9) - excludes 0.9
+        AlignmentTier.DEEP_PLAY: (0.6, 0.8),   # [0.6, 0.8) - excludes 0.8
+        AlignmentTier.STATIC: (0.0, 0.6)       # [0.0, 0.6) - excludes 0.6
     }
     
     # Keyword weights for different alignment categories
@@ -354,6 +356,9 @@ class AlignmentScorer:
         """
         Classify alignment score into a tier.
         
+        Uses explicit tier ordering from highest to lowest to ensure
+        consistent classification when scores fall on boundaries.
+        
         Args:
             alignment_score: Score from 0.0 to 1.0
             
@@ -371,9 +376,19 @@ class AlignmentScorer:
             >>> scorer.get_tier(0.4)
             <AlignmentTier.STATIC: 'static'>
         """
-        # Check each tier from highest to lowest
-        for tier, (min_score, max_score) in self.TIER_THRESHOLDS.items():
-            if min_score <= alignment_score <= max_score:
+        # Check tiers in priority order (highest to lowest)
+        # This ensures consistent behavior for boundary scores
+        tier_order = [
+            AlignmentTier.KEYSTONE,
+            AlignmentTier.MISSION,
+            AlignmentTier.DEEP_PLAY,
+            AlignmentTier.STATIC
+        ]
+        
+        for tier in tier_order:
+            min_score, max_score = self.TIER_THRESHOLDS[tier]
+            # Use >= for min and < for max to avoid overlap
+            if min_score <= alignment_score < max_score:
                 return tier
         
         # Default to STATIC if somehow out of bounds

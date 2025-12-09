@@ -76,7 +76,7 @@ class TestAlignmentScorer:
         assert tier in [AlignmentTier.MISSION, AlignmentTier.DEEP_PLAY]
     
     def test_deep_play_tier_scoring(self):
-        """Test scoring for Deep Play tier (0.6-0.79)."""
+        """Test scoring for Deep Play tier (0.6-0.8)."""
         memory = {
             "tags": ["creative", "narrative", "worldbuilding"],
             "significance_score": 7,
@@ -85,7 +85,7 @@ class TestAlignmentScorer:
         score = self.scorer.score_memory(memory)
         tier = self.scorer.get_tier(score)
         
-        assert 0.6 <= score < 0.8, f"Expected Deep Play tier (0.6-0.79), got {score}"
+        assert 0.6 <= score < 0.8, f"Expected Deep Play tier (0.6-0.8), got {score}"
         assert tier == AlignmentTier.DEEP_PLAY
     
     def test_static_tier_scoring(self):

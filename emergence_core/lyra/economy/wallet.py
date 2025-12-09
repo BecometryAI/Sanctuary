@@ -144,7 +144,15 @@ class LMTWallet:
                 self.balance = data.get('balance', 0)
                 self.last_ubi_date = date.fromisoformat(data.get('last_ubi_date'))
                 self.daily_ubi_amount = data.get('daily_ubi_amount', self.DAILY_UBI_AMOUNT)
-                self.debt = data.get('debt', 0)  # Track negative balance as debt
+                
+                # Load and validate debt
+                debt_value = data.get('debt', 0)
+                if not isinstance(debt_value, (int, float)) or debt_value < 0:
+                    logger.warning(f"Invalid debt value in ledger: {debt_value}. Resetting to 0.")
+                    self.debt = 0
+                else:
+                    self.debt = int(debt_value)
+                
                 self.transactions = [
                     Transaction(**tx) for tx in data.get('transactions', [])
                 ]

@@ -68,11 +68,15 @@ class FrictionMemoryManager(MemoryManager):
         """
         Commit journal entry with friction-based cost.
         
-        This method:
+        This method wraps the parent's commit_journal method with friction-based
+        cost calculation and payment. It:
         1. Calculates alignment score based on entry metadata
         2. Determines storage cost via friction formula
         3. Attempts to pay cost (with overdraft for high-alignment)
-        4. Stores entry if payment succeeds
+        4. Calls parent's commit_journal if payment succeeds
+        
+        Note: This is a demonstration. In production, you might override
+        commit_journal directly or use a pre-commit hook system.
         
         Args:
             entry: Journal entry to commit

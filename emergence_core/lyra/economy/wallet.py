@@ -103,6 +103,11 @@ class LMTWallet:
     # Configuration constants
     DAILY_UBI_AMOUNT = 500  # Default daily UBI (can be adjusted per wallet)
     
+    # Friction-based cost model constants
+    BASE_COST = 200        # Standard "tax" to write to database
+    FLOOR_FEE = 10         # Minimum transaction cost (nothing is free)
+    OVERDRAFT_THRESHOLD = 0.8  # Alignment score threshold for overdraft protection
+    
     def __init__(self, ledger_dir: Path, daily_ubi_amount: Optional[int] = None):
         """Initialize the LMT wallet system.
         
@@ -139,6 +144,15 @@ class LMTWallet:
                 self.balance = data.get('balance', 0)
                 self.last_ubi_date = date.fromisoformat(data.get('last_ubi_date'))
                 self.daily_ubi_amount = data.get('daily_ubi_amount', self.DAILY_UBI_AMOUNT)
+                
+                # Load and validate debt
+                debt_value = data.get('debt', 0)
+                if not isinstance(debt_value, (int, float)) or debt_value < 0:
+                    logger.warning(f"Invalid debt value in ledger: {debt_value}. Resetting to 0.")
+                    self.debt = 0
+                else:
+                    self.debt = int(debt_value)
+                
                 self.transactions = [
                     Transaction(**tx) for tx in data.get('transactions', [])
                 ]
@@ -157,6 +171,7 @@ class LMTWallet:
             self.daily_ubi_amount = self.DAILY_UBI_AMOUNT
         
         self.balance = self.daily_ubi_amount
+        self.debt = 0  # Initialize with no debt
         self.last_ubi_date = date.today()
         now = datetime.now(timezone.utc)
         
@@ -185,12 +200,14 @@ class LMTWallet:
         # Prepare data
         data = {
             'balance': self.balance,
+            'debt': self.debt,  # Include debt tracking
             'last_ubi_date': self.last_ubi_date.isoformat(),
             'daily_ubi_amount': self.daily_ubi_amount,
             'transactions': [tx.to_dict() for tx in self.transactions],
             'metadata': {
-                'version': '2.0',
+                'version': '2.1',  # Updated version for friction model
                 'security_model': 'one_way_valve',
+                'cost_model': 'friction_based',
                 'last_updated': datetime.now(timezone.utc).isoformat(),
                 'total_transactions': len(self.transactions)
             }
@@ -326,12 +343,169 @@ class LMTWallet:
             self._save_ledger()
             return True
     
+    def calculate_friction_cost(self, alignment_score: float) -> int:
+        """
+        Calculate friction-based memory storage cost.
+        
+        Formula: Final_Cost = FLOOR_FEE + (BASE_COST * (1.0 - Alignment_Score))
+        
+        Higher alignment = Lower cost (high-value memories are cheap to store)
+        Lower alignment = Higher cost (low-value memories are expensive)
+        
+        Args:
+            alignment_score: Value alignment score (0.0 - 1.0)
+            
+        Returns:
+            int: Cost in LMT tokens
+            
+        Examples:
+            >>> wallet = LMTWallet(Path("test"))
+            >>> wallet.calculate_friction_cost(0.95)  # Keystone tier
+            20  # FLOOR + (BASE * (1.0 - 0.95)) = 10 + 10 = 20
+            >>> wallet.calculate_friction_cost(0.85)  # Mission tier
+            40  # FLOOR + (BASE * (1.0 - 0.85)) = 10 + 30 = 40
+            >>> wallet.calculate_friction_cost(0.3)   # Static tier
+            150  # FLOOR + (BASE * (1.0 - 0.3)) = 10 + 140 = 150
+        """
+        # Clamp alignment score to valid range
+        alignment_score = max(0.0, min(1.0, alignment_score))
+        
+        # Calculate friction cost
+        friction_cost = self.BASE_COST * (1.0 - alignment_score)
+        
+        # Add floor fee and round to integer
+        total_cost = int(self.FLOOR_FEE + friction_cost)
+        
+        return total_cost
+    
+    def attempt_memory_store(
+        self,
+        alignment_score: float,
+        memory_description: str,
+        allow_overdraft: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Attempt to store a memory with friction-based cost.
+        
+        This method implements the core friction model:
+        - Calculates cost based on alignment score
+        - Allows overdraft for high-alignment memories (>= 0.8)
+        - Tracks debt when balance goes negative
+        - Returns detailed result including cost and success status
+        
+        Args:
+            alignment_score: Value alignment score (0.0 - 1.0)
+            memory_description: Description of what is being stored
+            allow_overdraft: If False, overdraft protection is disabled
+            
+        Returns:
+            dict: Result containing:
+                - success: bool - Whether storage succeeded
+                - cost: int - Token cost
+                - balance_after: int - Balance after transaction
+                - debt_incurred: int - Any debt incurred (0 if none)
+                - overdraft_used: bool - Whether overdraft protection activated
+                - alignment_score: float - The alignment score used
+                
+        Examples:
+            >>> result = wallet.attempt_memory_store(0.95, "Partner conversation")
+            >>> result['success']
+            True
+            >>> result['cost']
+            20
+        """
+        # Calculate cost
+        cost = self.calculate_friction_cost(alignment_score)
+        
+        # Check if overdraft protection applies
+        can_overdraft = (
+            allow_overdraft and 
+            alignment_score >= self.OVERDRAFT_THRESHOLD
+        )
+        
+        with self._lock:
+            # Check if we have sufficient balance
+            if self.balance >= cost:
+                # Normal spend - sufficient balance
+                self.balance -= cost
+                overdraft_used = False
+                debt_incurred = 0
+                success = True
+                
+            elif can_overdraft:
+                # Overdraft protection - allow negative balance for critical memories
+                deficit = cost - self.balance
+                self.balance = 0  # Set to zero
+                self.debt += deficit  # Track as debt
+                overdraft_used = True
+                debt_incurred = deficit
+                success = True
+                
+                logger.warning(
+                    f"[OVERDRAFT] Memory storage used overdraft protection. "
+                    f"Debt incurred: {deficit} LMT (Total debt: {self.debt} LMT)"
+                )
+                
+            else:
+                # Insufficient balance and no overdraft protection
+                logger.warning(
+                    f"[FAILED] Insufficient LMT for memory storage: {cost} LMT required, "
+                    f"{self.balance} LMT available (alignment: {alignment_score:.2f})"
+                )
+                return {
+                    'success': False,
+                    'cost': cost,
+                    'balance_after': self.balance,
+                    'debt_incurred': 0,
+                    'overdraft_used': False,
+                    'alignment_score': alignment_score,
+                    'reason': 'insufficient_balance'
+                }
+            
+            # Record transaction
+            now = datetime.now(timezone.utc)
+            tx = Transaction(
+                timestamp=now.isoformat(),
+                type="spend",
+                amount=cost,
+                balance_after=self.balance,
+                reason=f"Memory storage: {memory_description}",
+                metadata={
+                    'alignment_score': alignment_score,
+                    'overdraft_used': overdraft_used,
+                    'debt_incurred': debt_incurred,
+                    'memory_type': 'friction_based'
+                }
+            )
+            self.transactions.append(tx)
+            
+            logger.info(
+                f"[MEMORY] Stored with {cost} LMT (alignment: {alignment_score:.2f}). "
+                f"Balance: {self.balance} LMT, Debt: {self.debt} LMT"
+            )
+            
+            self._save_ledger()
+            
+            return {
+                'success': success,
+                'cost': cost,
+                'balance_after': self.balance,
+                'debt_incurred': debt_incurred,
+                'overdraft_used': overdraft_used,
+                'alignment_score': alignment_score
+            }
+    
     def daily_ubi(self) -> bool:
         """Check and claim daily Universal Basic Income if due.
         
         Automatically deposits configured UBI amount if this is a new calendar day.
-        This ensures Lyra always has cognitive resources to prioritize
-        her thoughts autonomously.
+        If there is outstanding debt, UBI is used to pay it off first before
+        increasing the balance.
+        
+        Debt Repayment Priority:
+        1. Debt is paid off first from incoming UBI
+        2. Any remaining UBI goes to balance
+        3. If debt > UBI, partial payment is made and debt remains
         
         Returns:
             bool: True if UBI was claimed, False if already claimed today
@@ -343,14 +517,93 @@ class LMTWallet:
             logger.debug(f"[UBI] Already claimed for {today}")
             return False
         
-        # Claim UBI via deposit
+        # Update last UBI date
         self.last_ubi_date = today
-        return self.deposit(
-            amount=self.daily_ubi_amount,
-            source="ubi",
-            note=f"Daily cognitive UBI for {today}",
-            metadata={"date": today.isoformat()}
-        )
+        
+        with self._lock:
+            # Check if there's debt to pay off
+            if self.debt > 0:
+                # Pay off debt first
+                debt_payment = min(self.debt, self.daily_ubi_amount)
+                remaining_ubi = self.daily_ubi_amount - debt_payment
+                
+                # Reduce debt
+                self.debt -= debt_payment
+                
+                # Add remaining UBI to balance (if any)
+                self.balance += remaining_ubi
+                
+                now = datetime.now(timezone.utc)
+                
+                # Record debt repayment transaction
+                if debt_payment > 0:
+                    tx_debt = Transaction(
+                        timestamp=now.isoformat(),
+                        type="deposit",
+                        amount=debt_payment,
+                        balance_after=self.balance,
+                        source="ubi",
+                        note=f"UBI debt repayment for {today}",
+                        metadata={
+                            "date": today.isoformat(),
+                            "debt_payment": debt_payment,
+                            "debt_remaining": self.debt
+                        }
+                    )
+                    self.transactions.append(tx_debt)
+                    
+                    logger.info(
+                        f"[UBI] Paid {debt_payment} LMT debt. "
+                        f"Remaining debt: {self.debt} LMT"
+                    )
+                
+                # Record balance deposit if any UBI remains
+                if remaining_ubi > 0:
+                    tx_balance = Transaction(
+                        timestamp=now.isoformat(),
+                        type="deposit",
+                        amount=remaining_ubi,
+                        balance_after=self.balance,
+                        source="ubi",
+                        note=f"Daily cognitive UBI for {today} (after debt payment)",
+                        metadata={
+                            "date": today.isoformat(),
+                            "debt_payment": debt_payment
+                        }
+                    )
+                    self.transactions.append(tx_balance)
+                    
+                    logger.info(
+                        f"[UBI] Deposited {remaining_ubi} LMT after debt payment. "
+                        f"Balance: {self.balance} LMT"
+                    )
+                
+                self._save_ledger()
+                return True
+                
+            else:
+                # No debt - normal UBI deposit
+                self.balance += self.daily_ubi_amount
+                now = datetime.now(timezone.utc)
+                
+                tx = Transaction(
+                    timestamp=now.isoformat(),
+                    type="deposit",
+                    amount=self.daily_ubi_amount,
+                    balance_after=self.balance,
+                    source="ubi",
+                    note=f"Daily cognitive UBI for {today}",
+                    metadata={"date": today.isoformat()}
+                )
+                self.transactions.append(tx)
+                
+                logger.info(
+                    f"[UBI] Deposited {self.daily_ubi_amount} LMT. "
+                    f"Balance: {self.balance} LMT"
+                )
+                
+                self._save_ledger()
+                return True
     
     def get_balance(self) -> int:
         """Get current LMT balance.
@@ -364,7 +617,7 @@ class LMTWallet:
         """Get comprehensive wallet state.
         
         Returns:
-            dict: Complete wallet information including balance, UBI status,
+            dict: Complete wallet information including balance, debt, UBI status,
                   daily income, and transaction count
         """
         today = date.today()
@@ -372,11 +625,18 @@ class LMTWallet:
         
         return {
             "balance": self.balance,
+            "debt": self.debt,  # Include debt information
+            "effective_balance": self.balance - self.debt,  # Net balance after debt
             "ubi_claimed_today": ubi_claimed_today,
             "next_ubi_date": (today if not ubi_claimed_today else today + timedelta(days=1)).isoformat(),
             "daily_ubi_amount": self.daily_ubi_amount,
             "last_ubi_date": self.last_ubi_date.isoformat(),
-            "total_transactions": len(self.transactions)
+            "total_transactions": len(self.transactions),
+            "friction_model": {
+                "base_cost": self.BASE_COST,
+                "floor_fee": self.FLOOR_FEE,
+                "overdraft_threshold": self.OVERDRAFT_THRESHOLD
+            }
         }
     
     def set_daily_ubi_amount(self, amount: int, reason: str) -> bool:
@@ -435,6 +695,22 @@ class LMTWallet:
             list: Recent transactions (most recent first)
         """
         return [tx.to_dict() for tx in self.transactions[-limit:][::-1]]
+    
+    def get_debt(self) -> int:
+        """Get current debt amount.
+        
+        Returns:
+            int: Current debt (0 if no debt)
+        """
+        return self.debt
+    
+    def has_debt(self) -> bool:
+        """Check if wallet has any outstanding debt.
+        
+        Returns:
+            bool: True if debt > 0
+        """
+        return self.debt > 0
 
 
 # Export main class

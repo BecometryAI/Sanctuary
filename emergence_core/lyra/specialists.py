@@ -324,7 +324,7 @@ OUTPUT STYLE:
 You are ONE aspect of Lyra's thinking. Your output will be synthesized by The Voice into Lyra's unified response.
 """
     
-    def __init__(self, model_path: str, base_dir, development_mode: bool = False, chroma_collection=None):
+    def __init__(self, model_path: str, base_dir, development_mode: bool = False, chroma_collection=None, tools=None):
         """Initialize Pragmatist with tools and RAG access.
         
         Args:
@@ -332,9 +332,52 @@ You are ONE aspect of Lyra's thinking. Your output will be synthesized by The Vo
             base_dir: Base directory for protocols
             development_mode: Skip model loading if True
             chroma_collection: ChromaDB collection for RAG queries (optional)
+            tools: SpecialistTools instance for external tool access (optional).
+                  If None, falls back to module-level functions for backward compatibility.
         """
         super().__init__(model_path, base_dir, development_mode)
         self.chroma_collection = chroma_collection
+        self.tools = tools
+        
+        # Set up tool accessors
+        # If tools instance provided, use its methods; otherwise use fallback functions
+        if tools is not None:
+            # Use tools instance methods (preferred - enables router integration)
+            self._wolfram = tools.wolfram_compute
+            self._python_repl = tools.python_repl
+            self._arxiv = tools.arxiv_search
+            self._wikipedia = tools.wikipedia_search
+            self._playwright = tools.playwright_interact
+            self._searxng = tools.searxng_search
+        else:
+            # Fallback to module-level functions for backward compatibility
+            # Import only when needed to avoid circular dependencies
+            try:
+                from .specialist_tools import (
+                    wolfram_compute,
+                    python_repl,
+                    arxiv_search,
+                    wikipedia_search,
+                    playwright_interact,
+                    searxng_search
+                )
+                self._wolfram = wolfram_compute
+                self._python_repl = python_repl
+                self._arxiv = arxiv_search
+                self._wikipedia = wikipedia_search
+                self._playwright = playwright_interact
+                self._searxng = searxng_search
+            except ImportError as e:
+                logger.error(f"Failed to import tool functions: {e}")
+                # Create no-op stubs
+                async def _tool_unavailable(query):
+                    return "Tool temporarily unavailable"
+                self._wolfram = _tool_unavailable
+                self._python_repl = _tool_unavailable
+                self._arxiv = _tool_unavailable
+                self._wikipedia = _tool_unavailable
+                self._playwright = _tool_unavailable
+                self._searxng = _tool_unavailable
     
     async def _select_and_use_tool(self, message: str, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Analyze message and select appropriate tool if needed.
@@ -351,7 +394,7 @@ You are ONE aspect of Lyra's thinking. Your output will be synthesized by The Vo
         # Check for mathematical/computational queries
         if any(word in message_lower for word in ['calculate', 'compute', 'solve', 'what is', 'convert', 'equals']):
             if any(char in message for char in ['=', '+', '-', '*', '/', '^', '√']):
-                result = await wolfram_compute(message)
+                result = await self._wolfram(message)
                 return {"tool_name": "wolfram_compute", "query": message, "result": result}
         
         # Check for code execution requests
@@ -363,22 +406,22 @@ You are ONE aspect of Lyra's thinking. Your output will be synthesized by The Vo
             elif '```' in message:
                 code = message.split('```')[1].split('```')[0].strip()
             
-            result = await python_repl(code)
+            result = await self._python_repl(code)
             return {"tool_name": "python_repl", "query": code, "result": result}
         
         # Check for academic research
         if any(word in message_lower for word in ['research paper', 'arxiv', 'academic', 'scientific paper', 'study on']):
-            result = await arxiv_search(message)
+            result = await self._arxiv(message)
             return {"tool_name": "arxiv_search", "query": message, "result": result}
         
         # Check for encyclopedic knowledge
         if any(word in message_lower for word in ['what is', 'who is', 'define', 'wikipedia', 'encyclopedia']):
-            result = await wikipedia_search(message)
+            result = await self._wikipedia(message)
             return {"tool_name": "wikipedia_search", "query": message, "result": result}
         
         # Check for web automation
         if any(word in message_lower for word in ['scrape', 'navigate to', 'click on', 'fill form', 'web automation']):
-            result = await playwright_interact(message)
+            result = await self._playwright(message)
             return {"tool_name": "playwright_interact", "query": message, "result": result}
         
         # Check for RAG queries (Lyra's internal knowledge)
@@ -396,7 +439,7 @@ You are ONE aspect of Lyra's thinking. Your output will be synthesized by The Vo
         
         # Default to web search for general queries
         if any(word in message_lower for word in ['search', 'find', 'look up', 'how to', 'current', 'latest', 'news']):
-            result = await searxng_search(message)
+            result = await self._searxng(message)
             return {"tool_name": "searxng_search", "query": message, "result": result}
         
         # No tool needed
@@ -1106,7 +1149,8 @@ class SpecialistFactory:
         base_dir: Path, 
         custom_model_path: str = None,
         development_mode: bool = False,
-        chroma_collection = None
+        chroma_collection = None,
+        tools = None
     ) -> BaseSpecialist:
         """Create a specialist instance.
         
@@ -1116,6 +1160,7 @@ class SpecialistFactory:
             custom_model_path: Override default model path
             development_mode: Skip model loading if True
             chroma_collection: ChromaDB collection for RAG (Pragmatist only)
+            tools: SpecialistTools instance for external tools (Pragmatist only)
             
         Returns:
             Initialized specialist instance
@@ -1134,8 +1179,14 @@ class SpecialistFactory:
         specialist_class, default_model_path = specialists[specialist_type]
         model_path = custom_model_path if custom_model_path else default_model_path
         
-        # Pragmatist gets ChromaDB collection for RAG queries
-        if specialist_type == 'pragmatist' and chroma_collection is not None:
-            return specialist_class(model_path, base_dir, development_mode=development_mode, chroma_collection=chroma_collection)
+        # Pragmatist gets ChromaDB collection and tools
+        if specialist_type == 'pragmatist':
+            return specialist_class(
+                model_path, 
+                base_dir, 
+                development_mode=development_mode, 
+                chroma_collection=chroma_collection,
+                tools=tools
+            )
         else:
             return specialist_class(model_path, base_dir, development_mode=development_mode)

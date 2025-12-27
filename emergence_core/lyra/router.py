@@ -31,14 +31,7 @@ schedule = get_dependency('schedule')
 from .autonomous import AutonomousCore
 from .router_model import RouterModel
 from .specialists import SpecialistFactory, SpecialistOutput
-from .specialist_tools import (
-    searxng_search,
-    arxiv_search,
-    wikipedia_search,
-    wolfram_compute,
-    python_repl,
-    playwright_interact
-)
+from .specialist_tools import SpecialistTools
 
 # Placeholder voice tools
 async def discord_join_voice_channel(channel_id: str) -> bool:
@@ -131,6 +124,9 @@ class AdaptiveRouter:
         router_model = "HuggingFaceH4/zephyr-7b-beta"  # Model path for future use
         self.router_model = RouterModel(router_model, development_mode=True)
         
+        # Initialize Specialist Tools with router reference for code generation
+        self.tools = SpecialistTools(router=self)
+        
         # Initialize Specialist Factory
         self.specialist_factory = SpecialistFactory()
         
@@ -146,14 +142,15 @@ class AdaptiveRouter:
         self.specialists = {}
         for name, model_path in specialist_configs.items():
             try:
-                # Pragmatist gets ChromaDB collection for RAG queries
+                # Pragmatist gets ChromaDB collection for RAG queries AND tools
                 if name == 'pragmatist':
                     specialist = self.specialist_factory.create_specialist(
                         name, 
                         str(self.base_dir),
                         model_path,
                         development_mode=True,
-                        chroma_collection=self.collection
+                        chroma_collection=self.collection,
+                        tools=self.tools  # Pass tools to pragmatist
                     )
                 else:
                     specialist = self.specialist_factory.create_specialist(
@@ -659,13 +656,139 @@ class AdaptiveRouter:
         specialist: str,
         **kwargs
     ) -> SpecialistResponse:
-        """Invoke a specialist model with the given context and parameters."""
-        # TODO: Implement actual model invocation
-        return SpecialistResponse(
-            content="Placeholder response",
-            metadata={},
-            source=specialist
-        )
+        """Invoke a specialist model with the given context and parameters.
+        
+        This method handles specialist routing, name normalization, and error handling.
+        It supports both current and legacy specialist names for backward compatibility.
+        
+        Args:
+            specialist: Name of the specialist to invoke (e.g., "philosopher", "pragmatist", "artist", "voice")
+                       Also supports legacy names: "creator" -> "artist", "logician" -> "philosopher"
+            **kwargs: Additional context and parameters:
+                - message (str): The query or request for the specialist
+                - query (str): Alternative to message
+                - context (dict): Additional context for processing
+                - Any other kwargs are merged into context
+            
+        Returns:
+            SpecialistResponse containing the specialist's output, metadata, and source
+            
+        Raises:
+            Does not raise exceptions - returns error responses instead
+            
+        Example:
+            response = await self._invoke_specialist(
+                "philosopher",
+                message="What is the nature of consciousness?",
+                context={"mood": "contemplative"}
+            )
+        """
+        # Input validation
+        if not specialist or not isinstance(specialist, str):
+            logger.error(f"Invalid specialist name: {specialist}")
+            return SpecialistResponse(
+                content="Error: Specialist name must be a non-empty string",
+                metadata={"error": "invalid_specialist_name"},
+                source="router"
+            )
+        
+        # Map legacy specialist names to current names
+        specialist_mapping = {
+            "creator": "artist",
+            "logician": "philosopher",
+            "thinker": "philosopher",
+            "doer": "pragmatist"
+        }
+        
+        # Normalize specialist name
+        specialist_name = specialist_mapping.get(specialist.lower(), specialist.lower())
+        
+        # Get the specialist instance
+        if specialist_name not in self.specialists:
+            logger.error(f"Unknown specialist: {specialist_name} (original: {specialist})")
+            available = ", ".join(self.specialists.keys())
+            return SpecialistResponse(
+                content=f"Error: Specialist '{specialist_name}' not found. Available: {available}",
+                metadata={"error": "specialist_not_found", "available_specialists": list(self.specialists.keys())},
+                source=specialist
+            )
+        
+        specialist_obj = self.specialists[specialist_name]
+        if specialist_obj is None:
+            logger.error(f"Specialist {specialist_name} is not initialized")
+            return SpecialistResponse(
+                content=f"Error: Specialist '{specialist_name}' not initialized (likely due to missing dependencies)",
+                metadata={"error": "specialist_not_initialized"},
+                source=specialist_name
+            )
+        
+        # Extract message and context from kwargs
+        message = kwargs.pop("message", kwargs.pop("query", ""))
+        context = kwargs.pop("context", {})
+        
+        # Validate message
+        if not isinstance(message, str):
+            logger.warning(f"Message is not a string, converting: {type(message)}")
+            message = str(message)
+        
+        # Validate context is a dict
+        if not isinstance(context, dict):
+            logger.warning(f"Context is not a dict ({type(context)}), creating new dict")
+            context = {"original_context": context}
+        
+        # Include any remaining kwargs in context
+        if kwargs:
+            context.update(kwargs)
+        
+        # Invoke the specialist with timeout
+        try:
+            # Add timeout to prevent hanging
+            specialist_output = await asyncio.wait_for(
+                specialist_obj.process(message=message, context=context),
+                timeout=30.0  # 30 second timeout
+            )
+            
+            # Validate output type
+            if not hasattr(specialist_output, 'content'):
+                logger.error(f"Specialist returned invalid output type: {type(specialist_output)}")
+                return SpecialistResponse(
+                    content=str(specialist_output),
+                    metadata={"error": "invalid_output_type"},
+                    source=specialist_name
+                )
+            
+            # Convert SpecialistOutput to SpecialistResponse
+            return SpecialistResponse(
+                content=specialist_output.content,
+                metadata={
+                    **specialist_output.metadata,
+                    "thought_process": specialist_output.thought_process,
+                    "confidence": specialist_output.confidence
+                },
+                source=specialist_name
+            )
+            
+        except asyncio.TimeoutError:
+            logger.error(f"Specialist {specialist_name} timed out after 30 seconds")
+            return SpecialistResponse(
+                content=f"Error: {specialist_name} processing timed out",
+                metadata={"error": "timeout"},
+                source=specialist_name
+            )
+        except AttributeError as e:
+            logger.error(f"Specialist {specialist_name} missing required attributes: {e}")
+            return SpecialistResponse(
+                content=f"Error: Specialist malformed - {str(e)}",
+                metadata={"error": "attribute_error"},
+                source=specialist_name
+            )
+        except Exception as e:
+            logger.error(f"Error invoking specialist {specialist_name}: {e}", exc_info=True)
+            return SpecialistResponse(
+                content=f"Error during {specialist_name} processing: {str(e)}",
+                metadata={"error": str(e), "error_type": type(e).__name__},
+                source=specialist_name
+            )
 
     async def _send_to_discord(self, message: str, channel_id: Optional[int] = None, user_id: Optional[int] = None):
         """

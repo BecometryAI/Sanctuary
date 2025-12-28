@@ -95,9 +95,20 @@ memories/
 # Test output and temporary files
 test_chain/
 test_memories/
+test_mem_simple/
 test_meta_logs/
 test_output/
+test_context/
+test_ctx_simple/
+test_data/
 *.html
+
+# Validation reports (generated files)
+validation_report*.json
+validation_test*.json
+
+# Temporary audio files
+temp_audio/
 searxng_response.html
 
 # Large binary files and models

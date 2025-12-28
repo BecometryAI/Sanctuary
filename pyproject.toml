@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "lyra-emergence"
 version = "0.1.0"
 description = "Lyra Emergence - An AI emergence framework"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     # Core ML dependencies
     "numpy>=2.3.4",
@@ -28,12 +28,13 @@ dependencies = [
     "hypercorn>=0.16.0",
     "httpx>=0.28.1",
     "aiohttp>=3.13.2",
-    "discord-py-interactions>=5.11.0",
+    "discord.py>=2.0.0",
     
     # Audio processing
     "soundfile>=0.13.1",
     "librosa>=0.11.0",
     "scipy>=1.16.3",
+    "torchaudio>=2.9.0",
     
     # Blockchain and storage
     "web3[async]>=6.0.0",
@@ -70,8 +71,8 @@ filterwarnings = [
     "ignore::UserWarning",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
     "pytest-mock>=3.10.0",

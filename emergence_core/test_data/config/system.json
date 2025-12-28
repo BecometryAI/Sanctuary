@@ -1,7 +1,0 @@
-{
-    "base_dir": "test_data",
-    "chroma_dir": "test_data/chroma",
-    "model_dir": "test_data/models",
-    "cache_dir": "test_data/cache",
-    "log_dir": "test_data/logs"
-}

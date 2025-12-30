@@ -151,7 +151,7 @@ class PerceptionSubsystem:
         Returns:
             Percept with dummy embedding for now
         """
-        from ..cognitive_core.workspace import Percept as WorkspacePercept
+        from .workspace import Percept as WorkspacePercept
         return WorkspacePercept(
             modality="text",
             raw=raw_input,

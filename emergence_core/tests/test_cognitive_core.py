@@ -108,6 +108,9 @@ class TestCognitiveCoreInputInjection:
         workspace = GlobalWorkspace()
         core = CognitiveCore(workspace=workspace)
         
+        # Initialize the queue by starting (but not running the loop)
+        core.input_queue = asyncio.Queue(maxsize=100)
+        
         # Create a percept
         percept = WorkspacePercept(
             modality="text",
@@ -128,6 +131,9 @@ class TestCognitiveCoreInputInjection:
         workspace = GlobalWorkspace()
         core = CognitiveCore(workspace=workspace)
         
+        # Initialize the queue
+        core.input_queue = asyncio.Queue(maxsize=100)
+        
         # Create and inject a percept
         percept = WorkspacePercept(
             modality="text",
@@ -142,6 +148,24 @@ class TestCognitiveCoreInputInjection:
         
         # Verify percept was processed
         assert core.metrics['percepts_processed'] >= 1
+    
+    @pytest.mark.asyncio
+    async def test_inject_input_requires_start(self):
+        """Test that injecting input before start raises error"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Create a percept
+        percept = WorkspacePercept(
+            modality="text",
+            raw="test input",
+            embedding=[0.1] * 384,
+            complexity=5
+        )
+        
+        # Inject it before starting should raise error
+        with pytest.raises(RuntimeError):
+            core.inject_input(percept)
 
 
 class TestCognitiveCoreAttentionIntegration:
@@ -152,6 +176,9 @@ class TestCognitiveCoreAttentionIntegration:
         """Test that attention selects highest priority percepts"""
         workspace = GlobalWorkspace()
         core = CognitiveCore(workspace=workspace, config={"attention_budget": 50})
+        
+        # Initialize the queue
+        core.input_queue = asyncio.Queue(maxsize=100)
         
         # Inject multiple percepts with different complexity
         for i in range(5):
@@ -247,6 +274,9 @@ class TestCognitiveCoreErrorRecovery:
         """Test that loop continues despite errors"""
         workspace = GlobalWorkspace()
         core = CognitiveCore(workspace=workspace)
+        
+        # Initialize the queue
+        core.input_queue = asyncio.Queue(maxsize=100)
         
         # Inject a malformed percept (this should be handled gracefully)
         # Note: Since we're using Pydantic models, malformed percepts 

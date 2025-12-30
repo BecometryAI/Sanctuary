@@ -9,17 +9,17 @@ import logging
 from lyra.cognitive_core.core import CognitiveCore
 from lyra.cognitive_core.workspace import GlobalWorkspace
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 
 async def main():
     """Run the cognitive core."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
+    
     workspace = GlobalWorkspace()
-    core = CognitiveCore(workspace)
+    core = CognitiveCore(workspace=workspace)
     
     try:
         await core.start()

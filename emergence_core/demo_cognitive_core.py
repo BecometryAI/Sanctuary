@@ -14,15 +14,16 @@ import logging
 from lyra.cognitive_core.core import CognitiveCore
 from lyra.cognitive_core.workspace import GlobalWorkspace, Percept, Goal, GoalType
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
 
 async def demo():
     """Demonstrate the CognitiveCore functionality."""
+    # Configure logging inside the function
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
+    
     logger.info("=" * 80)
     logger.info("CognitiveCore Demonstration")
     logger.info("=" * 80)
@@ -30,7 +31,7 @@ async def demo():
     # 1. Initialize
     logger.info("\n1. Initializing GlobalWorkspace and CognitiveCore...")
     workspace = GlobalWorkspace(capacity=10)
-    core = CognitiveCore(workspace, config={"cycle_rate_hz": 10})
+    core = CognitiveCore(workspace=workspace, config={"cycle_rate_hz": 10})
     
     # 2. Add a goal
     logger.info("\n2. Adding a goal to the workspace...")

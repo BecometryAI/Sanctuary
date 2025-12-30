@@ -20,8 +20,7 @@ import logging
 import time
 from typing import Optional, Dict, Any, List
 from collections import deque
-
-import numpy as np
+from statistics import mean
 
 from .workspace import GlobalWorkspace, Percept, WorkspaceSnapshot
 from .attention import AttentionController
@@ -119,10 +118,8 @@ class CognitiveCore:
         self.running = False
         self.cycle_duration = 1.0 / self.config["cycle_rate_hz"]
         
-        # Input queue for external percepts
-        self.input_queue: asyncio.Queue[Percept] = asyncio.Queue(
-            maxsize=self.config["max_queue_size"]
-        )
+        # Input queue - will be initialized in start()
+        self.input_queue: Optional[asyncio.Queue[Percept]] = None
         
         # Performance metrics
         self.metrics: Dict[str, Any] = {
@@ -143,6 +140,11 @@ class CognitiveCore:
         to prevent crashes and maintains system stability.
         """
         logger.info("🧠 Starting CognitiveCore...")
+        
+        # Initialize input queue in async context
+        if self.input_queue is None:
+            self.input_queue = asyncio.Queue(maxsize=self.config["max_queue_size"])
+        
         self.running = True
         
         while self.running:
@@ -160,7 +162,7 @@ class CognitiveCore:
         self.running = False
         
         # Log final metrics
-        avg_cycle_time = np.mean(self.metrics['cycle_times']) if self.metrics['cycle_times'] else 0.0
+        avg_cycle_time = mean(self.metrics['cycle_times']) if self.metrics['cycle_times'] else 0.0
         logger.info(f"📊 Final metrics: total_cycles={self.metrics['total_cycles']}, "
                    f"avg_cycle_time={avg_cycle_time*1000:.1f}ms, "
                    f"percepts_processed={self.metrics['percepts_processed']}")
@@ -251,6 +253,10 @@ class CognitiveCore:
         """
         percepts = []
         
+        # Check if queue is initialized (it should be after start())
+        if self.input_queue is None:
+            return percepts
+        
         # Drain queue (non-blocking)
         while not self.input_queue.empty():
             try:
@@ -271,8 +277,12 @@ class CognitiveCore:
             percept: Percept to inject into the cognitive loop
             
         Raises:
-            QueueFull: If input queue is at capacity (logs warning instead)
+            RuntimeError: If called before start() (queue not initialized)
         """
+        if self.input_queue is None:
+            logger.error("Cannot inject input: CognitiveCore not started yet")
+            raise RuntimeError("CognitiveCore must be started before injecting input")
+        
         try:
             self.input_queue.put_nowait(percept)
             logger.debug(f"Injected percept: {percept.id}")
@@ -304,7 +314,7 @@ class CognitiveCore:
         Returns:
             Dict containing performance metrics
         """
-        avg_cycle_time = np.mean(self.metrics['cycle_times']) if self.metrics['cycle_times'] else 0.0
+        avg_cycle_time = mean(self.metrics['cycle_times']) if self.metrics['cycle_times'] else 0.0
         
         return {
             'total_cycles': self.metrics['total_cycles'],
@@ -331,7 +341,7 @@ class CognitiveCore:
         
         # Log every N cycles
         if self.metrics['total_cycles'] % self.config['log_interval_cycles'] == 0:
-            avg_time = np.mean(self.metrics['cycle_times'])
+            avg_time = mean(self.metrics['cycle_times'])
             logger.info(f"📊 Cycle {self.metrics['total_cycles']}: "
                        f"avg_time={avg_time*1000:.1f}ms, "
                        f"target={self.cycle_duration*1000:.0f}ms, "

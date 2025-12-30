@@ -13,7 +13,6 @@ Tests cover:
 
 import pytest
 import numpy as np
-from typing import List
 
 from lyra.cognitive_core.perception import PerceptionSubsystem
 from lyra.cognitive_core.workspace import Percept

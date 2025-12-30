@@ -142,4 +142,22 @@ class SelfMonitor:
             history_size: Number of reports to maintain in history
             anomaly_detection: Whether to actively detect processing anomalies
         """
-        pass
+        # Placeholder implementation - will be fully implemented in Phase 2
+        self.monitoring_level = monitoring_level
+        self.history_size = history_size
+        self.anomaly_detection = anomaly_detection
+        self.report_history: List[IntrospectiveReport] = []
+    
+    def observe(self, snapshot: Any) -> List[Any]:
+        """
+        Placeholder: will be implemented in Phase 2.
+        
+        Observes workspace state and generates introspective percepts.
+        
+        Args:
+            snapshot: WorkspaceSnapshot containing current state
+            
+        Returns:
+            List of meta-cognitive percepts (empty for now)
+        """
+        return []  # No meta-percepts yet

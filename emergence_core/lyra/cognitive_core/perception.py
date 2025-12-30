@@ -132,4 +132,29 @@ class PerceptionSubsystem:
         Note: If modality encoders are None, that modality will not be supported.
         All encoders should project to the same embedding_dim for compatibility.
         """
-        pass
+        # Placeholder implementation - will be fully implemented in Phase 2
+        self.text_encoder_name = text_encoder_name
+        self.image_encoder_name = image_encoder_name
+        self.audio_encoder_name = audio_encoder_name
+        self.embedding_dim = embedding_dim
+        self.buffer_size = buffer_size
+    
+    async def process(self, raw_input: Any) -> Any:
+        """
+        Placeholder: will be implemented in Phase 2.
+        
+        Converts raw input into a percept with embedding.
+        
+        Args:
+            raw_input: Raw input data to process
+            
+        Returns:
+            Percept with dummy embedding for now
+        """
+        from .workspace import Percept as WorkspacePercept
+        return WorkspacePercept(
+            modality="text",
+            raw=raw_input,
+            embedding=[0.0] * 384,  # Dummy embedding
+            complexity=5
+        )

@@ -129,4 +129,35 @@ class AffectSubsystem:
                 Higher values mean faster emotional regulation
             history_size: Number of emotional states to maintain in history
         """
-        pass
+        # Placeholder implementation - will be fully implemented in Phase 2
+        self.baseline_valence = baseline_valence
+        self.baseline_arousal = baseline_arousal
+        self.baseline_dominance = baseline_dominance
+        self.decay_rate = decay_rate
+        self.history_size = history_size
+        
+        # Initialize current state at baseline
+        self.current_state = EmotionalState(
+            valence=baseline_valence,
+            arousal=baseline_arousal,
+            dominance=baseline_dominance
+        )
+        self.emotional_history: List[EmotionalState] = []
+    
+    def compute_update(self, snapshot: Any) -> Dict[str, float]:
+        """
+        Placeholder: will be implemented in Phase 2.
+        
+        Computes emotional state update based on workspace snapshot.
+        
+        Args:
+            snapshot: WorkspaceSnapshot containing current state
+            
+        Returns:
+            Dict with valence, arousal, dominance values
+        """
+        return {
+            "valence": self.current_state.valence,
+            "arousal": self.current_state.arousal,
+            "dominance": self.current_state.dominance
+        }

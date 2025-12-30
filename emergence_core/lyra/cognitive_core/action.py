@@ -125,4 +125,22 @@ class ActionSubsystem:
             history_size: Number of recent actions to maintain in history
             default_action_type: Type of action to take when no clear choice exists
         """
-        pass
+        # Placeholder implementation - will be fully implemented in Phase 2
+        self.action_repertoire = action_repertoire or {}
+        self.history_size = history_size
+        self.default_action_type = default_action_type
+        self.action_history: List[Any] = []
+    
+    def decide(self, snapshot: Any) -> List[Any]:
+        """
+        Placeholder: will be implemented in Phase 2.
+        
+        Decides what actions to take based on workspace snapshot.
+        
+        Args:
+            snapshot: WorkspaceSnapshot containing current state
+            
+        Returns:
+            List of actions to execute (empty for now)
+        """
+        return []  # No actions yet

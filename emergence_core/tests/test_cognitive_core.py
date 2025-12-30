@@ -7,13 +7,19 @@ Tests cover:
 - Type hints and docstring presence
 - Data model validation
 - PEP 8 compliance
+- Integration tests for CognitiveCore
 """
 
 import pytest
+import asyncio
+import time
 from pathlib import Path
 
 from lyra.cognitive_core.core import CognitiveCore
-from lyra.cognitive_core.workspace import GlobalWorkspace, WorkspaceContent
+from lyra.cognitive_core.workspace import (
+    GlobalWorkspace, WorkspaceContent, Percept as WorkspacePercept,
+    Goal, GoalType
+)
 from lyra.cognitive_core.attention import AttentionController, AttentionMode, AttentionScore
 from lyra.cognitive_core.perception import PerceptionSubsystem, ModalityType, Percept
 from lyra.cognitive_core.action import ActionSubsystem, ActionType, Action
@@ -29,12 +35,24 @@ class TestCognitiveCore:
         core = CognitiveCore()
         assert core is not None
         assert isinstance(core, CognitiveCore)
+        assert core.workspace is not None
+        assert core.attention is not None
+        assert core.perception is not None
+        assert core.action is not None
+        assert core.affect is not None
+        assert core.meta_cognition is not None
+        assert core.running is False
     
     def test_cognitive_core_initialization_custom(self):
         """Test creating CognitiveCore with custom parameters"""
-        core = CognitiveCore(cycle_frequency=20.0, persistence_dir="/tmp/test")
+        workspace = GlobalWorkspace(capacity=10)
+        config = {"cycle_rate_hz": 20, "attention_budget": 150}
+        core = CognitiveCore(workspace=workspace, config=config)
         assert core is not None
         assert isinstance(core, CognitiveCore)
+        assert core.workspace == workspace
+        assert core.config["cycle_rate_hz"] == 20
+        assert core.config["attention_budget"] == 150
     
     def test_cognitive_core_has_docstring(self):
         """Test that CognitiveCore has comprehensive docstring"""
@@ -46,8 +64,306 @@ class TestCognitiveCore:
         """Test that __init__ has proper type hints"""
         import inspect
         sig = inspect.signature(CognitiveCore.__init__)
-        assert 'cycle_frequency' in sig.parameters
-        assert 'persistence_dir' in sig.parameters
+        assert 'workspace' in sig.parameters
+        assert 'config' in sig.parameters
+
+
+class TestCognitiveCoreSingleCycle:
+    """Test single cognitive cycle execution"""
+    
+    @pytest.mark.asyncio
+    async def test_single_cycle(self):
+        """Test running one cognitive cycle"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Run a single cycle
+        await core._cognitive_cycle()
+        
+        # Verify metrics updated
+        assert core.metrics['total_cycles'] == 1
+        assert len(core.metrics['cycle_times']) == 1
+    
+    @pytest.mark.asyncio
+    async def test_workspace_updated_after_cycle(self):
+        """Test that workspace is updated after a cycle"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        initial_cycle_count = workspace.cycle_count
+        
+        # Run a single cycle
+        await core._cognitive_cycle()
+        
+        # Verify workspace was updated
+        assert workspace.cycle_count > initial_cycle_count
+
+
+class TestCognitiveCoreInputInjection:
+    """Test input injection functionality"""
+    
+    @pytest.mark.asyncio
+    async def test_inject_input(self):
+        """Test injecting percept via inject_input()"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Initialize the queue by starting (but not running the loop)
+        core.input_queue = asyncio.Queue(maxsize=100)
+        
+        # Create a percept
+        percept = WorkspacePercept(
+            modality="text",
+            raw="test input",
+            embedding=[0.1] * 384,
+            complexity=5
+        )
+        
+        # Inject it
+        core.inject_input(percept)
+        
+        # Verify it's in the queue
+        assert not core.input_queue.empty()
+    
+    @pytest.mark.asyncio
+    async def test_injected_percept_appears_in_workspace(self):
+        """Test that injected percept appears in workspace after cycle"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Initialize the queue
+        core.input_queue = asyncio.Queue(maxsize=100)
+        
+        # Create and inject a percept
+        percept = WorkspacePercept(
+            modality="text",
+            raw="test input",
+            embedding=[0.5] * 384,
+            complexity=10
+        )
+        core.inject_input(percept)
+        
+        # Run a cycle
+        await core._cognitive_cycle()
+        
+        # Verify percept was processed
+        assert core.metrics['percepts_processed'] >= 1
+    
+    @pytest.mark.asyncio
+    async def test_inject_input_requires_start(self):
+        """Test that injecting input before start raises error"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Create a percept
+        percept = WorkspacePercept(
+            modality="text",
+            raw="test input",
+            embedding=[0.1] * 384,
+            complexity=5
+        )
+        
+        # Inject it before starting should raise error
+        with pytest.raises(RuntimeError):
+            core.inject_input(percept)
+
+
+class TestCognitiveCoreAttentionIntegration:
+    """Test attention integration"""
+    
+    @pytest.mark.asyncio
+    async def test_attention_selects_highest_priority(self):
+        """Test that attention selects highest priority percepts"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace, config={"attention_budget": 50})
+        
+        # Initialize the queue
+        core.input_queue = asyncio.Queue(maxsize=100)
+        
+        # Inject multiple percepts with different complexity
+        for i in range(5):
+            percept = WorkspacePercept(
+                modality="text",
+                raw=f"test input {i}",
+                embedding=[float(i) / 10.0] * 384,
+                complexity=10
+            )
+            core.inject_input(percept)
+        
+        # Run a cycle
+        await core._cognitive_cycle()
+        
+        # Verify attention made selections
+        assert core.metrics['attention_selections'] > 0
+        # Should not exceed attention budget
+        assert core.metrics['attention_selections'] <= 5
+
+
+class TestCognitiveCoreCycleRate:
+    """Test cycle rate management"""
+    
+    @pytest.mark.asyncio
+    async def test_cycle_rate_timing(self):
+        """Test that cycle rate is approximately correct"""
+        workspace = GlobalWorkspace()
+        config = {"cycle_rate_hz": 20}  # 50ms per cycle
+        core = CognitiveCore(workspace=workspace, config=config)
+        
+        # Run 5 cycles
+        start_time = time.time()
+        for _ in range(5):
+            await core._cognitive_cycle()
+        elapsed = time.time() - start_time
+        
+        # Should take approximately 250ms (5 cycles at 50ms each)
+        # Allow 100ms tolerance
+        assert 0.15 < elapsed < 0.35
+        assert core.metrics['total_cycles'] == 5
+    
+    @pytest.mark.asyncio
+    async def test_average_cycle_time(self):
+        """Test average cycle time tracking"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Run 10 cycles
+        for _ in range(10):
+            await core._cognitive_cycle()
+        
+        # Verify metrics
+        metrics = core.get_metrics()
+        assert metrics['total_cycles'] == 10
+        assert 'avg_cycle_time_ms' in metrics
+        assert metrics['avg_cycle_time_ms'] > 0
+
+
+class TestCognitiveCoreGracefulShutdown:
+    """Test graceful shutdown"""
+    
+    @pytest.mark.asyncio
+    async def test_graceful_shutdown(self):
+        """Test that stop() gracefully shuts down the core"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Start core in background
+        async def run_core():
+            await core.start()
+        
+        task = asyncio.create_task(run_core())
+        
+        # Let it run a few cycles
+        await asyncio.sleep(0.3)
+        
+        # Stop it
+        await core.stop()
+        
+        # Wait for task to complete
+        await asyncio.sleep(0.1)
+        
+        # Verify it stopped
+        assert core.running is False
+        assert core.metrics['total_cycles'] > 0
+
+
+class TestCognitiveCoreErrorRecovery:
+    """Test error recovery"""
+    
+    @pytest.mark.asyncio
+    async def test_loop_continues_despite_error(self):
+        """Test that loop continues despite errors"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Initialize the queue
+        core.input_queue = asyncio.Queue(maxsize=100)
+        
+        # Inject a malformed percept (this should be handled gracefully)
+        # Note: Since we're using Pydantic models, malformed percepts 
+        # can't really be created, but we can test with extreme values
+        percept = WorkspacePercept(
+            modality="text",
+            raw="",  # Empty raw content
+            embedding=[],  # Empty embedding
+            complexity=0
+        )
+        core.inject_input(percept)
+        
+        # Run multiple cycles
+        for _ in range(3):
+            await core._cognitive_cycle()
+        
+        # Verify loop continued
+        assert core.metrics['total_cycles'] == 3
+
+
+class TestCognitiveCoreStateQuery:
+    """Test state query functionality"""
+    
+    @pytest.mark.asyncio
+    async def test_query_state(self):
+        """Test querying current state"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Add a goal to workspace
+        goal = Goal(
+            type=GoalType.RESPOND_TO_USER,
+            description="Test goal"
+        )
+        workspace.add_goal(goal)
+        
+        # Query state
+        snapshot = core.query_state()
+        
+        # Verify snapshot
+        assert snapshot is not None
+        assert len(snapshot.goals) == 1
+        assert snapshot.goals[0].description == "Test goal"
+    
+    @pytest.mark.asyncio
+    async def test_query_state_is_immutable(self):
+        """Test that queried state is immutable"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Query state
+        snapshot = core.query_state()
+        
+        # Attempt to modify should fail (Pydantic frozen model)
+        with pytest.raises(Exception):  # ValidationError or AttributeError
+            snapshot.cycle_count = 999
+
+
+class TestCognitiveCoreMetrics:
+    """Test metrics functionality"""
+    
+    @pytest.mark.asyncio
+    async def test_get_metrics(self):
+        """Test getting performance metrics"""
+        workspace = GlobalWorkspace()
+        core = CognitiveCore(workspace=workspace)
+        
+        # Run a few cycles
+        for _ in range(5):
+            await core._cognitive_cycle()
+        
+        # Get metrics
+        metrics = core.get_metrics()
+        
+        # Verify metrics structure
+        assert 'total_cycles' in metrics
+        assert 'avg_cycle_time_ms' in metrics
+        assert 'target_cycle_time_ms' in metrics
+        assert 'cycle_rate_hz' in metrics
+        assert 'attention_selections' in metrics
+        assert 'percepts_processed' in metrics
+        assert 'workspace_size' in metrics
+        assert 'current_goals' in metrics
+        
+        # Verify values
+        assert metrics['total_cycles'] == 5
+        assert metrics['cycle_rate_hz'] == 10  # default
 
 
 class TestGlobalWorkspace:
@@ -334,7 +650,7 @@ class TestModuleStructure:
         import lyra.cognitive_core as cc
         assert cc.__doc__ is not None
         assert "Cognitive Core" in cc.__doc__
-        assert "non-linguistic" in cc.__doc__
+        assert "non-linguistic" in cc.__doc__.lower()  # Case-insensitive check
     
     def test_cognitive_core_exports(self):
         """Test cognitive_core __all__ exports"""

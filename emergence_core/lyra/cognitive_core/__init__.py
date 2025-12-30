@@ -12,6 +12,14 @@ cognitive substrate.
 
 from __future__ import annotations
 
+from .core import CognitiveCore
+from .workspace import GlobalWorkspace
+from .attention import AttentionController
+from .perception import PerceptionSubsystem
+from .action import ActionSubsystem
+from .affect import AffectSubsystem
+from .meta_cognition import SelfMonitor
+
 __all__ = [
     "CognitiveCore",
     "GlobalWorkspace",

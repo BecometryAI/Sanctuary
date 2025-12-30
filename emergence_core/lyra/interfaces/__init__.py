@@ -8,6 +8,9 @@ recurrent loop in cognitive_core/.
 
 from __future__ import annotations
 
+from .language_input import LanguageInputParser
+from .language_output import LanguageOutputGenerator
+
 __all__ = [
     "LanguageInputParser",
     "LanguageOutputGenerator",

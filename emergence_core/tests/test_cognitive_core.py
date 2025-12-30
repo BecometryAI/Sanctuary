@@ -11,10 +11,6 @@ Tests cover:
 
 import pytest
 from pathlib import Path
-import sys
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from lyra.cognitive_core.core import CognitiveCore
 from lyra.cognitive_core.workspace import GlobalWorkspace, WorkspaceContent

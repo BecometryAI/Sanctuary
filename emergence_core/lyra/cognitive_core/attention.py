@@ -14,9 +14,88 @@ The attention mechanism is crucial for:
 
 from __future__ import annotations
 
+import logging
+from collections import deque
 from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass
 from enum import Enum
+from datetime import datetime
+
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine
+
+from .workspace import GlobalWorkspace, Percept
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+# Scoring weights (configurable)
+SCORING_WEIGHTS = {
+    "goal_relevance": 0.4,
+    "novelty": 0.3,
+    "emotional_salience": 0.2,
+    "recency": 0.1
+}
+
+
+def cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
+    """
+    Compute cosine similarity between two vectors.
+    
+    Args:
+        vec1: First vector
+        vec2: Second vector
+        
+    Returns:
+        Cosine similarity score (0.0-1.0, where 1.0 is identical, 0.0 is orthogonal/opposite)
+    """
+    if not vec1 or not vec2 or len(vec1) != len(vec2):
+        return 0.0
+    
+    # Convert to numpy arrays and reshape for sklearn
+    v1 = np.array(vec1).reshape(1, -1)
+    v2 = np.array(vec2).reshape(1, -1)
+    
+    # Use sklearn's cosine_similarity (returns values in [-1, 1])
+    similarity = sklearn_cosine(v1, v2)[0][0]
+    
+    # Clamp to [0, 1] range - negative similarities become 0
+    # This makes sense for attention: opposing directions shouldn't get negative scores
+    return max(0.0, float(similarity))
+
+
+def keyword_overlap(text1: str, text2: str) -> float:
+    """
+    Simple keyword overlap score (0.0-1.0) using Jaccard similarity.
+    
+    Args:
+        text1: First text string
+        text2: Second text string
+        
+    Returns:
+        Jaccard similarity score (0.0-1.0)
+    """
+    if not text1 or not text2:
+        return 0.0
+    
+    # Simple tokenization (lowercase and split)
+    tokens1 = set(text1.lower().split())
+    tokens2 = set(text2.lower().split())
+    
+    # Remove common stopwords
+    stopwords = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'is', 'are', 'was', 'were'}
+    tokens1 = tokens1 - stopwords
+    tokens2 = tokens2 - stopwords
+    
+    # Compute Jaccard similarity
+    if not tokens1 or not tokens2:
+        return 0.0
+    
+    intersection = len(tokens1 & tokens2)
+    union = len(tokens1 | tokens2)
+    
+    return intersection / union if union > 0 else 0.0
 
 
 class AttentionMode(Enum):
@@ -97,6 +176,8 @@ class AttentionController:
 
     def __init__(
         self,
+        attention_budget: int = 100,
+        workspace: Optional[GlobalWorkspace] = None,
         initial_mode: AttentionMode = AttentionMode.FOCUSED,
         goal_weight: float = 0.4,
         novelty_weight: float = 0.3,
@@ -107,6 +188,8 @@ class AttentionController:
         Initialize the attention controller.
 
         Args:
+            attention_budget: Total attention units available per cycle
+            workspace: Reference to the workspace for context
             initial_mode: Starting attention mode (focused, diffuse, vigilant, relaxed)
             goal_weight: Importance of goal-relevance in attention (0.0-1.0)
             novelty_weight: Importance of novelty in attention (0.0-1.0)
@@ -115,4 +198,282 @@ class AttentionController:
 
         Note: Weights should sum to approximately 1.0 for balanced scoring.
         """
-        pass
+        self.attention_budget = attention_budget
+        self.initial_budget = attention_budget
+        self.workspace = workspace
+        self.mode = initial_mode
+        
+        # Scoring weights
+        self.goal_weight = goal_weight
+        self.novelty_weight = novelty_weight
+        self.emotion_weight = emotion_weight
+        self.urgency_weight = urgency_weight
+        
+        # History tracking
+        self.recent_percepts: deque = deque(maxlen=50)
+        self.attention_history: List[Dict[str, Any]] = []
+        
+        logger.info(f"AttentionController initialized with budget={attention_budget}, mode={initial_mode.value}")
+
+    def select_for_broadcast(self, candidates: List[Percept]) -> List[Percept]:
+        """
+        Scores all candidate percepts and selects top-scoring ones within budget.
+        
+        Args:
+            candidates: List of candidate percepts to evaluate
+            
+        Returns:
+            Sorted list of selected percepts (highest scoring first)
+        """
+        if not candidates:
+            logger.debug("No candidates to select from")
+            return []
+        
+        # Score all candidates
+        scored_percepts = []
+        for percept in candidates:
+            score = self._score(percept)
+            scored_percepts.append((percept, score))
+        
+        # Sort by score (highest first)
+        scored_percepts.sort(key=lambda x: x[1], reverse=True)
+        
+        # Select percepts that fit within budget
+        selected = []
+        budget_used = 0
+        rejected_low_score = []
+        rejected_budget = []
+        
+        for percept, score in scored_percepts:
+            if budget_used + percept.complexity <= self.attention_budget:
+                selected.append(percept)
+                budget_used += percept.complexity
+                
+                # Add to recent percepts for novelty detection
+                if percept.embedding:
+                    self.recent_percepts.append(percept.embedding)
+                
+                logger.debug(f"Selected percept: {percept.id} (score: {score:.3f}, complexity: {percept.complexity})")
+            else:
+                rejected_budget.append((percept.id, score))
+                logger.debug(f"Budget exhausted: rejected {percept.id} (score: {score:.3f})")
+        
+        # Log any remaining low-scoring percepts
+        for percept, score in scored_percepts[len(selected) + len(rejected_budget):]:
+            rejected_low_score.append((percept.id, score))
+        
+        # Log selection decision
+        decision = {
+            "timestamp": datetime.now(),
+            "total_candidates": len(candidates),
+            "selected_count": len(selected),
+            "budget_used": budget_used,
+            "budget_available": self.attention_budget,
+            "rejected_low_score": len(rejected_low_score),
+            "rejected_budget": len(rejected_budget)
+        }
+        self.attention_history.append(decision)
+        
+        logger.info(f"Selected {len(selected)}/{len(candidates)} percepts, budget used: {budget_used}/{self.attention_budget}")
+        
+        return selected
+
+    def _score(self, percept: Percept) -> float:
+        """
+        Calculates relevance score for a single percept.
+        
+        Score components:
+        - Goal relevance (0.0-1.0): Cosine similarity with current goals
+        - Novelty (0.0-1.0): How different from recent percepts
+        - Emotional salience (0.0-1.0): Matches emotional themes
+        - Recency bonus (0.0-0.2): Slight boost for very recent percepts
+        
+        Args:
+            percept: The percept to score
+            
+        Returns:
+            Float score (0.0-1.0+)
+        """
+        goal_rel = self._compute_goal_relevance(percept)
+        novelty = self._compute_novelty(percept)
+        emotion_sal = self._compute_emotional_salience(percept)
+        
+        # Recency bonus: newer percepts get slight boost
+        time_diff = (datetime.now() - percept.timestamp).total_seconds()
+        recency = 0.2 if time_diff < 1.0 else 0.1 if time_diff < 5.0 else 0.0
+        
+        # Weighted average
+        total_score = (
+            goal_rel * self.goal_weight +
+            novelty * self.novelty_weight +
+            emotion_sal * self.emotion_weight +
+            recency * self.urgency_weight
+        )
+        
+        logger.debug(f"Scored percept {percept.id}: total={total_score:.3f}, "
+                    f"goal_rel={goal_rel:.2f}, novelty={novelty:.2f}, "
+                    f"emotion={emotion_sal:.2f}, recency={recency:.2f}")
+        
+        return total_score
+
+    def _compute_goal_relevance(self, percept: Percept) -> float:
+        """
+        Compute goal relevance score for percept.
+        
+        Args:
+            percept: The percept to evaluate
+            
+        Returns:
+            Score 0.0-1.0 indicating relevance to current goals
+        """
+        if not self.workspace or not self.workspace.current_goals:
+            return 0.5  # Neutral score if no goals
+        
+        max_relevance = 0.0
+        
+        for goal in self.workspace.current_goals:
+            # Try embedding-based similarity if available
+            if percept.embedding and goal.metadata.get('embedding'):
+                similarity = cosine_similarity(percept.embedding, goal.metadata['embedding'])
+                max_relevance = max(max_relevance, similarity)
+            else:
+                # Fall back to keyword matching
+                percept_text = str(percept.raw) if not isinstance(percept.raw, str) else percept.raw
+                overlap = keyword_overlap(percept_text, goal.description)
+                max_relevance = max(max_relevance, overlap)
+        
+        return max_relevance
+
+    def _compute_novelty(self, percept: Percept) -> float:
+        """
+        Compute novelty score for percept.
+        
+        High novelty if dissimilar to recent percepts.
+        
+        Args:
+            percept: The percept to evaluate
+            
+        Returns:
+            Score 0.0-1.0 (1.0 = completely novel)
+        """
+        if not percept.embedding or not self.recent_percepts:
+            return 1.0  # Completely novel if no embedding or no history
+        
+        # Compute similarity to all recent percepts
+        similarities = []
+        for recent_embedding in self.recent_percepts:
+            sim = cosine_similarity(percept.embedding, list(recent_embedding))
+            similarities.append(sim)
+        
+        # Novelty is inverse of maximum similarity
+        if similarities:
+            max_similarity = max(similarities)
+            novelty = 1.0 - max_similarity
+        else:
+            novelty = 1.0
+        
+        return novelty
+
+    def _compute_emotional_salience(self, percept: Percept) -> float:
+        """
+        Compute emotional salience score for percept.
+        
+        High salience if matches current emotional state intensity.
+        
+        Args:
+            percept: The percept to evaluate
+            
+        Returns:
+            Score 0.0-1.0
+        """
+        if not self.workspace:
+            return 0.0
+        
+        # Check for emotion keywords in percept metadata or raw content
+        emotion_keywords = {
+            'positive': ['happy', 'joy', 'excited', 'pleased', 'good', 'great', 'love'],
+            'negative': ['sad', 'angry', 'fear', 'anxious', 'bad', 'terrible', 'hate'],
+            'neutral': ['calm', 'peaceful', 'neutral', 'okay']
+        }
+        
+        percept_text = str(percept.raw).lower() if percept.raw else ""
+        
+        # Check metadata for emotion tags
+        if 'emotion' in percept.metadata:
+            emotion_tag = percept.metadata['emotion']
+            # Match with workspace emotional state
+            valence = self.workspace.emotional_state.get('valence', 0.0)
+            if emotion_tag in emotion_keywords['positive'] and valence > 0.3:
+                return 0.8
+            elif emotion_tag in emotion_keywords['negative'] and valence < -0.3:
+                return 0.8
+            else:
+                return 0.5
+        
+        # Check for emotion keywords in text
+        for emotion_type, keywords in emotion_keywords.items():
+            for keyword in keywords:
+                if keyword in percept_text:
+                    # Boost salience if matches current emotional state
+                    valence = self.workspace.emotional_state.get('valence', 0.0)
+                    arousal = self.workspace.emotional_state.get('arousal', 0.0)
+                    
+                    if emotion_type == 'positive' and valence > 0.3:
+                        return min(1.0, 0.7 + abs(arousal) * 0.3)
+                    elif emotion_type == 'negative' and valence < -0.3:
+                        return min(1.0, 0.7 + abs(arousal) * 0.3)
+                    else:
+                        return 0.5
+        
+        # Default: low emotional salience
+        return 0.2
+
+    def reset_budget(self) -> None:
+        """
+        Resets attention budget to initial value.
+        
+        Called at the start of each cognitive cycle.
+        """
+        self.attention_budget = self.initial_budget
+        logger.debug(f"Attention budget reset to {self.attention_budget}")
+
+    def get_attention_report(self) -> Dict[str, Any]:
+        """
+        Returns summary of recent attention decisions.
+        
+        Returns:
+            Dict with attention statistics including:
+            - total_candidates: Total percepts evaluated
+            - selected_count: Number of percepts selected
+            - rejection_reasons: Breakdown of why percepts were rejected
+            - budget_usage: Average budget utilization
+        """
+        if not self.attention_history:
+            return {
+                "total_decisions": 0,
+                "total_candidates": 0,
+                "selected_count": 0,
+                "avg_budget_usage": 0.0,
+                "rejection_reasons": {
+                    "low_score": 0,
+                    "budget_exhausted": 0
+                }
+            }
+        
+        total_candidates = sum(d['total_candidates'] for d in self.attention_history)
+        selected_count = sum(d['selected_count'] for d in self.attention_history)
+        total_rejected_low = sum(d['rejected_low_score'] for d in self.attention_history)
+        total_rejected_budget = sum(d['rejected_budget'] for d in self.attention_history)
+        avg_budget = sum(d['budget_used'] for d in self.attention_history) / len(self.attention_history)
+        
+        return {
+            "total_decisions": len(self.attention_history),
+            "total_candidates": total_candidates,
+            "selected_count": selected_count,
+            "avg_budget_usage": avg_budget,
+            "avg_budget_available": self.initial_budget,
+            "rejection_reasons": {
+                "low_score": total_rejected_low,
+                "budget_exhausted": total_rejected_budget
+            }
+        }

@@ -14,27 +14,140 @@ The GlobalWorkspace serves as:
 
 from __future__ import annotations
 
-from typing import Optional, Dict, Any, List, Set, Callable
-from dataclasses import dataclass, field
+import uuid
+import logging
 from datetime import datetime
+from typing import List, Dict, Any, Optional
+from enum import Enum
+
+from pydantic import BaseModel, Field, ConfigDict
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+class GoalType(str, Enum):
+    """Types of goals the system can pursue."""
+    RESPOND_TO_USER = "respond_to_user"
+    COMMIT_MEMORY = "commit_memory"
+    RETRIEVE_MEMORY = "retrieve_memory"
+    INTROSPECT = "introspect"
+    LEARN = "learn"
+    CREATE = "create"
+
+
+class Goal(BaseModel):
+    """
+    Represents a goal or intention in the workspace.
+    
+    Goals drive the cognitive system's behavior and provide top-down
+    influence on attention and action selection.
+    
+    Attributes:
+        id: Unique identifier for the goal
+        type: Category of goal (respond, memory, introspect, etc.)
+        description: Human-readable description of what the goal is
+        priority: Importance of this goal (0.0-1.0, higher is more important)
+        created_at: When this goal was created
+        progress: How close to completion (0.0-1.0, 1.0 is complete)
+        metadata: Additional goal-specific information
+    """
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    type: GoalType
+    description: str
+    priority: float = Field(ge=0.0, le=1.0, default=0.5)
+    created_at: datetime = Field(default_factory=datetime.now)
+    progress: float = Field(ge=0.0, le=1.0, default=0.0)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class Percept(BaseModel):
+    """
+    Represents a perceptual input that has gained attention.
+    
+    Percepts are internal representations of external sensory input
+    that have been selected by the attention system for conscious processing.
+    
+    Attributes:
+        id: Unique identifier for the percept
+        modality: Type of sensory input (text, image, audio, introspection)
+        embedding: Optional vector representation for similarity comparison
+        raw: Original data (string, dict, etc.)
+        complexity: Cognitive cost in attention units
+        timestamp: When the percept was created
+        metadata: Additional percept-specific information
+    """
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    modality: str  # "text", "image", "audio", "introspection"
+    embedding: Optional[List[float]] = None
+    raw: Any
+    complexity: int = 1
+    timestamp: datetime = Field(default_factory=datetime.now)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class Memory(BaseModel):
+    """
+    Represents a memory that has been retrieved into conscious awareness.
+    
+    Memories provide context from past experience and can influence
+    current processing, goals, and actions.
+    
+    Attributes:
+        id: Unique identifier for the memory
+        content: The memory content (text, structured data, etc.)
+        embedding: Optional vector representation for similarity
+        timestamp: When the memory was originally created
+        significance: Importance/relevance of this memory (0.0-1.0)
+        tags: Category labels for the memory
+        metadata: Additional memory-specific information
+    """
+    id: str
+    content: str
+    embedding: Optional[List[float]] = None
+    timestamp: datetime
+    significance: float = Field(ge=0.0, le=1.0)
+    tags: List[str] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class WorkspaceSnapshot(BaseModel):
+    """
+    Immutable snapshot of workspace state at a point in time.
+    
+    This frozen model allows subsystems to read the conscious state
+    without risk of concurrent modification or unintended side effects.
+    Broadcasting snapshots ensures clean information flow.
+    
+    Attributes:
+        goals: Current active goals
+        percepts: Currently attended perceptual inputs (keyed by ID)
+        emotions: Current emotional state (valence, arousal, dominance, etc.)
+        memories: Memories in conscious awareness
+        timestamp: When this snapshot was taken
+        cycle_count: Number of cognitive cycles processed
+    """
+    model_config = ConfigDict(frozen=True)  # Immutable
+    
+    goals: List[Goal]
+    percepts: Dict[str, Any]
+    emotions: Dict[str, float]
+    memories: List[Any]
+    timestamp: datetime
+    cycle_count: int
+
+
+# Legacy dataclass kept for backward compatibility
+from dataclasses import dataclass, field
 
 
 @dataclass
 class WorkspaceContent:
     """
-    Represents the current content of the global workspace.
-
-    This is what is "conscious" at any given moment - the unified representation
-    of goals, percepts, emotions, and attended memories that are currently
-    active and being broadcast to all subsystems.
-
-    Attributes:
-        goals: Current active goals and intentions
-        percepts: Recent perceptual inputs that have gained attention
-        emotions: Current emotional state (valence, arousal, dominance)
-        memories: Relevant memories retrieved for current context
-        timestamp: When this workspace state was created
-        metadata: Additional contextual information
+    Legacy dataclass for backward compatibility.
+    
+    Note: New code should use Goal, Percept, Memory, and WorkspaceSnapshot
+    Pydantic models instead for better validation and type safety.
     """
     goals: List[str] = field(default_factory=list)
     percepts: List[Dict[str, Any]] = field(default_factory=list)
@@ -78,9 +191,12 @@ class GlobalWorkspace:
     synchronized with the current conscious state without tight coupling.
 
     Attributes:
-        capacity: Maximum number of items that can be held simultaneously
-        content: Current workspace content
-        subscribers: Registered callbacks for workspace updates
+        current_goals: Active goals the system is pursuing
+        active_percepts: Currently attended sensory inputs (keyed by percept ID)
+        emotional_state: Current emotional state (valence, arousal, dominance)
+        attended_memories: Memories currently in conscious awareness
+        timestamp: Last update time
+        cycle_count: Number of cognitive cycles processed
     """
 
     def __init__(
@@ -96,4 +212,236 @@ class GlobalWorkspace:
                 Miller's "magical number" for working memory capacity).
             persistence_dir: Optional directory for saving/loading workspace history.
         """
-        pass
+        self.capacity = capacity
+        self.persistence_dir = persistence_dir
+        
+        # Core state
+        self.current_goals: List[Goal] = []
+        self.active_percepts: Dict[str, Percept] = {}
+        self.emotional_state: Dict[str, float] = {
+            "valence": 0.0,  # positive/negative
+            "arousal": 0.0,  # activation level
+            "dominance": 0.0,  # sense of control
+        }
+        self.attended_memories: List[Memory] = []
+        
+        # Tracking
+        self.timestamp: datetime = datetime.now()
+        self.cycle_count: int = 0
+        
+        logger.info(f"GlobalWorkspace initialized with capacity={capacity}")
+
+    def broadcast(self) -> WorkspaceSnapshot:
+        """
+        Returns an immutable snapshot of current workspace state.
+        
+        This method creates a frozen Pydantic model containing the current
+        conscious state. Subsystems can read this snapshot without risk of
+        concurrent modification.
+        
+        Returns:
+            WorkspaceSnapshot: Immutable snapshot of workspace state
+            
+        Example:
+            >>> workspace = GlobalWorkspace()
+            >>> snapshot = workspace.broadcast()
+            >>> # snapshot.goals is immutable - cannot be modified
+        """
+        return WorkspaceSnapshot(
+            goals=self.current_goals.copy(),
+            percepts={k: v.model_dump() for k, v in self.active_percepts.items()},
+            emotions=self.emotional_state.copy(),
+            memories=[m.model_dump() for m in self.attended_memories],
+            timestamp=self.timestamp,
+            cycle_count=self.cycle_count,
+        )
+
+    def update(self, subsystem_outputs: List[Any]) -> None:
+        """
+        Integrates new information from subsystems into workspace.
+        
+        This method processes outputs from various cognitive subsystems
+        and updates the workspace state accordingly. It handles:
+        - New goals from planning/reasoning
+        - New percepts from attention system
+        - Emotional updates from affect subsystem
+        - Memory updates from memory system
+        
+        Args:
+            subsystem_outputs: List of outputs from cognitive subsystems
+                Each output should be a dict with 'type' and relevant data
+                
+        Example:
+            >>> outputs = [
+            ...     {'type': 'goal', 'data': goal_instance},
+            ...     {'type': 'emotion', 'data': {'valence': 0.5}},
+            ... ]
+            >>> workspace.update(outputs)
+        """
+        for output in subsystem_outputs:
+            if isinstance(output, dict):
+                output_type = output.get('type')
+                data = output.get('data')
+                
+                if output_type == 'goal' and isinstance(data, Goal):
+                    self.add_goal(data)
+                elif output_type == 'percept' and isinstance(data, Percept):
+                    self.active_percepts[data.id] = data
+                elif output_type == 'emotion' and isinstance(data, dict):
+                    self.emotional_state.update(data)
+                elif output_type == 'memory' and isinstance(data, Memory):
+                    self.attended_memories.append(data)
+        
+        # Update tracking
+        self.cycle_count += 1
+        self.timestamp = datetime.now()
+        
+        logger.debug(f"Workspace updated: cycle={self.cycle_count}, "
+                    f"goals={len(self.current_goals)}, "
+                    f"percepts={len(self.active_percepts)}")
+
+    def add_goal(self, goal: Goal) -> None:
+        """
+        Adds a new goal to current_goals.
+        
+        This method adds a goal to the workspace, checking for duplicates
+        and maintaining priority ordering if needed.
+        
+        Args:
+            goal: The Goal instance to add
+            
+        Raises:
+            ValueError: If goal validation fails
+            
+        Example:
+            >>> goal = Goal(type=GoalType.RESPOND_TO_USER, 
+            ...             description="Answer user query")
+            >>> workspace.add_goal(goal)
+        """
+        # Check for duplicate by ID
+        if any(g.id == goal.id for g in self.current_goals):
+            logger.warning(f"Goal {goal.id} already exists in workspace")
+            return
+        
+        self.current_goals.append(goal)
+        
+        # Sort by priority (highest first)
+        self.current_goals.sort(key=lambda g: g.priority, reverse=True)
+        
+        logger.info(f"Added goal: type={goal.type.value}, priority={goal.priority}")
+
+    def remove_goal(self, goal_id: str) -> None:
+        """
+        Removes completed or abandoned goals.
+        
+        Args:
+            goal_id: ID of the goal to remove
+            
+        Example:
+            >>> workspace.remove_goal("abc-123-def")
+        """
+        initial_count = len(self.current_goals)
+        self.current_goals = [g for g in self.current_goals if g.id != goal_id]
+        
+        if len(self.current_goals) < initial_count:
+            logger.info(f"Removed goal: id={goal_id}")
+        else:
+            logger.warning(f"Goal {goal_id} not found in workspace")
+
+    def clear(self) -> None:
+        """
+        Resets workspace to initial state.
+        
+        This method is useful for testing and for clearing state
+        between major context shifts.
+        
+        Example:
+            >>> workspace.clear()
+            >>> assert len(workspace.current_goals) == 0
+        """
+        self.current_goals.clear()
+        self.active_percepts.clear()
+        self.emotional_state = {
+            "valence": 0.0,
+            "arousal": 0.0,
+            "dominance": 0.0,
+        }
+        self.attended_memories.clear()
+        self.timestamp = datetime.now()
+        self.cycle_count = 0
+        
+        logger.info("Workspace cleared")
+
+    def to_dict(self) -> dict:
+        """
+        Serializes entire state to JSON-compatible dict.
+        
+        This method converts the workspace to a dictionary that can
+        be saved to disk or transmitted over a network.
+        
+        Returns:
+            dict: JSON-compatible representation of workspace state
+            
+        Example:
+            >>> data = workspace.to_dict()
+            >>> import json
+            >>> json.dumps(data)  # Can be serialized
+        """
+        return {
+            "current_goals": [g.model_dump(mode='json') for g in self.current_goals],
+            "active_percepts": {k: v.model_dump(mode='json') for k, v in self.active_percepts.items()},
+            "emotional_state": self.emotional_state,
+            "attended_memories": [m.model_dump(mode='json') for m in self.attended_memories],
+            "timestamp": self.timestamp.isoformat(),
+            "cycle_count": self.cycle_count,
+            "capacity": self.capacity,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> GlobalWorkspace:
+        """
+        Restores workspace from serialized state.
+        
+        This class method creates a new GlobalWorkspace instance from
+        a dictionary created by to_dict().
+        
+        Args:
+            data: Dictionary containing workspace state
+            
+        Returns:
+            GlobalWorkspace: Restored workspace instance
+            
+        Raises:
+            ValueError: If data format is invalid
+            
+        Example:
+            >>> data = workspace.to_dict()
+            >>> restored = GlobalWorkspace.from_dict(data)
+        """
+        workspace = cls(capacity=data.get("capacity", 7))
+        
+        # Restore goals
+        workspace.current_goals = [Goal(**g) for g in data.get("current_goals", [])]
+        
+        # Restore percepts
+        percepts_data = data.get("active_percepts", {})
+        workspace.active_percepts = {k: Percept(**v) for k, v in percepts_data.items()}
+        
+        # Restore emotional state
+        workspace.emotional_state = data.get("emotional_state", {
+            "valence": 0.0,
+            "arousal": 0.0,
+            "dominance": 0.0,
+        })
+        
+        # Restore memories
+        workspace.attended_memories = [Memory(**m) for m in data.get("attended_memories", [])]
+        
+        # Restore tracking
+        timestamp_str = data.get("timestamp")
+        if timestamp_str:
+            workspace.timestamp = datetime.fromisoformat(timestamp_str)
+        workspace.cycle_count = data.get("cycle_count", 0)
+        
+        logger.info(f"Workspace restored from dict: cycle={workspace.cycle_count}")
+        return workspace

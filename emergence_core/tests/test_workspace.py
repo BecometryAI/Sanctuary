@@ -11,7 +11,7 @@ Tests cover:
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime
 from pydantic import ValidationError
 
 from lyra.cognitive_core.workspace import (

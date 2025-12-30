@@ -11,7 +11,7 @@ Tests cover:
 """
 
 import pytest
-import time
+
 
 from lyra.cognitive_core.attention import (
     AttentionController,

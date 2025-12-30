@@ -15,7 +15,7 @@ The affect subsystem is responsible for:
 
 from __future__ import annotations
 
-from typing import Optional, Dict, Any, List, Tuple
+from typing import List
 from dataclasses import dataclass
 from datetime import datetime
 import numpy as np

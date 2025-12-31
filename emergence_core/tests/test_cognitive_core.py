@@ -489,29 +489,30 @@ class TestActionSubsystem:
     
     def test_action_initialization_custom(self):
         """Test creating ActionSubsystem with custom parameters"""
-        action_sys = ActionSubsystem(
-            history_size=50,
-            default_action_type=ActionType.WAIT
-        )
+        config = {"test_key": "test_value"}
+        action_sys = ActionSubsystem(config=config)
         assert action_sys is not None
+        assert action_sys.config["test_key"] == "test_value"
     
     def test_action_type_enum(self):
         """Test ActionType enum values"""
-        assert ActionType.COMMUNICATE.value == "communicate"
-        assert ActionType.RETRIEVE.value == "retrieve"
-        assert ActionType.TOOL_USE.value == "tool_use"
-        assert ActionType.INTERNAL.value == "internal"
+        assert ActionType.SPEAK.value == "speak"
+        assert ActionType.COMMIT_MEMORY.value == "commit_memory"
+        assert ActionType.RETRIEVE_MEMORY.value == "retrieve_memory"
+        assert ActionType.INTROSPECT.value == "introspect"
+        assert ActionType.UPDATE_GOAL.value == "update_goal"
         assert ActionType.WAIT.value == "wait"
+        assert ActionType.TOOL_CALL.value == "tool_call"
     
     def test_action_creation(self):
-        """Test creating Action data class"""
+        """Test creating Action Pydantic model"""
         action = Action(
-            action_type=ActionType.COMMUNICATE,
+            type=ActionType.SPEAK,
             parameters={"text": "Hello"},
             priority=0.8
         )
         assert action is not None
-        assert action.action_type == ActionType.COMMUNICATE
+        assert action.type == ActionType.SPEAK
         assert action.priority == 0.8
         assert action.metadata is not None
     

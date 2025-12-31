@@ -203,7 +203,11 @@ class CognitiveCore:
             affect_update = self.affect.compute_update(self.workspace.broadcast())
             
             # 4. ACTION: Decide what to do
-            self.action.decide(self.workspace.broadcast())
+            actions = self.action.decide(self.workspace.broadcast())
+            
+            # Execute immediate actions
+            for action in actions:
+                await self._execute_action(action)
             
             # 5. META-COGNITION: Introspect
             meta_percepts = self.meta_cognition.observe(self.workspace.broadcast())
@@ -217,10 +221,6 @@ class CognitiveCore:
             
             # Add affect update
             updates.append({'type': 'emotion', 'data': affect_update})
-            
-            # Add actions (if any)
-            # Note: actions are processed but not stored in workspace yet
-            # This will be implemented more fully in Phase 2
             
             # Add meta-percepts
             for meta_percept in meta_percepts:
@@ -357,3 +357,54 @@ class CognitiveCore:
                        f"target={self.cycle_duration*1000:.0f}ms, "
                        f"workspace_size={len(self.workspace.active_percepts)}, "
                        f"goals={len(self.workspace.current_goals)}")
+    
+    async def _execute_action(self, action: Any) -> None:
+        """
+        Execute a single action.
+        
+        Routes action execution based on action type. Different action types
+        are handled differently (some queue output, some modify state, etc.).
+        
+        Args:
+            action: Action to execute
+        """
+        from .action import ActionType
+        
+        try:
+            if action.type == ActionType.SPEAK:
+                # Queue for language output (will be handled by output subsystem)
+                logger.debug(f"Action SPEAK queued for output: {action.reason}")
+                # TODO: Implement output queue in future phase
+                
+            elif action.type == ActionType.COMMIT_MEMORY:
+                # Commit current workspace to long-term memory
+                logger.debug(f"Action COMMIT_MEMORY: {action.reason}")
+                # TODO: Integrate with memory system in future phase
+                
+            elif action.type == ActionType.RETRIEVE_MEMORY:
+                # Query memory system
+                query = action.parameters.get("query", "")
+                logger.debug(f"Action RETRIEVE_MEMORY: query='{query}'")
+                # TODO: Integrate with memory system and add results to workspace
+                
+            elif action.type == ActionType.INTROSPECT:
+                # Trigger introspective percept
+                logger.debug(f"Action INTROSPECT: {action.reason}")
+                # TODO: Generate introspective percept
+                
+            elif action.type == ActionType.UPDATE_GOAL:
+                # Modify goal state
+                logger.debug(f"Action UPDATE_GOAL: {action.reason}")
+                # TODO: Implement goal modification
+                
+            elif action.type == ActionType.WAIT:
+                # Explicitly do nothing (valid action!)
+                logger.debug("Action WAIT: maintaining current state")
+                
+            elif action.type == ActionType.TOOL_CALL:
+                # Execute registered tool
+                result = await self.action.execute_action(action)
+                logger.debug(f"Action TOOL_CALL: result={result}")
+                
+        except Exception as e:
+            logger.error(f"Error executing action {action.type}: {e}", exc_info=True)

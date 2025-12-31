@@ -126,6 +126,7 @@ class WorkspaceSnapshot(BaseModel):
         memories: Memories in conscious awareness
         timestamp: When this snapshot was taken
         cycle_count: Number of cognitive cycles processed
+        metadata: Additional context information (e.g., recent_actions)
     """
     model_config = ConfigDict(frozen=True)  # Immutable
     
@@ -135,6 +136,7 @@ class WorkspaceSnapshot(BaseModel):
     memories: List[Any]
     timestamp: datetime
     cycle_count: int
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 # Legacy dataclass kept for backward compatibility

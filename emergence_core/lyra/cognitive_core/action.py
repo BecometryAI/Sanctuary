@@ -222,7 +222,10 @@ class ActionSubsystem:
                     type=ActionType.SPEAK,
                     priority=0.9,  # User requests are high priority
                     parameters={"goal_id": goal.id},
-                    reason="Responding to user request"
+                    reason="Responding to user request",
+                    metadata={
+                        "responding_to": goal.metadata.get("user_input", "")
+                    }
                 ))
             
             elif goal.type == GoalType.COMMIT_MEMORY:

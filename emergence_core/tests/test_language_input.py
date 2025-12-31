@@ -11,7 +11,6 @@ Tests cover:
 """
 
 import pytest
-import asyncio
 
 from lyra.cognitive_core.language_input import (
     LanguageInputParser,

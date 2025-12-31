@@ -5,7 +5,6 @@ Tests specific use cases and interaction patterns.
 """
 
 import pytest
-import asyncio
 
 from lyra import LyraAPI
 

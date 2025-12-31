@@ -23,7 +23,6 @@ from lyra.cognitive_core.action import (
 from lyra.cognitive_core.workspace import (
     Goal,
     GoalType,
-    Percept,
     WorkspaceSnapshot,
 )
 from lyra.identity.loader import ActionConstraint

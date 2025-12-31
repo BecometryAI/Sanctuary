@@ -115,7 +115,14 @@ class CognitiveCore:
         )
         self.perception = PerceptionSubsystem(config=self.config.get("perception", {}))
         self.action = ActionSubsystem(config=self.config.get("action", {}), affect=self.affect)
-        self.meta_cognition = SelfMonitor()
+        
+        # Store references for subsystems to access each other
+        self.workspace.affect = self.affect
+        self.workspace.action_subsystem = self.action
+        self.workspace.perception = self.perception
+        
+        # Initialize meta-cognition (needs workspace reference)
+        self.meta_cognition = SelfMonitor(workspace=self.workspace, config=self.config.get("meta_cognition", {}))
         
         # Control flags
         self.running = False

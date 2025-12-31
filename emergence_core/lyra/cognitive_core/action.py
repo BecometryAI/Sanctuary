@@ -253,11 +253,27 @@ class ActionSubsystem:
         valence = snapshot.emotions.get("valence", 0.0)
         arousal = snapshot.emotions.get("arousal", 0.0)
         
+        # Memory retrieval - trigger when workspace is sparse
+        if len(snapshot.percepts) < 5:
+            candidates.append(Action(
+                type=ActionType.RETRIEVE_MEMORY,
+                priority=0.4,
+                reason="Workspace sparse, retrieving context from memory"
+            ))
+        
+        # Memory consolidation - trigger on high arousal
         if arousal > 0.7:
             # High arousal = urgent action needed
             for action in candidates:
                 if action.type == ActionType.SPEAK:
                     action.priority = min(action.priority * 1.3, 1.0)
+            
+            # Also trigger memory consolidation
+            candidates.append(Action(
+                type=ActionType.COMMIT_MEMORY,
+                priority=0.6,
+                reason=f"High arousal ({arousal:.2f}), consolidating experience"
+            ))
         
         if valence < -0.5:
             # Negative emotion = may need introspection

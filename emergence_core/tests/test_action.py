@@ -356,7 +356,7 @@ class TestActionDecision:
         
         initial_total = subsystem.action_stats["total_actions"]
         
-        actions = subsystem.decide(snapshot)
+        subsystem.decide(snapshot)
         
         # Statistics should be updated
         assert subsystem.action_stats["total_actions"] > initial_total

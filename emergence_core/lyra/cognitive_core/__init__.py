@@ -27,6 +27,7 @@ from .perception import PerceptionSubsystem
 from .action import ActionSubsystem
 from .affect import AffectSubsystem
 from .meta_cognition import SelfMonitor
+from .memory_integration import MemoryIntegration
 
 __all__ = [
     "CognitiveCore",
@@ -42,4 +43,5 @@ __all__ = [
     "ActionSubsystem",
     "AffectSubsystem",
     "SelfMonitor",
+    "MemoryIntegration",
 ]

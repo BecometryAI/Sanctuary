@@ -22,12 +22,13 @@ from typing import Optional, Dict, Any, List
 from collections import deque
 from statistics import mean
 
-from .workspace import GlobalWorkspace, Percept, WorkspaceSnapshot
+from .workspace import GlobalWorkspace, Percept, WorkspaceSnapshot, GoalType
 from .attention import AttentionController
 from .perception import PerceptionSubsystem
 from .action import ActionSubsystem
 from .affect import AffectSubsystem
 from .meta_cognition import SelfMonitor
+from .memory_integration import MemoryIntegration
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -124,6 +125,9 @@ class CognitiveCore:
         # Initialize meta-cognition (needs workspace reference)
         self.meta_cognition = SelfMonitor(workspace=self.workspace, config=self.config.get("meta_cognition", {}))
         
+        # Initialize memory integration
+        self.memory = MemoryIntegration(workspace=self.workspace, config=self.config.get("memory", {}))
+        
         # Control flags
         self.running = False
         self.cycle_duration = 1.0 / self.config["cycle_rate_hz"]
@@ -187,16 +191,18 @@ class CognitiveCore:
         """
         Execute one complete cognitive cycle.
         
-        The cognitive cycle follows 9 steps:
+        The cognitive cycle follows these steps:
         1. PERCEPTION: Gather new inputs (if any queued)
-        2. ATTENTION: Select percepts for workspace
-        3. AFFECT UPDATE: Compute emotional dynamics
-        4. ACTION SELECTION: Decide what to do
-        5. META-COGNITION: Generate introspective percepts
-        6. WORKSPACE UPDATE: Integrate all subsystem outputs
-        7. BROADCAST: Make state available to subsystems
-        8. METRICS: Track performance
-        9. RATE LIMITING: Maintain ~10 Hz
+        2. MEMORY RETRIEVAL: Check for memory retrieval goals and fetch relevant memories
+        3. ATTENTION: Select percepts (including memory-percepts) for workspace
+        4. AFFECT UPDATE: Compute emotional dynamics
+        5. ACTION SELECTION: Decide what to do
+        6. META-COGNITION: Generate introspective percepts
+        7. WORKSPACE UPDATE: Integrate all subsystem outputs
+        8. MEMORY CONSOLIDATION: Store significant states to long-term memory
+        9. BROADCAST: Make state available to subsystems
+        10. METRICS: Track performance
+        11. RATE LIMITING: Maintain ~10 Hz
         """
         cycle_start = time.time()
         
@@ -204,25 +210,37 @@ class CognitiveCore:
             # 1. PERCEPTION: Process queued inputs
             new_percepts = await self._gather_percepts()
             
-            # 2. ATTENTION: Select for conscious awareness
+            # 2. MEMORY RETRIEVAL: Check for memory retrieval goals
+            snapshot = self.workspace.broadcast()
+            retrieve_goals = [
+                g for g in snapshot.goals
+                if g.type == GoalType.RETRIEVE_MEMORY
+            ]
+            
+            if retrieve_goals:
+                # Retrieve memories and add as percepts
+                memory_percepts = await self.memory.retrieve_for_workspace(snapshot)
+                new_percepts.extend(memory_percepts)
+            
+            # 3. ATTENTION: Select for conscious awareness
             attended = self.attention.select_for_broadcast(new_percepts)
             self.metrics['attention_selections'] += len(attended)
             self.metrics['percepts_processed'] += len(new_percepts)
             
-            # 3. AFFECT: Update emotional state
+            # 4. AFFECT: Update emotional state
             affect_update = self.affect.compute_update(self.workspace.broadcast())
             
-            # 4. ACTION: Decide what to do
+            # 5. ACTION: Decide what to do
             actions = self.action.decide(self.workspace.broadcast())
             
             # Execute immediate actions
             for action in actions:
                 await self._execute_action(action)
             
-            # 5. META-COGNITION: Introspect
+            # 6. META-COGNITION: Introspect
             meta_percepts = self.meta_cognition.observe(self.workspace.broadcast())
             
-            # 6. WORKSPACE UPDATE: Integrate everything
+            # 7. WORKSPACE UPDATE: Integrate everything
             updates = []
             
             # Add attended percepts
@@ -238,14 +256,17 @@ class CognitiveCore:
             
             self.workspace.update(updates)
             
-            # 7. BROADCAST: Make state available
+            # 8. MEMORY CONSOLIDATION: Commit workspace to long-term memory (if appropriate)
+            await self.memory.consolidate(self.workspace.broadcast())
+            
+            # 9. BROADCAST: Make state available
             snapshot = self.workspace.broadcast()
             
-            # 8. METRICS: Track performance
+            # 10. METRICS: Track performance
             cycle_time = time.time() - cycle_start
             self._update_metrics(cycle_time)
             
-            # 9. RATE LIMITING: Maintain ~10 Hz
+            # 11. RATE LIMITING: Maintain ~10 Hz
             sleep_time = max(0, self.cycle_duration - cycle_time)
             await asyncio.sleep(sleep_time)
             

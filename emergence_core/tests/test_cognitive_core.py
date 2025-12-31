@@ -534,12 +534,19 @@ class TestAffectSubsystem:
     
     def test_affect_initialization_custom(self):
         """Test creating AffectSubsystem with custom parameters"""
-        affect = AffectSubsystem(
-            baseline_valence=0.1,
-            baseline_arousal=-0.2,
-            decay_rate=0.15
-        )
+        config = {
+            "baseline": {
+                "valence": 0.1,
+                "arousal": -0.2,
+                "dominance": 0.5
+            },
+            "decay_rate": 0.15
+        }
+        affect = AffectSubsystem(config=config)
         assert affect is not None
+        assert affect.baseline["valence"] == 0.1
+        assert affect.baseline["arousal"] == -0.2
+        assert affect.decay_rate == 0.15
     
     def test_emotional_state_creation(self):
         """Test creating EmotionalState data class"""

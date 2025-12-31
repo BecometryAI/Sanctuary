@@ -178,6 +178,7 @@ class AttentionController:
         self,
         attention_budget: int = 100,
         workspace: Optional[GlobalWorkspace] = None,
+        affect: Optional[Any] = None,
         initial_mode: AttentionMode = AttentionMode.FOCUSED,
         goal_weight: float = 0.4,
         novelty_weight: float = 0.3,
@@ -190,6 +191,7 @@ class AttentionController:
         Args:
             attention_budget: Total attention units available per cycle
             workspace: Reference to the workspace for context
+            affect: Reference to the affect subsystem for emotional modulation
             initial_mode: Starting attention mode (focused, diffuse, vigilant, relaxed)
             goal_weight: Importance of goal-relevance in attention (0.0-1.0)
             novelty_weight: Importance of novelty in attention (0.0-1.0)
@@ -201,6 +203,7 @@ class AttentionController:
         self.attention_budget = attention_budget
         self.initial_budget = attention_budget
         self.workspace = workspace
+        self.affect = affect
         self.mode = initial_mode
         
         # Scoring weights
@@ -287,6 +290,7 @@ class AttentionController:
         - Novelty (0.0-1.0): How different from recent percepts
         - Emotional salience (0.0-1.0): Matches emotional themes
         - Recency bonus (0.0-0.2): Slight boost for very recent percepts
+        - Affect modulation: Emotional state influences attention
         
         Args:
             percept: The percept to score
@@ -303,16 +307,22 @@ class AttentionController:
         recency = 0.2 if time_diff < 1.0 else 0.1 if time_diff < 5.0 else 0.0
         
         # Weighted average
-        total_score = (
+        base_score = (
             goal_rel * self.goal_weight +
             novelty * self.novelty_weight +
             emotion_sal * self.emotion_weight +
             recency * self.urgency_weight
         )
         
+        # Apply affect modulation if affect subsystem is available
+        if self.affect:
+            total_score = self.affect.influence_attention(base_score, percept)
+        else:
+            total_score = base_score
+        
         logger.debug(f"Scored percept {percept.id}: total={total_score:.3f}, "
-                    f"goal_rel={goal_rel:.2f}, novelty={novelty:.2f}, "
-                    f"emotion={emotion_sal:.2f}, recency={recency:.2f}")
+                    f"base={base_score:.3f}, goal_rel={goal_rel:.2f}, "
+                    f"novelty={novelty:.2f}, emotion={emotion_sal:.2f}, recency={recency:.2f}")
         
         return total_score
 

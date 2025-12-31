@@ -29,6 +29,7 @@ from .action import ActionSubsystem
 from .affect import AffectSubsystem
 from .meta_cognition import SelfMonitor
 from .memory_integration import MemoryIntegration
+from .language_input import LanguageInputParser
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -127,6 +128,12 @@ class CognitiveCore:
         
         # Initialize memory integration
         self.memory = MemoryIntegration(workspace=self.workspace, config=self.config.get("memory", {}))
+        
+        # Initialize language input parser (needs perception subsystem)
+        self.language_input = LanguageInputParser(
+            self.perception,
+            config=self.config.get("language_input", {})
+        )
         
         # Control flags
         self.running = False
@@ -329,6 +336,41 @@ class CognitiveCore:
             logger.debug(f"Injected {modality} input for encoding")
         except asyncio.QueueFull:
             logger.warning("Input queue full, dropping input")
+
+    async def process_language_input(self, text: str, context: Optional[Dict] = None) -> None:
+        """
+        Process natural language input through the language input parser.
+        
+        Parses the text into structured Goals and Percepts, adds the goals to
+        the workspace, and queues the percept for processing in the next cycle.
+        This is the high-level entry point for natural language interaction.
+        
+        Args:
+            text: Natural language user input
+            context: Optional additional context for parsing
+            
+        Raises:
+            RuntimeError: If called before start() (queue not initialized)
+        """
+        if self.input_queue is None:
+            logger.error("Cannot process language input: CognitiveCore not started yet")
+            raise RuntimeError("CognitiveCore must be started before processing language input")
+        
+        # Parse input into structured components
+        parse_result = await self.language_input.parse(text, context)
+        
+        # Add goals to workspace
+        for goal in parse_result.goals:
+            self.workspace.add_goal(goal)
+        
+        # Queue percept for next cycle (tuple format: raw, modality)
+        # We use the percept directly as "raw" and set modality to "text"
+        # The perception subsystem will see it's already a percept
+        try:
+            self.input_queue.put_nowait((parse_result.percept.raw, "text"))
+            logger.info(f"📥 Processed language input: {len(parse_result.goals)} goals added")
+        except asyncio.QueueFull:
+            logger.warning("Input queue full, dropping percept from language input")
 
     def query_state(self) -> WorkspaceSnapshot:
         """

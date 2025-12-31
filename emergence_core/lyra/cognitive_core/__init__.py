@@ -30,6 +30,7 @@ from .meta_cognition import SelfMonitor
 from .memory_integration import MemoryIntegration
 from .language_output import LanguageOutputGenerator
 from .conversation import ConversationManager, ConversationTurn
+from .autonomous_initiation import AutonomousInitiationController
 
 __all__ = [
     "CognitiveCore",
@@ -49,4 +50,5 @@ __all__ = [
     "LanguageOutputGenerator",
     "ConversationManager",
     "ConversationTurn",
+    "AutonomousInitiationController",
 ]

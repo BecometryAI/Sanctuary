@@ -104,49 +104,39 @@ class TestCognitiveCoreInputInjection:
     
     @pytest.mark.asyncio
     async def test_inject_input(self):
-        """Test injecting percept via inject_input()"""
+        """Test injecting raw input via inject_input()"""
         workspace = GlobalWorkspace()
         core = CognitiveCore(workspace=workspace)
         
         # Initialize the queue by starting (but not running the loop)
         core.input_queue = asyncio.Queue(maxsize=100)
         
-        # Create a percept
-        percept = WorkspacePercept(
-            modality="text",
-            raw="test input",
-            embedding=[0.1] * 384,
-            complexity=5
-        )
-        
-        # Inject it
-        core.inject_input(percept)
+        # Inject raw text input
+        core.inject_input("test input", modality="text")
         
         # Verify it's in the queue
         assert not core.input_queue.empty()
+        
+        # Verify it's a tuple of (raw_input, modality)
+        item = core.input_queue.get_nowait()
+        assert item == ("test input", "text")
     
     @pytest.mark.asyncio
     async def test_injected_percept_appears_in_workspace(self):
-        """Test that injected percept appears in workspace after cycle"""
+        """Test that injected input is encoded and appears in workspace after cycle"""
         workspace = GlobalWorkspace()
         core = CognitiveCore(workspace=workspace)
         
         # Initialize the queue
         core.input_queue = asyncio.Queue(maxsize=100)
         
-        # Create and inject a percept
-        percept = WorkspacePercept(
-            modality="text",
-            raw="test input",
-            embedding=[0.5] * 384,
-            complexity=10
-        )
-        core.inject_input(percept)
+        # Inject raw text input (will be encoded by perception subsystem)
+        core.inject_input("test input", modality="text")
         
         # Run a cycle
         await core._cognitive_cycle()
         
-        # Verify percept was processed
+        # Verify input was processed
         assert core.metrics['percepts_processed'] >= 1
     
     @pytest.mark.asyncio
@@ -155,17 +145,9 @@ class TestCognitiveCoreInputInjection:
         workspace = GlobalWorkspace()
         core = CognitiveCore(workspace=workspace)
         
-        # Create a percept
-        percept = WorkspacePercept(
-            modality="text",
-            raw="test input",
-            embedding=[0.1] * 384,
-            complexity=5
-        )
-        
-        # Inject it before starting should raise error
+        # Inject input before starting should raise error
         with pytest.raises(RuntimeError):
-            core.inject_input(percept)
+            core.inject_input("test input", modality="text")
 
 
 class TestCognitiveCoreAttentionIntegration:
@@ -180,15 +162,9 @@ class TestCognitiveCoreAttentionIntegration:
         # Initialize the queue
         core.input_queue = asyncio.Queue(maxsize=100)
         
-        # Inject multiple percepts with different complexity
+        # Inject multiple raw text inputs
         for i in range(5):
-            percept = WorkspacePercept(
-                modality="text",
-                raw=f"test input {i}",
-                embedding=[float(i) / 10.0] * 384,
-                complexity=10
-            )
-            core.inject_input(percept)
+            core.inject_input(f"test input {i}", modality="text")
         
         # Run a cycle
         await core._cognitive_cycle()
@@ -465,12 +441,14 @@ class TestPerceptionSubsystem:
     
     def test_perception_initialization_custom(self):
         """Test creating PerceptionSubsystem with custom parameters"""
-        perception = PerceptionSubsystem(
-            text_encoder_name="test-encoder",
-            embedding_dim=512,
-            buffer_size=50
-        )
+        config = {
+            "text_model": "all-MiniLM-L6-v2",
+            "cache_size": 500,
+            "enable_image": False,
+        }
+        perception = PerceptionSubsystem(config=config)
         assert perception is not None
+        assert perception.cache_size == 500
     
     def test_modality_type_enum(self):
         """Test ModalityType enum values"""

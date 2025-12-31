@@ -109,7 +109,7 @@ class CognitiveCore:
             attention_budget=self.config["attention_budget"],
             workspace=self.workspace
         )
-        self.perception = PerceptionSubsystem()
+        self.perception = PerceptionSubsystem(config=self.config.get("perception", {}))
         self.action = ActionSubsystem()
         self.affect = AffectSubsystem()
         self.meta_cognition = SelfMonitor()
@@ -119,7 +119,8 @@ class CognitiveCore:
         self.cycle_duration = 1.0 / self.config["cycle_rate_hz"]
         
         # Input queue - will be initialized in start()
-        self.input_queue: Optional[asyncio.Queue[Percept]] = None
+        # Queue holds tuples of (raw_input, modality)
+        self.input_queue: Optional[asyncio.Queue] = None
         
         # Performance metrics
         self.metrics: Dict[str, Any] = {
@@ -244,37 +245,46 @@ class CognitiveCore:
 
     async def _gather_percepts(self) -> List[Percept]:
         """
-        Collect all queued percepts for this cycle.
+        Collect and encode queued inputs for this cycle.
         
-        Drains the input queue (non-blocking) and returns all available percepts.
+        Drains the input queue (non-blocking), encodes raw inputs using
+        the perception subsystem, and returns all available percepts.
         
         Returns:
             List of Percept objects ready for attention processing
         """
-        percepts = []
+        raw_inputs = []
         
         # Check if queue is initialized (it should be after start())
         if self.input_queue is None:
-            return percepts
+            return []
         
         # Drain queue (non-blocking)
         while not self.input_queue.empty():
             try:
-                percepts.append(self.input_queue.get_nowait())
+                raw_inputs.append(self.input_queue.get_nowait())
             except asyncio.QueueEmpty:
                 break
         
+        # Encode all inputs using perception subsystem
+        percepts = []
+        for raw_input, modality in raw_inputs:
+            percept = await self.perception.encode(raw_input, modality)
+            percepts.append(percept)
+        
         return percepts
 
-    def inject_input(self, percept: Percept) -> None:
+    def inject_input(self, raw_input: Any, modality: str = "text") -> None:
         """
         Thread-safe method to add external input.
         
-        Queues percept for processing in the next cognitive cycle. Used by
-        external systems (language input, sensors, etc.) to provide input.
+        Queues raw input for encoding and processing in the next cognitive cycle.
+        The perception subsystem will encode the raw input into a Percept.
+        Used by external systems (language input, sensors, etc.) to provide input.
         
         Args:
-            percept: Percept to inject into the cognitive loop
+            raw_input: Raw data to be encoded (text string, image, audio, dict)
+            modality: Type of input ("text", "image", "audio", "introspection")
             
         Raises:
             RuntimeError: If called before start() (queue not initialized)
@@ -284,10 +294,10 @@ class CognitiveCore:
             raise RuntimeError("CognitiveCore must be started before injecting input")
         
         try:
-            self.input_queue.put_nowait(percept)
-            logger.debug(f"Injected percept: {percept.id}")
+            self.input_queue.put_nowait((raw_input, modality))
+            logger.debug(f"Injected {modality} input for encoding")
         except asyncio.QueueFull:
-            logger.warning("Input queue full, dropping percept")
+            logger.warning("Input queue full, dropping input")
 
     def query_state(self) -> WorkspaceSnapshot:
         """

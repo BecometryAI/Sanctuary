@@ -114,14 +114,16 @@ class ActionSubsystem:
         config: Configuration dictionary
     """
 
-    def __init__(self, config: Optional[Dict] = None) -> None:
+    def __init__(self, config: Optional[Dict] = None, affect: Optional[Any] = None) -> None:
         """
         Initialize the action subsystem.
 
         Args:
             config: Optional configuration dict
+            affect: Optional reference to the affect subsystem for emotional modulation
         """
         self.config = config or {}
+        self.affect = affect
         self.protocol_constraints: List[Any] = []
         self.action_history: deque = deque(maxlen=50)
         self.action_stats: Dict[str, Any] = {
@@ -320,6 +322,7 @@ class ActionSubsystem:
         - Emotional urgency: High arousal boosts priority
         - Recency penalty: Avoid repeating same action
         - Resource cost: Some actions are expensive
+        - Affect modulation: Emotional state influences action priorities
         
         Args:
             action: Action to score
@@ -338,10 +341,13 @@ class ActionSubsystem:
             if matching_goals:
                 goal_boost = matching_goals[0].priority * 0.3
         
-        # 2. Emotional urgency
-        arousal = snapshot.emotions.get("arousal", 0.0)
-        if action.type == ActionType.SPEAK and arousal > 0.7:
-            base_score *= 1.2
+        # 2. Emotional urgency (legacy - now handled by affect subsystem)
+        # Kept for backward compatibility if affect subsystem is not available
+        emotional_boost = 0.0
+        if not self.affect:
+            arousal = snapshot.emotions.get("arousal", 0.0)
+            if action.type == ActionType.SPEAK and arousal > 0.7:
+                emotional_boost = base_score * 0.2
         
         # 3. Recency penalty (avoid repetition)
         recent_same_type = sum(
@@ -355,7 +361,16 @@ class ActionSubsystem:
         if action.type == ActionType.RETRIEVE_MEMORY:
             cost_penalty = 0.1  # Memory search is costly
         
-        final_score = base_score + goal_boost - recency_penalty - cost_penalty
+        # Calculate base final score
+        intermediate_score = base_score + goal_boost + emotional_boost - recency_penalty - cost_penalty
+        intermediate_score = max(0.0, min(1.0, intermediate_score))
+        
+        # 5. Apply affect modulation if available
+        if self.affect:
+            final_score = self.affect.influence_action(intermediate_score, action)
+        else:
+            final_score = intermediate_score
+        
         return max(0.0, min(1.0, final_score))
     
     def register_tool(self, name: str, handler: Callable, description: str) -> None:

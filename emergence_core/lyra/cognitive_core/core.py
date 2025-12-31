@@ -104,14 +104,17 @@ class CognitiveCore:
         # Initialize workspace
         self.workspace = workspace if workspace is not None else GlobalWorkspace()
         
-        # Initialize subsystems
+        # Initialize affect subsystem first (needed by attention and action)
+        self.affect = AffectSubsystem(config=self.config.get("affect", {}))
+        
+        # Initialize subsystems (pass affect to attention and action)
         self.attention = AttentionController(
             attention_budget=self.config["attention_budget"],
-            workspace=self.workspace
+            workspace=self.workspace,
+            affect=self.affect
         )
         self.perception = PerceptionSubsystem(config=self.config.get("perception", {}))
-        self.action = ActionSubsystem()
-        self.affect = AffectSubsystem()
+        self.action = ActionSubsystem(config=self.config.get("action", {}), affect=self.affect)
         self.meta_cognition = SelfMonitor()
         
         # Control flags

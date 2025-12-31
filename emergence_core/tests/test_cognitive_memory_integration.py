@@ -20,7 +20,6 @@ from uuid import uuid4
 from lyra.cognitive_core.memory_integration import MemoryIntegration
 from lyra.cognitive_core.workspace import (
     GlobalWorkspace,
-    WorkspaceSnapshot,
     Goal,
     GoalType,
     Percept,

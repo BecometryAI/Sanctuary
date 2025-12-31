@@ -408,7 +408,7 @@ class TestMetrics:
         core = CognitiveCore()
         manager = ConversationManager(core)
         
-        core_task = asyncio.create_task(core.start())
+        asyncio.create_task(core.start())
         await asyncio.sleep(0.1)
         
         try:

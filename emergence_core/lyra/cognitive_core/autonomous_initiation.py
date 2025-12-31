@@ -20,7 +20,7 @@ preventing isolated self-referential loops.
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 from datetime import datetime, timedelta
 
 from .workspace import GlobalWorkspace, WorkspaceSnapshot, Goal, GoalType

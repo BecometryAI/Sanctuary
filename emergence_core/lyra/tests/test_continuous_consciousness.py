@@ -561,6 +561,7 @@ class TestEndToEndIntegration:
         try:
             await start_task
         except asyncio.CancelledError:
+            # Expected: start_task was cancelled as part of test cleanup
             pass
     
     @pytest.mark.asyncio
@@ -597,6 +598,7 @@ class TestEndToEndIntegration:
         try:
             await start_task
         except asyncio.CancelledError:
+            # Expected: start_task was cancelled as part of test cleanup
             pass
 
 

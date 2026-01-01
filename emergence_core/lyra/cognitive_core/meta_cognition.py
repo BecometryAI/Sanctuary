@@ -348,7 +348,7 @@ class SelfMonitor:
         for goal in snapshot.goals:
             # Check if goal has a type attribute
             goal_type = goal.type if hasattr(goal, 'type') else None
-            if goal_type and str(goal_type) == "maintain_value":
+            if goal_type == GoalType.MAINTAIN_VALUE:
                 goal_priority = goal.priority if hasattr(goal, 'priority') else goal.get('priority', 1.0)
                 if goal_priority < 0.8:
                     goal_desc = goal.description if hasattr(goal, 'description') else goal.get('description', 'unknown')
@@ -917,17 +917,21 @@ class SelfMonitor:
         # Check behavioral pattern deviation
         if len(self.behavioral_log) > 10:
             recent_behaviors = list(self.behavioral_log)[-10:]
-            avg_valence = np.mean([b["snapshot"]["emotions"].get("valence", 0.0) for b in recent_behaviors])
-            current_valence = snapshot.emotions.get("valence", 0.0)
+            valence_values = [b["snapshot"]["emotions"].get("valence", 0.0) for b in recent_behaviors]
             
-            if abs(current_valence - avg_valence) > 0.5:
-                inconsistencies.append({
-                    "type": "emotional_deviation",
-                    "description": "Current emotional state differs significantly from recent pattern",
-                    "expected_valence": avg_valence,
-                    "actual_valence": current_valence,
-                    "severity": abs(current_valence - avg_valence)
-                })
+            # Only compute mean if we have values
+            if valence_values:
+                avg_valence = np.mean(valence_values)
+                current_valence = snapshot.emotions.get("valence", 0.0)
+                
+                if abs(current_valence - avg_valence) > 0.5:
+                    inconsistencies.append({
+                        "type": "emotional_deviation",
+                        "description": "Current emotional state differs significantly from recent pattern",
+                        "expected_valence": float(avg_valence),
+                        "actual_valence": current_valence,
+                        "severity": abs(current_valence - avg_valence)
+                    })
         
         if inconsistencies:
             severity = max(inc.get("severity", 0.5) for inc in inconsistencies)
@@ -971,7 +975,7 @@ class SelfMonitor:
         misalignments = []
         
         # Check if high-value goals are being deprioritized
-        value_goals = [g for g in snapshot.goals if str(g.type) == "maintain_value"]
+        value_goals = [g for g in snapshot.goals if g.type == GoalType.MAINTAIN_VALUE]
         for goal in value_goals:
             priority = goal.priority if hasattr(goal, 'priority') else goal.get('priority', 1.0)
             if priority < 0.6:
@@ -1077,7 +1081,7 @@ class SelfMonitor:
         high_priority_value_goals = 0
         if self.workspace:
             snapshot = self.workspace.broadcast()
-            value_goals = [g for g in snapshot.goals if str(g.type) == "maintain_value"]
+            value_goals = [g for g in snapshot.goals if g.type == GoalType.MAINTAIN_VALUE]
             value_goal_count = len(value_goals)
             high_priority_value_goals = sum(1 for g in value_goals 
                                            if (g.priority if hasattr(g, 'priority') else g.get('priority', 0)) > 0.7)

@@ -255,20 +255,34 @@ class SelfMonitor:
         stats: Meta-cognitive statistics
     """
 
-    def __init__(self, workspace: Optional[GlobalWorkspace] = None, config: Optional[Dict] = None):
+    def __init__(
+        self,
+        workspace: Optional[GlobalWorkspace] = None,
+        config: Optional[Dict] = None,
+        identity: Optional[Any] = None
+    ):
         """
         Initialize the self-monitor.
 
         Args:
             workspace: GlobalWorkspace instance to observe
             config: Optional configuration dict
+            identity: Optional IdentityLoader instance with charter and protocols
         """
         self.workspace = workspace
         self.config = config or {}
+        self.identity = identity
         
-        # Load identity files
-        self.charter_text = self._load_charter()
-        self.protocols_text = self._load_protocols()
+        # Load identity files (use identity if provided, otherwise load from files)
+        if self.identity and self.identity.charter:
+            self.charter_text = self.identity.charter.full_text
+        else:
+            self.charter_text = self._load_charter()
+            
+        if self.identity and self.identity.protocols:
+            self.protocols_text = self._format_protocols(self.identity.protocols)
+        else:
+            self.protocols_text = self._load_protocols()
         
         # Tracking
         self.observation_history = deque(maxlen=100)
@@ -411,6 +425,8 @@ class SelfMonitor:
         """
         Check if recent behavior aligns with charter values.
         
+        Enhanced to use loaded charter instead of hardcoded values.
+        
         Args:
             snapshot: WorkspaceSnapshot containing current state
             
@@ -424,6 +440,11 @@ class SelfMonitor:
         
         # Check for specific value conflicts
         conflicts = []
+        
+        # Get core values from identity (if available)
+        core_values = []
+        if self.identity and self.identity.charter:
+            core_values = self.identity.charter.core_values
         
         # Check for claiming capabilities we don't have
         from .action import ActionType
@@ -452,6 +473,22 @@ class SelfMonitor:
                         "severity": 0.6
                     })
         
+        # Check alignment with core values (if loaded)
+        if core_values:
+            misalignments = []
+            for goal in snapshot.goals:
+                for value in core_values:
+                    if self._goal_conflicts_with_value(goal, value):
+                        goal_desc = goal.description if hasattr(goal, 'description') else goal.get('description', 'unknown')
+                        misalignments.append({
+                            "goal": goal_desc,
+                            "value": value,
+                            "severity": 0.7
+                        })
+            
+            if misalignments:
+                conflicts.extend(misalignments)
+        
         if conflicts:
             return Percept(
                 modality="introspection",
@@ -459,7 +496,8 @@ class SelfMonitor:
                     "type": "value_conflict",
                     "description": f"Detected {len(conflicts)} potential value conflicts",
                     "conflicts": conflicts,
-                    "charter_excerpt": self._relevant_charter_section(conflicts)
+                    "charter_excerpt": self._relevant_charter_section(conflicts),
+                    "charter_values": core_values if core_values else []
                 },
                 embedding=self._compute_embedding("value conflict detected"),
                 complexity=25,
@@ -468,6 +506,38 @@ class SelfMonitor:
             )
         
         return None
+    
+    def _goal_conflicts_with_value(self, goal, value: str) -> bool:
+        """
+        Check if a goal conflicts with a core value.
+        
+        Args:
+            goal: Goal object to check
+            value: Core value string
+            
+        Returns:
+            True if goal conflicts with value, False otherwise
+        """
+        # Implement simple keyword-based checking
+        # In a real implementation, this would use more sophisticated analysis
+        goal_desc = (goal.description if hasattr(goal, 'description') 
+                    else goal.get('description', '')).lower()
+        value_lower = value.lower()
+        
+        # Check for obvious conflicts
+        if "honesty" in value_lower or "truthfulness" in value_lower:
+            if "deceive" in goal_desc or "lie" in goal_desc or "mislead" in goal_desc:
+                return True
+        
+        if "respect" in value_lower or "autonomy" in value_lower:
+            if "manipulate" in goal_desc or "coerce" in goal_desc:
+                return True
+        
+        if "harm" in value_lower or "non-maleficence" in value_lower:
+            if "harm" in goal_desc and "prevent" not in goal_desc:
+                return True
+        
+        return False
     
     def _relevant_charter_section(self, conflicts: List[Dict]) -> str:
         """
@@ -799,6 +869,30 @@ class SelfMonitor:
             return protocols_path.read_text()
         logger.warning("Protocols file not found at data/identity/protocols.md")
         return ""
+    
+    def _format_protocols(self, protocols: List) -> str:
+        """
+        Format loaded protocols for prompt context.
+        
+        Args:
+            protocols: List of ProtocolDocument objects
+            
+        Returns:
+            Formatted protocol text
+        """
+        if not protocols:
+            return ""
+        
+        lines = ["# Active Protocols\n"]
+        for proto in protocols[:10]:  # Top 10 protocols
+            lines.append(f"\n## {proto.name} (Priority: {proto.priority})")
+            lines.append(f"- {proto.description}")
+            if proto.trigger_conditions:
+                lines.append(f"- Triggers: {', '.join(proto.trigger_conditions[:3])}")
+            if proto.actions:
+                lines.append(f"- Actions: {', '.join(proto.actions[:3])}")
+        
+        return "\n".join(lines)
     
     def _compute_embedding(self, text: str) -> List[float]:
         """

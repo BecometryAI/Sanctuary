@@ -127,22 +127,36 @@ class CognitiveCore:
         # Initialize affect subsystem first (needed by attention and action)
         self.affect = AffectSubsystem(config=self.config.get("affect", {}))
         
-        # Initialize subsystems (pass affect to attention and action)
+        # Initialize identity loader (loads charter and protocols)
+        from .identity_loader import IdentityLoader
+        identity_dir = Path(self.config.get("identity_dir", "data/identity"))
+        self.identity = IdentityLoader(identity_dir=identity_dir)
+        self.identity.load_all()
+        
+        # Initialize subsystems (pass affect and identity where needed)
         self.attention = AttentionController(
             attention_budget=self.config["attention_budget"],
             workspace=self.workspace,
             affect=self.affect
         )
         self.perception = PerceptionSubsystem(config=self.config.get("perception", {}))
-        self.action = ActionSubsystem(config=self.config.get("action", {}), affect=self.affect)
+        self.action = ActionSubsystem(
+            config=self.config.get("action", {}),
+            affect=self.affect,
+            identity=self.identity
+        )
         
         # Store references for subsystems to access each other
         self.workspace.affect = self.affect
         self.workspace.action_subsystem = self.action
         self.workspace.perception = self.perception
         
-        # Initialize meta-cognition (needs workspace reference)
-        self.meta_cognition = SelfMonitor(workspace=self.workspace, config=self.config.get("meta_cognition", {}))
+        # Initialize meta-cognition (needs workspace reference and identity)
+        self.meta_cognition = SelfMonitor(
+            workspace=self.workspace,
+            config=self.config.get("meta_cognition", {}),
+            identity=self.identity
+        )
         
         # Create introspective journal
         from .meta_cognition import IntrospectiveJournal
@@ -230,10 +244,11 @@ class CognitiveCore:
             config=self.config.get("language_input", {})
         )
         
-        # Initialize language output generator (needs LLM client)
+        # Initialize language output generator (needs LLM client and identity)
         self.language_output = LanguageOutputGenerator(
             self.llm_output_client,
-            config=self.config.get("language_output", {})
+            config=self.config.get("language_output", {}),
+            identity=self.identity
         )
         
         # Control flags

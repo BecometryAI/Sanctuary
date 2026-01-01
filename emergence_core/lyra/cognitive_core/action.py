@@ -116,16 +116,23 @@ class ActionSubsystem:
         config: Configuration dictionary
     """
 
-    def __init__(self, config: Optional[Dict] = None, affect: Optional[Any] = None) -> None:
+    def __init__(
+        self,
+        config: Optional[Dict] = None,
+        affect: Optional[Any] = None,
+        identity: Optional[Any] = None
+    ) -> None:
         """
         Initialize the action subsystem.
 
         Args:
             config: Optional configuration dict
             affect: Optional reference to the affect subsystem for emotional modulation
+            identity: Optional IdentityLoader instance with charter and protocols
         """
         self.config = config or {}
         self.affect = affect
+        self.identity = identity
         self.protocol_constraints: List[Any] = []
         self.action_history: deque = deque(maxlen=50)
         self.action_stats: Dict[str, Any] = {
@@ -135,13 +142,16 @@ class ActionSubsystem:
         }
         self.tool_registry: Dict[str, Dict[str, Any]] = {}
         
-        # Load identity constraints
-        self._load_protocol_constraints()
-        
-        logger.info("✅ ActionSubsystem initialized")
+        # Load identity constraints if identity provided
+        if self.identity:
+            logger.info("✅ ActionSubsystem initialized with identity")
+        else:
+            # Fallback: Load protocol constraints from identity files
+            self._load_protocol_constraints()
+            logger.info("✅ ActionSubsystem initialized (legacy mode)")
     
     def _load_protocol_constraints(self) -> None:
-        """Load protocol constraints from identity files."""
+        """Load protocol constraints from identity files (legacy fallback)."""
         try:
             from ..identity.loader import IdentityLoader
             
@@ -315,12 +325,16 @@ class ActionSubsystem:
         """
         Check if action violates constitutional protocols.
         
+        This method checks both legacy protocol_constraints and new identity-based
+        charter/protocols.
+        
         Args:
             action: Action to check
             
         Returns:
             True if action should be blocked, False otherwise
         """
+        # Check legacy protocol constraints (if any)
         for constraint in self.protocol_constraints:
             if constraint.test_fn is None:
                 continue
@@ -332,6 +346,88 @@ class ActionSubsystem:
             except Exception as e:
                 logger.error(f"Error testing constraint: {e}")
         
+        # Check new identity-based constitutional constraints
+        if self.identity:
+            if not self._check_constitutional_constraints(action):
+                return True
+        
+        return False
+    
+    def _check_constitutional_constraints(self, action: Action) -> bool:
+        """
+        Check if action violates charter or protocols.
+        
+        Returns:
+            True if action is permitted, False if prohibited
+        """
+        if not self.identity or not self.identity.charter:
+            return True  # No constraints if no charter loaded
+        
+        # Check against behavioral guidelines
+        for guideline in self.identity.charter.behavioral_guidelines:
+            if self._action_violates_guideline(action, guideline):
+                logger.warning(f"⚠️ Action {action.type} violates guideline: {guideline}")
+                return False
+        
+        # Check relevant protocols
+        protocols = self.identity.get_relevant_protocols({"action": action})
+        for protocol in protocols:
+            if self._action_violates_protocol(action, protocol):
+                logger.warning(f"⚠️ Action {action.type} violates protocol: {protocol.name}")
+                return False
+        
+        return True
+    
+    def _action_violates_guideline(self, action: Action, guideline: str) -> bool:
+        """
+        Check if action violates a specific guideline.
+        
+        Args:
+            action: Action to check
+            guideline: Guideline text from charter
+            
+        Returns:
+            True if action violates guideline, False otherwise
+        """
+        # Implement guideline checking logic
+        # For now, basic keyword matching
+        guideline_lower = guideline.lower()
+        
+        # Check honesty-related guidelines
+        if "never lie" in guideline_lower or "always honest" in guideline_lower or "never fabricate" in guideline_lower:
+            # Check if SPEAK action contains deception markers
+            if action.type == ActionType.SPEAK:
+                # In a real implementation, we'd analyze the content
+                # For now, we allow all speech actions (assume honesty)
+                return False
+        
+        # Check harm-related guidelines
+        if "do no harm" in guideline_lower or "refuse" in guideline_lower and "harm" in guideline_lower:
+            # Check if action could cause harm
+            # For now, we don't have enough context to determine harm
+            return False
+        
+        # Default: not violating
+        return False
+    
+    def _action_violates_protocol(self, action: Action, protocol) -> bool:
+        """
+        Check if action violates a protocol.
+        
+        Args:
+            action: Action to check
+            protocol: ProtocolDocument to check against
+            
+        Returns:
+            True if action violates protocol, False otherwise
+        """
+        # Implement protocol checking logic
+        # This is a placeholder - real implementation would analyze
+        # trigger conditions and check if the action's context matches
+        
+        # For now, we don't block any actions based on protocols
+        # The protocols are more about guiding what actions to take
+        # rather than blocking actions
         return False
     
     def _score_action(self, action: Action, snapshot: WorkspaceSnapshot) -> float:

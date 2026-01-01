@@ -73,7 +73,7 @@ class LanguageOutputGenerator:
         timeout: Generation timeout in seconds
     """
     
-    def __init__(self, llm_client, config: Optional[Dict] = None):
+    def __init__(self, llm_client, config: Optional[Dict] = None, identity: Optional[Any] = None):
         """
         Initialize the language output generator.
         
@@ -86,9 +86,11 @@ class LanguageOutputGenerator:
                 - use_fallback_on_error: Use fallback on LLM failure (default: True)
                 - timeout: Generation timeout in seconds (default: 10.0)
                 - emotional_style_modulation: Apply emotion-based styling (default: True)
+            identity: Optional IdentityLoader instance with charter and protocols
         """
         self.llm = llm_client
         self.config = config or {}
+        self.identity = identity
         
         # Initialize fallback generator
         self.fallback_generator = FallbackOutputGenerator(config)
@@ -101,9 +103,16 @@ class LanguageOutputGenerator:
         self.timeout = self.config.get("timeout", 10.0)
         self.emotional_style_modulation = self.config.get("emotional_style_modulation", True)
         
-        # Load identity
-        self.charter_text = self._load_charter()
-        self.protocols_text = self._load_protocols()
+        # Load identity (use identity if provided, otherwise load from files)
+        if self.identity and self.identity.charter:
+            self.charter_text = self.identity.charter.full_text
+        else:
+            self.charter_text = self._load_charter()
+            
+        if self.identity and self.identity.protocols:
+            self.protocols_text = self._format_protocols(self.identity.protocols)
+        else:
+            self.protocols_text = self._load_protocols()
         
         # Generation parameters
         self.temperature = self.config.get("temperature", 0.7)
@@ -268,6 +277,25 @@ class LanguageOutputGenerator:
                 logger.warning(f"Failed to load protocols: {e}")
                 
         return ""
+    
+    def _format_protocols(self, protocols: List) -> str:
+        """
+        Format loaded protocols for prompt.
+        
+        Args:
+            protocols: List of ProtocolDocument objects
+            
+        Returns:
+            Formatted protocol text for prompt
+        """
+        if not protocols:
+            return ""
+        
+        lines = ["# Key Protocols:\n"]
+        for proto in protocols[:5]:  # Top 5 protocols by priority
+            lines.append(f"- **{proto.name}**: {proto.description}")
+        
+        return "\n".join(lines)
     
     def _build_prompt(self, snapshot: WorkspaceSnapshot, context: Dict) -> str:
         """

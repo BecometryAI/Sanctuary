@@ -22,7 +22,6 @@ from lyra.cognitive_core.workspace import (
     GlobalWorkspace, WorkspaceSnapshot, Percept, Goal, GoalType
 )
 from lyra.cognitive_core.action import Action, ActionType
-from lyra.cognitive_core.affect import AffectSubsystem
 
 
 class TestSelfModelTracking:

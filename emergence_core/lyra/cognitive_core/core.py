@@ -22,6 +22,7 @@ from typing import Optional, Dict, Any, List
 from collections import deque
 from statistics import mean
 from datetime import datetime
+from pathlib import Path
 
 from .workspace import GlobalWorkspace, Percept, WorkspaceSnapshot, GoalType
 from .attention import AttentionController
@@ -142,6 +143,12 @@ class CognitiveCore:
         
         # Initialize meta-cognition (needs workspace reference)
         self.meta_cognition = SelfMonitor(workspace=self.workspace, config=self.config.get("meta_cognition", {}))
+        
+        # Create introspective journal
+        from .meta_cognition import IntrospectiveJournal
+        journal_dir = Path(self.config.get("journal_dir", "data/introspection"))
+        journal_dir.mkdir(parents=True, exist_ok=True)
+        self.introspective_journal = IntrospectiveJournal(journal_dir)
         
         # Initialize memory integration
         self.memory = MemoryIntegration(workspace=self.workspace, config=self.config.get("memory", {}))
@@ -382,12 +389,28 @@ class CognitiveCore:
             # 5. ACTION: Decide what to do
             actions = self.action.decide(self.workspace.broadcast())
             
+            # Get snapshot before executing actions
+            snapshot_before_action = self.workspace.broadcast()
+            
             # Execute immediate actions
             for action in actions:
                 await self._execute_action(action)
+                
+                # Extract action outcome for self-model update
+                actual_outcome = self._extract_action_outcome(action)
+                
+                # Update self-model based on action execution
+                self.meta_cognition.update_self_model(snapshot_before_action, actual_outcome)
             
             # 6. META-COGNITION: Introspect
             meta_percepts = self.meta_cognition.observe(self.workspace.broadcast())
+            
+            # Record significant observations to journal
+            for percept in meta_percepts:
+                if hasattr(percept, 'raw') and isinstance(percept.raw, dict):
+                    percept_type = percept.raw.get("type")
+                    if percept_type in ["self_model_update", "behavioral_inconsistency", "existential_question"]:
+                        self.introspective_journal.record_observation(percept.raw)
             
             # 7. AUTONOMOUS INITIATION: Check for autonomous speech triggers
             snapshot = self.workspace.broadcast()
@@ -743,3 +766,35 @@ class CognitiveCore:
                 
         except Exception as e:
             logger.error(f"Error executing action {action.type}: {e}", exc_info=True)
+    
+    def _extract_action_outcome(self, action: Any) -> Dict[str, Any]:
+        """
+        Extract outcome information from an executed action.
+        
+        Args:
+            action: The action that was executed
+            
+        Returns:
+            Dictionary containing outcome details for self-model update
+        """
+        from .action import ActionType
+        
+        outcome = {
+            "action_type": str(action.type) if hasattr(action, 'type') else "unknown",
+            "timestamp": datetime.now().isoformat(),
+            "success": True,  # Default to True, override if we detect failure
+            "reason": ""
+        }
+        
+        # Add action-specific details
+        if hasattr(action, 'metadata'):
+            outcome["metadata"] = action.metadata
+        
+        if hasattr(action, 'reason'):
+            outcome["reason"] = action.reason
+        
+        # Check for failure indicators
+        if hasattr(action, 'status'):
+            outcome["success"] = action.status == "success"
+        
+        return outcome

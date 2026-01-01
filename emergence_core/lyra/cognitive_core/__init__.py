@@ -26,7 +26,7 @@ from .attention import AttentionController
 from .perception import PerceptionSubsystem
 from .action import ActionSubsystem
 from .affect import AffectSubsystem
-from .meta_cognition import SelfMonitor
+from .meta_cognition import SelfMonitor, IntrospectiveJournal
 from .memory_integration import MemoryIntegration
 from .language_input import LanguageInputParser, IntentType, Intent, ParseResult
 from .language_output import LanguageOutputGenerator
@@ -68,6 +68,7 @@ __all__ = [
     "ActionSubsystem",
     "AffectSubsystem",
     "SelfMonitor",
+    "IntrospectiveJournal",
     "MemoryIntegration",
     "LanguageInputParser",
     "IntentType",

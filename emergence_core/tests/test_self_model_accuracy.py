@@ -5,7 +5,6 @@ Comprehensive tests for prediction tracking, accuracy metrics,
 self-model refinement, reporting, and temporal tracking.
 """
 import pytest
-from unittest.mock import Mock
 from datetime import datetime, timedelta
 from collections import deque
 import json

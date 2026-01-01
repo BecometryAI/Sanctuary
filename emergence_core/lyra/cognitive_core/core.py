@@ -401,6 +401,28 @@ class CognitiveCore:
             # Get snapshot before executing actions
             snapshot_before_action = self.workspace.broadcast()
             
+            # Phase 4.3: Record prediction before action execution
+            prediction_id = None
+            if self.meta_cognition and actions:
+                # Make prediction about action outcome
+                predicted_outcome = self.meta_cognition.predict_behavior(snapshot_before_action)
+                
+                # Record prediction for later validation
+                if predicted_outcome and predicted_outcome.get("likely_actions"):
+                    prediction_id = self.meta_cognition.record_prediction(
+                        category="action",
+                        predicted_state={
+                            "action": str(actions[0].type) if actions else "no_action",
+                            "predicted_outcome": predicted_outcome
+                        },
+                        confidence=predicted_outcome.get("confidence", 0.5),
+                        context={
+                            "cycle": self.metrics['total_cycles'],
+                            "goal_count": len(snapshot_before_action.goals),
+                            "emotion_valence": snapshot_before_action.emotions.get("valence", 0.0)
+                        }
+                    )
+            
             # Execute immediate actions
             for action in actions:
                 await self._execute_action(action)
@@ -410,9 +432,29 @@ class CognitiveCore:
                 
                 # Update self-model based on action execution
                 self.meta_cognition.update_self_model(snapshot_before_action, actual_outcome)
+                
+                # Phase 4.3: Validate prediction after action execution
+                if prediction_id and actual_outcome:
+                    validated = self.meta_cognition.validate_prediction(
+                        prediction_id,
+                        actual_state={
+                            "action": str(action.type),
+                            "result": actual_outcome
+                        }
+                    )
+                    
+                    # Trigger self-model refinement if error detected
+                    if validated and not validated.correct and validated.error_magnitude > self.meta_cognition.refinement_threshold:
+                        self.meta_cognition.refine_self_model_from_errors([validated])
             
             # 6. META-COGNITION: Introspect
             meta_percepts = self.meta_cognition.observe(self.workspace.broadcast())
+            
+            # Phase 4.3: Auto-validate pending predictions
+            if self.meta_cognition:
+                auto_validated = self.meta_cognition.auto_validate_predictions(snapshot_before_action)
+                if auto_validated:
+                    logger.debug(f"🔍 Auto-validated {len(auto_validated)} predictions")
             
             # Record significant observations to journal
             for percept in meta_percepts:
@@ -455,6 +497,12 @@ class CognitiveCore:
             # 11. METRICS: Track performance
             cycle_time = time.time() - cycle_start
             self._update_metrics(cycle_time)
+            
+            # Phase 4.3: Periodic accuracy snapshots (every 100 cycles)
+            if self.meta_cognition and self.metrics['total_cycles'] % 100 == 0:
+                snapshot = self.meta_cognition.record_accuracy_snapshot()
+                logger.info(f"📸 Accuracy snapshot: {snapshot.overall_accuracy:.1%} accuracy, "
+                           f"{snapshot.prediction_count} predictions")
             
             # 12. RATE LIMITING: Maintain ~10 Hz
             sleep_time = max(0, self.cycle_duration - cycle_time)

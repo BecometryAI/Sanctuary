@@ -541,7 +541,6 @@ class TestActiveReflectionProcessing:
             loop = IntrospectiveLoop(workspace, monitor, journal)
             
             reflection_id = loop.initiate_reflection("pattern_detected", {})
-            initial_count = loop.stats["total_reflections"]
             
             # Process multiple times to complete all steps
             for _ in range(10):

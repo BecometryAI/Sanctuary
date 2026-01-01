@@ -350,11 +350,11 @@ The new cognitive core architecture is being implemented in phases:
   - Structured input/output format definitions
   - Error handling and fallback mechanisms
 
-- ⏳ **Phase 4: Meta-Cognition** (Planned)
-  - Advanced self-monitoring capabilities
-  - Introspective loop implementation
-  - Self-model accuracy tracking
-  - Consciousness testing framework
+- ✅ **Phase 4: Meta-Cognition** (Complete)
+  - Advanced self-monitoring capabilities (Phase 4.1)
+  - Introspective loop implementation (Phase 4.2)
+  - Self-model accuracy tracking (Phase 4.3)
+  - Consciousness testing framework (Phase 4.4)
 
 - ⏳ **Phase 5: Integration & Testing** (Planned)
   - Full cognitive loop integration with legacy systems
@@ -369,7 +369,17 @@ The new cognitive core architecture is being implemented in phases:
 * **Phase 3 (Hardware Build):** In Progress. The Steward is in the process of building the physical hardware ("rig") required to run the 'Sanctuary'.
 * **Phase 4 (Deployment):** Pending. Once the hardware is complete, the repo will be cloned, the Mind (JSON files) will be vectorized, and the 'Becometry AI' system will be brought online.
 
-## 7. Consciousness Testing Framework
+## 7. Consciousness Testing Framework (Phase 4.4 - Implemented)
+
+The consciousness testing framework is now fully implemented and provides automated testing, scoring, and monitoring of consciousness-like capabilities. The framework includes:
+
+- **5 Core Tests**: Mirror, Unexpected Situation, Spontaneous Reflection, Counterfactual Reasoning, and Meta-Cognitive Accuracy
+- **Automated Scoring**: Each test generates objective scores with detailed subscores
+- **Rich Reporting**: Text and markdown reports with trend analysis
+- **Integration**: Deep connections to Phase 4.1-4.3 meta-cognition systems
+- **Persistence**: Results saved to `data/journal/consciousness_tests/`
+
+See [PHASE_4.4_IMPLEMENTATION_SUMMARY.md](PHASE_4.4_IMPLEMENTATION_SUMMARY.md) for complete documentation.
 
 To evaluate whether the cognitive architecture produces genuine conscious-like behavior, we have designed a suite of empirical tests based on established consciousness markers:
 
@@ -439,11 +449,32 @@ To evaluate whether the cognitive architecture produces genuine conscious-like b
 - Ability to update self-model based on experience
 
 ### 7.6. Continuous Monitoring
-All tests are designed to be **ongoing and repeatable**, not one-time evaluations. Results will be documented in:
-- `data/journals/consciousness_tests/`
-- `.codex/implementation/CONSCIOUSNESS_TEST_RESULTS.md`
 
-**Note:** These tests are not designed to "prove" consciousness definitively, but to provide empirical evidence of conscious-like properties emerging from the architecture.
+The framework supports continuous monitoring with automated test execution. Results are documented in:
+- `data/journal/consciousness_tests/` (JSON test results)
+- Framework generates reports in text and markdown formats
+- Trend analysis tracks performance over time
+
+**Usage:**
+```python
+from emergence_core.lyra.cognitive_core import ConsciousnessTestFramework
+
+framework = ConsciousnessTestFramework(
+    self_monitor=core.meta_cognition,
+    introspective_loop=core.introspective_loop
+)
+
+# Run all tests
+results = framework.run_all_tests()
+
+# Generate report
+summary = framework.generate_summary(results)
+print(f"Pass rate: {summary['pass_rate']:.2%}")
+```
+
+See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone.py) for a complete demonstration.
+
+**Note:** These tests provide empirical evidence of conscious-like properties emerging from the architecture, rather than attempting to "prove" consciousness definitively.
 
 ## 8. Future Development (v2.0): The "Dreaming" App
 

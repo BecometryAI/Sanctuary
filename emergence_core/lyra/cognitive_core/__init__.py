@@ -54,6 +54,17 @@ from .existential_reflection import ExistentialReflection
 from .interaction_patterns import InteractionPatternAnalysis
 from .continuous_consciousness import ContinuousConsciousnessController
 from .introspective_loop import IntrospectiveLoop, ActiveReflection, ReflectionTrigger
+from .consciousness_tests import (
+    ConsciousnessTest,
+    TestResult,
+    MirrorTest,
+    UnexpectedSituationTest,
+    SpontaneousReflectionTest,
+    CounterfactualReasoningTest,
+    MetaCognitiveAccuracyTest,
+    ConsciousnessTestFramework,
+    ConsciousnessReportGenerator
+)
 
 __all__ = [
     "CognitiveCore",
@@ -103,4 +114,13 @@ __all__ = [
     "IntrospectiveLoop",
     "ActiveReflection",
     "ReflectionTrigger",
+    "ConsciousnessTest",
+    "TestResult",
+    "MirrorTest",
+    "UnexpectedSituationTest",
+    "SpontaneousReflectionTest",
+    "CounterfactualReasoningTest",
+    "MetaCognitiveAccuracyTest",
+    "ConsciousnessTestFramework",
+    "ConsciousnessReportGenerator",
 ]

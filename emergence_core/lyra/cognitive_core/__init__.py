@@ -24,7 +24,7 @@ from .workspace import (
 )
 from .attention import AttentionController
 from .perception import PerceptionSubsystem
-from .action import ActionSubsystem
+from .action import ActionSubsystem, Action, ActionType
 from .affect import AffectSubsystem
 from .meta_cognition import SelfMonitor, IntrospectiveJournal
 from .memory_integration import MemoryIntegration
@@ -78,6 +78,8 @@ __all__ = [
     "AttentionController",
     "PerceptionSubsystem",
     "ActionSubsystem",
+    "Action",
+    "ActionType",
     "AffectSubsystem",
     "SelfMonitor",
     "IntrospectiveJournal",

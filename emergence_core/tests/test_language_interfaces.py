@@ -13,7 +13,7 @@ Tests cover:
 
 import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import Mock, AsyncMock
 
 from lyra.cognitive_core.llm_client import (
     LLMClient,

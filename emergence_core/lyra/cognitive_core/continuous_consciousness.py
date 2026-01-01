@@ -135,8 +135,9 @@ class ContinuousConsciousnessController:
         2. Occasionally reviews memories (probabilistic)
         3. Occasionally generates existential reflections (probabilistic)
         4. Rarely performs pattern analysis (probabilistic)
-        5. Processes all generated percepts through attention and affect
-        6. Checks for autonomous speech triggers
+        5. Runs introspective loop for proactive self-reflection (Phase 4.2)
+        6. Processes all generated percepts through attention and affect
+        7. Checks for autonomous speech triggers
         """
         # ALWAYS: Generate temporal percepts
         temporal_percepts = self.core.temporal_awareness.generate_temporal_percepts()
@@ -178,6 +179,31 @@ class ContinuousConsciousnessController:
                 logger.debug("📊 Performed pattern analysis")
             except Exception as e:
                 logger.error(f"Error in pattern analysis: {e}")
+        
+        # INTROSPECTIVE LOOP: Run reflection cycle (Phase 4.2)
+        try:
+            introspective_percepts = await self.core.introspective_loop.run_reflection_cycle()
+            
+            # Add introspective percepts to workspace
+            for percept in introspective_percepts:
+                self.core.workspace.add_percept(percept)
+            
+            if introspective_percepts:
+                logger.debug(f"🔍 Generated {len(introspective_percepts)} introspective percepts")
+            
+            # Generate meta-cognitive goals
+            snapshot = self.core.workspace.broadcast()
+            meta_goals = self.core.introspective_loop.generate_meta_cognitive_goals(snapshot)
+            
+            # Add meta-cognitive goals to workspace
+            for goal in meta_goals:
+                self.core.workspace.add_goal(goal)
+            
+            if meta_goals:
+                logger.debug(f"🎯 Created {len(meta_goals)} meta-cognitive goals")
+                
+        except Exception as e:
+            logger.error(f"Error in introspective loop: {e}")
         
         # Process idle components
         await self._process_idle_components()

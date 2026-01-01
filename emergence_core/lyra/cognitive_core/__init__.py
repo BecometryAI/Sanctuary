@@ -53,6 +53,7 @@ from .autonomous_memory_review import AutonomousMemoryReview
 from .existential_reflection import ExistentialReflection
 from .interaction_patterns import InteractionPatternAnalysis
 from .continuous_consciousness import ContinuousConsciousnessController
+from .introspective_loop import IntrospectiveLoop, ActiveReflection, ReflectionTrigger
 
 __all__ = [
     "CognitiveCore",
@@ -99,4 +100,7 @@ __all__ = [
     "ExistentialReflection",
     "InteractionPatternAnalysis",
     "ContinuousConsciousnessController",
+    "IntrospectiveLoop",
+    "ActiveReflection",
+    "ReflectionTrigger",
 ]

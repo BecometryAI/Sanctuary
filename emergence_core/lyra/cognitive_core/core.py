@@ -178,6 +178,15 @@ class CognitiveCore:
             config=self.config.get("pattern_analysis", {})
         )
         
+        # Initialize introspective loop (Phase 4.2)
+        from .introspective_loop import IntrospectiveLoop
+        self.introspective_loop = IntrospectiveLoop(
+            workspace=self.workspace,
+            self_monitor=self.meta_cognition,
+            journal=self.introspective_journal,
+            config=self.config.get("introspective_loop", {})
+        )
+        
         self.continuous_consciousness = ContinuousConsciousnessController(
             self,
             config=self.config.get("continuous_consciousness", {})

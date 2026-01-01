@@ -9,7 +9,6 @@ from datetime import datetime
 from pathlib import Path
 import json
 import tempfile
-import shutil
 
 
 def test_imports():

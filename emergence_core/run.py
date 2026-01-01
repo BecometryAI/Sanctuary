@@ -1,4 +1,6 @@
 # Start the Lyra Emergence server
+# DEPRECATED: This server uses the old API which depends on deleted
+# router/specialist architecture. Use run_cognitive_core.py instead.
 import uvicorn
 import sys
 import signal

@@ -1,6 +1,10 @@
 """
 Simplified Discord Bot for Lyra - Optimized for Quick Testing
 
+DEPRECATED: This Discord bot uses the old router/specialist architecture
+which has been removed. It is no longer functional. Integration with the
+new pure GWT cognitive core is needed.
+
 This version avoids heavy model loading during import by using lazy initialization.
 """
 import asyncio

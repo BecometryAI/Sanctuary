@@ -1,5 +1,9 @@
 """
 API server for interacting with the consciousness core
+
+DEPRECATED: This API server was built for the old "Cognitive Committee" 
+specialist architecture. It is no longer functional after the removal of
+the router/specialist system. Use run_cognitive_core.py instead.
 """
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.staticfiles import StaticFiles

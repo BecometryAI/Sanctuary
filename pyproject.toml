@@ -60,6 +60,7 @@ dependencies = [
     # Utilities
     "python-dotenv>=1.2.1",
     "pydantic>=2.12.4",
+    "pyjwt>=2.8.0",  # Required for JWT token handling in tests
 ]
 
 [tool.pytest.ini_options]

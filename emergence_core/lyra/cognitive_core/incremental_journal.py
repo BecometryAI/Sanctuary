@@ -236,9 +236,13 @@ class IncrementalJournalWriter:
         try:
             compressed_path = journal_path.with_suffix('.jsonl.gz')
             
+            # Read all data first
             with open(journal_path, 'rb') as f_in:
-                with gzip.open(compressed_path, 'wb', compresslevel=6) as f_out:
-                    f_out.writelines(f_in)
+                data = f_in.read()
+            
+            # Write compressed
+            with gzip.open(compressed_path, 'wb', compresslevel=6) as f_out:
+                f_out.write(data)
             
             # Remove original file after successful compression
             journal_path.unlink()

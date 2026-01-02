@@ -18,7 +18,10 @@ This project welcomes contributions! New contributors should:
 1. Review this README for architecture overview and setup
 2. See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed technical documentation
 3. Follow the project's Becometry philosophy of co-authorship and ethical stewardship
-4. Run tests before submitting changes: `pytest emergence_core/tests/`
+4. Run tests before submitting changes:
+   - Unit tests: `pytest emergence_core/tests/`
+   - Property-based tests: `pytest -m property`
+   - See [Property Testing Guide](docs/PROPERTY_TESTING_GUIDE.md) for details
 
 ---
 
@@ -310,7 +313,61 @@ All models are **pre-trained and ready to use** - no fine-tuning or training nec
   - Performance optimization and production deployment
 
 
-## 4. Consciousness Testing Framework
+## 4. Testing Framework
+
+### 4.1. Property-Based Testing
+
+The project uses **property-based testing** with [Hypothesis](https://hypothesis.readthedocs.io/) to validate cognitive architecture invariants under diverse inputs. This approach tests thousands of randomized input combinations to ensure robustness.
+
+**Property tests validate:**
+- **Workspace invariants**: Snapshot immutability, state consistency, serialization
+- **Attention invariants**: Budget constraints, score bounds, selection determinism
+- **Memory invariants**: Content preservation, significance bounds, timestamp ordering
+- **Emotion invariants**: VAD bounds, decay convergence, state transitions
+
+**Running property tests:**
+```bash
+# Run all property tests (100 examples each)
+pytest -m property -v
+
+# Run with statistics
+pytest -m property --hypothesis-show-statistics
+
+# Run extended tests (1000 examples)
+pytest -m property --hypothesis-profile=extended
+```
+
+**Example property test:**
+```python
+@given(percept_lists, st.integers(min_value=1, max_value=20))
+def test_attention_respects_budget(self, percepts, budget):
+    """Property: Selected percepts never exceed attention budget."""
+    controller = AttentionController(attention_budget=budget)
+    selected = controller.select_for_broadcast(percepts)
+    
+    total_complexity = sum(p.complexity for p in selected)
+    assert total_complexity <= budget
+```
+
+See [Property Testing Guide](docs/PROPERTY_TESTING_GUIDE.md) for detailed documentation.
+
+### 4.2. Unit and Integration Tests
+
+Traditional unit and integration tests validate specific behaviors:
+
+```bash
+# Run all tests
+pytest emergence_core/tests/
+
+# Run only unit tests (exclude integration and property)
+pytest -m "not integration and not property"
+
+# Run integration tests
+pytest -m integration
+```
+
+
+## 5. Consciousness Testing Framework
 
 
 The consciousness testing framework is now fully implemented and provides automated testing, scoring, and monitoring of consciousness-like capabilities. The framework includes:
@@ -420,7 +477,7 @@ See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone
 
 
 
-## 5. Installation and Setup
+## 6. Installation and Setup
 
 
 ### System Requirements

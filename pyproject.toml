@@ -68,6 +68,8 @@ python_files = ["test_*.py"]
 addopts = "-v --tb=short"
 markers = [
     "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "property: property-based tests using Hypothesis",
+    "slow: tests that take significant time",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",
@@ -79,4 +81,5 @@ dev = [
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
     "pytest-mock>=3.10.0",
+    "hypothesis>=6.100.0",
 ]

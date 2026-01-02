@@ -359,6 +359,7 @@ class TestCheckpointManager:
             try:
                 await task
             except asyncio.CancelledError:
+                # Expected: the auto-save task is cancelled as part of test cleanup.
                 pass
             
             # Should have created multiple checkpoints

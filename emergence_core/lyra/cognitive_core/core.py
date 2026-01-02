@@ -417,6 +417,14 @@ class CognitiveCore:
                    f"avg_cycle_time={avg_cycle_time*1000:.1f}ms, "
                    f"percepts_processed={self.metrics['percepts_processed']}")
         
+        # Close introspective journal to ensure all entries are saved
+        try:
+            if hasattr(self, 'introspective_journal') and self.introspective_journal:
+                self.introspective_journal.close()
+                logger.info("💾 Introspective journal closed successfully")
+        except Exception as e:
+            logger.error(f"❌ Failed to close introspective journal: {e}")
+        
         # Save final workspace state on shutdown
         checkpoint_config = self.config.get("checkpointing", {})
         if checkpoint_config.get("checkpoint_on_shutdown", True) and self.checkpoint_manager:

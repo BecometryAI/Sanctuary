@@ -20,12 +20,13 @@ import uuid
 from typing import Optional, Dict, Any, List
 from collections import deque
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from dataclasses import dataclass, field
 
 import numpy as np
 
 from .workspace import GlobalWorkspace, WorkspaceSnapshot, Percept, GoalType
+from .incremental_journal import IncrementalJournalWriter
 
 logger = logging.getLogger(__name__)
 
@@ -92,27 +93,46 @@ class IntrospectiveJournal:
     - Insights about emotional patterns
     - Questions about self
     
+    Now uses incremental writing to persist entries immediately rather than
+    batching at shutdown, preventing data loss from crashes.
+    
     Attributes:
         journal_dir: Directory to store journal entries
-        current_session_entries: List of entries for current session
+        writer: IncrementalJournalWriter for immediate persistence
+        recent_entries: Deque of recent entries for pattern detection
+        config: Configuration dictionary
     """
     
-    def __init__(self, journal_dir: Path):
+    def __init__(self, journal_dir: Path, config: Optional[Dict] = None):
         """
         Initialize the introspective journal.
         
         Args:
             journal_dir: Directory path for storing journal files
+            config: Optional configuration dictionary
         """
         self.journal_dir = Path(journal_dir)
         self.journal_dir.mkdir(parents=True, exist_ok=True)
-        self.current_session_entries: List[Dict] = []
+        self.config = config or {}
+        
+        # Initialize incremental writer
+        self.writer = IncrementalJournalWriter(
+            journal_dir=journal_dir,
+            max_size_mb=self.config.get("max_journal_size_mb", 10.0),
+            auto_flush=self.config.get("auto_flush", True),
+            compression=self.config.get("compress_archived", True)
+        )
+        
+        # Keep recent entries in memory for pattern detection
+        self.recent_entries = deque(maxlen=100)
         
         logger.info(f"✅ IntrospectiveJournal initialized at {self.journal_dir}")
     
     def record_observation(self, observation: Dict) -> None:
         """
         Record a meta-cognitive observation.
+        
+        Writes immediately to journal file for persistence.
         
         Args:
             observation: Dictionary containing observation details
@@ -122,12 +142,20 @@ class IntrospectiveJournal:
             "timestamp": datetime.now().isoformat(),
             "content": observation
         }
-        self.current_session_entries.append(entry)
+        
+        # Write immediately to disk
+        self.writer.write_entry(entry)
+        
+        # Keep in memory for pattern detection
+        self.recent_entries.append(entry)
+        
         logger.debug(f"📝 Recorded observation: {observation.get('type', 'unknown')}")
     
     def record_realization(self, realization: str, confidence: float) -> None:
         """
         Record an insight or realization about self.
+        
+        Writes immediately to journal file for persistence.
         
         Args:
             realization: Description of the realization
@@ -139,12 +167,20 @@ class IntrospectiveJournal:
             "realization": realization,
             "confidence": confidence
         }
-        self.current_session_entries.append(entry)
+        
+        # Write immediately to disk
+        self.writer.write_entry(entry)
+        
+        # Keep in memory for pattern detection
+        self.recent_entries.append(entry)
+        
         logger.info(f"💡 Recorded realization: {realization[:50]}... (confidence: {confidence:.2f})")
     
     def record_question(self, question: str, context: Dict) -> None:
         """
         Record a question the system has about itself.
+        
+        Writes immediately to journal file for persistence.
         
         Args:
             question: The existential or meta-cognitive question
@@ -156,12 +192,20 @@ class IntrospectiveJournal:
             "question": question,
             "context": context
         }
-        self.current_session_entries.append(entry)
+        
+        # Write immediately to disk
+        self.writer.write_entry(entry)
+        
+        # Keep in memory for pattern detection
+        self.recent_entries.append(entry)
+        
         logger.info(f"❓ Recorded question: {question}")
     
     def get_recent_patterns(self, days: int = 7) -> List[Dict]:
         """
         Retrieve patterns from recent journal entries.
+        
+        Now reads from in-memory buffer instead of loading from disk.
         
         Args:
             days: Number of days to look back
@@ -170,62 +214,67 @@ class IntrospectiveJournal:
             List of pattern dictionaries
         """
         patterns = []
-        cutoff_date = datetime.now().timestamp() - (days * 24 * 60 * 60)
+        cutoff = datetime.now() - timedelta(days=days)
         
-        # Scan recent journal files
-        journal_files = sorted(self.journal_dir.glob("journal_*.json"), reverse=True)
+        # Filter recent entries by time
+        recent = [
+            entry for entry in self.recent_entries
+            if datetime.fromisoformat(entry["timestamp"]) > cutoff
+        ]
         
-        for journal_file in journal_files[:days]:  # Approximate by file count
-            try:
-                with open(journal_file, 'r') as f:
-                    entries = json.load(f)
-                    
-                # Extract patterns from entries
-                realizations = [e for e in entries if e.get("type") == "realization"]
-                questions = [e for e in entries if e.get("type") == "question"]
-                
-                if realizations:
-                    patterns.append({
-                        "type": "realizations_pattern",
-                        "file": journal_file.name,
-                        "count": len(realizations),
-                        "sample": realizations[0] if realizations else None
-                    })
-                
-                if questions:
-                    patterns.append({
-                        "type": "questions_pattern",
-                        "file": journal_file.name,
-                        "count": len(questions),
-                        "sample": questions[0] if questions else None
-                    })
-                    
-            except Exception as e:
-                logger.warning(f"Failed to read journal file {journal_file}: {e}")
+        if not recent:
+            return patterns
+        
+        # Extract patterns from recent entries
+        realizations = [e for e in recent if e.get("type") == "realization"]
+        questions = [e for e in recent if e.get("type") == "question"]
+        observations = [e for e in recent if e.get("type") == "observation"]
+        
+        if realizations:
+            patterns.append({
+                "type": "realizations_pattern",
+                "count": len(realizations),
+                "sample": realizations[-1] if realizations else None,
+                "timespan_days": days
+            })
+        
+        if questions:
+            patterns.append({
+                "type": "questions_pattern",
+                "count": len(questions),
+                "sample": questions[-1] if questions else None,
+                "timespan_days": days
+            })
+        
+        if observations:
+            patterns.append({
+                "type": "observations_pattern",
+                "count": len(observations),
+                "sample": observations[-1] if observations else None,
+                "timespan_days": days
+            })
         
         return patterns
     
     def save_session(self) -> None:
-        """Save current session to persistent storage."""
-        if not self.current_session_entries:
-            logger.debug("No journal entries to save")
-            return
+        """
+        Save current session to persistent storage.
         
-        # Create filename with timestamp
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = self.journal_dir / f"journal_{timestamp}.json"
-        
-        try:
-            with open(filename, 'w') as f:
-                json.dump(self.current_session_entries, f, indent=2)
-            
-            logger.info(f"💾 Saved {len(self.current_session_entries)} journal entries to {filename}")
-            
-            # Clear current session after saving
-            self.current_session_entries = []
-            
-        except Exception as e:
-            logger.error(f"Failed to save journal session: {e}")
+        Now a no-op since entries are written immediately.
+        This method is kept for backward compatibility.
+        """
+        # Flush buffer to ensure all data is persisted
+        self.writer.flush()
+        logger.debug("💾 Flushed journal buffer (entries already written)")
+    
+    def flush(self) -> None:
+        """Force write any buffered data to disk."""
+        self.writer.flush()
+    
+    def close(self) -> None:
+        """Close journal writer safely."""
+        self.writer.close()
+        logger.info("💾 Closed introspective journal")
 
 
 class SelfMonitor:

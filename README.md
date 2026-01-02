@@ -846,6 +846,94 @@ Checkpoints are stored as JSON (optionally gzip-compressed):
 }
 ```
 
+### Memory Garbage Collection
+
+Lyra includes an automatic memory garbage collection (GC) system to prevent unbounded memory growth while preserving important memories.
+
+#### Features
+
+- **Significance-Based Removal**: Removes memories below configurable significance threshold
+- **Age-Based Decay**: Applies time decay to significance scores
+- **Capacity-Based Pruning**: Enforces maximum memory capacity limits
+- **Protected Memories**: Never removes memories tagged as "important" or "pinned"
+- **Recent Memory Protection**: Protects memories < 24 hours old
+- **Automatic Scheduling**: Runs periodically in background
+- **Dry-Run Mode**: Preview what would be removed without executing
+
+#### Configuration
+
+Add to your cognitive core configuration:
+
+```python
+"memory_gc": {
+    "enabled": True,
+    "collection_interval": 3600.0,  # 1 hour
+    "significance_threshold": 0.1,
+    "decay_rate_per_day": 0.01,
+    "max_memory_capacity": 10000,
+    "preserve_tags": ["important", "pinned", "charter_related"],
+    "recent_memory_protection_hours": 24,
+    "max_removal_per_run": 100
+}
+```
+
+#### CLI Commands
+
+```bash
+# View memory health statistics
+memory stats
+
+# Run garbage collection manually
+memory gc
+
+# Run with custom threshold
+memory gc --threshold 0.2
+
+# Preview what would be removed (dry-run)
+memory gc --dry-run
+
+# Enable/disable automatic GC
+memory autogc on
+memory autogc off
+```
+
+#### Programmatic Usage
+
+```python
+from lyra.memory_manager import MemoryManager
+
+manager = MemoryManager(
+    base_dir=Path("./data/memories"),
+    chroma_dir=Path("./data/chroma"),
+    gc_config={"significance_threshold": 0.15}
+)
+
+# Enable automatic GC
+manager.enable_auto_gc(interval=3600.0)
+
+# Run manual GC
+stats = await manager.run_gc(threshold=0.2)
+print(f"Removed {stats.memories_removed} memories")
+
+# Get memory health
+health = await manager.get_memory_health()
+if health.needs_collection:
+    print("Collection recommended!")
+
+# Disable automatic GC
+manager.disable_auto_gc()
+```
+
+#### Demo Script
+
+See the memory GC in action:
+
+```bash
+python scripts/demo_memory_gc.py
+```
+
+For complete documentation, see [docs/MEMORY_GC_GUIDE.md](docs/MEMORY_GC_GUIDE.md).
+
 ### Notes on Deprecated Files
 
 Some files from the old "Cognitive Committee" architecture remain in the repository but are marked as DEPRECATED:

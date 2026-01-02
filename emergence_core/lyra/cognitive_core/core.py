@@ -39,6 +39,7 @@ from .autonomous_memory_review import AutonomousMemoryReview
 from .existential_reflection import ExistentialReflection
 from .interaction_patterns import InteractionPatternAnalysis
 from .continuous_consciousness import ContinuousConsciousnessController
+from .checkpoint import CheckpointManager
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -48,7 +49,16 @@ DEFAULT_CONFIG = {
     "cycle_rate_hz": 10,
     "attention_budget": 100,
     "max_queue_size": 100,
-    "log_interval_cycles": 100
+    "log_interval_cycles": 100,
+    "checkpointing": {
+        "enabled": True,
+        "auto_save": False,
+        "auto_save_interval": 300.0,  # 5 minutes
+        "checkpoint_dir": "data/checkpoints/",
+        "max_checkpoints": 20,
+        "compression": True,
+        "checkpoint_on_shutdown": True,
+    }
 }
 
 
@@ -275,10 +285,24 @@ class CognitiveCore:
             'percepts_processed': 0,
         }
         
+        # Initialize checkpoint manager
+        checkpoint_config = self.config.get("checkpointing", {})
+        if checkpoint_config.get("enabled", True):
+            checkpoint_dir = Path(checkpoint_config.get("checkpoint_dir", "data/checkpoints"))
+            self.checkpoint_manager = CheckpointManager(
+                checkpoint_dir=checkpoint_dir,
+                max_checkpoints=checkpoint_config.get("max_checkpoints", 20),
+                compression=checkpoint_config.get("compression", True),
+            )
+            logger.info(f"💾 Checkpoint manager enabled: {checkpoint_dir}")
+        else:
+            self.checkpoint_manager = None
+            logger.info("💾 Checkpoint manager disabled")
+        
         logger.info(f"🧠 CognitiveCore initialized: cycle_rate={self.config['cycle_rate_hz']}Hz, "
                    f"attention_budget={self.config['attention_budget']}")
 
-    async def start(self) -> None:
+    async def start(self, restore_latest: bool = False) -> None:
         """
         Start the main cognitive loop.
         
@@ -288,8 +312,22 @@ class CognitiveCore:
         Now starts both active (fast) and idle (slow) cognitive loops:
         - Active loop: Processes user input, runs at ~10 Hz
         - Idle loop: Continuous consciousness, runs every ~10 seconds
+        
+        Args:
+            restore_latest: If True, restore from the most recent checkpoint before starting
         """
         logger.info("🧠 Starting CognitiveCore...")
+        
+        # Restore from checkpoint if requested
+        if restore_latest and self.checkpoint_manager:
+            latest = self.checkpoint_manager.get_latest_checkpoint()
+            if latest:
+                try:
+                    logger.info(f"💾 Restoring from checkpoint: {latest.name}")
+                    self.workspace = self.checkpoint_manager.load_checkpoint(latest)
+                    logger.info("✅ Workspace restored from checkpoint")
+                except Exception as e:
+                    logger.error(f"Failed to restore checkpoint: {e}")
         
         # Initialize input queue in async context
         if self.input_queue is None:
@@ -300,6 +338,15 @@ class CognitiveCore:
             self.output_queue = asyncio.Queue(maxsize=self.config["max_queue_size"])
         
         self.running = True
+        
+        # Start auto-save if enabled
+        checkpoint_config = self.config.get("checkpointing", {})
+        if checkpoint_config.get("auto_save", False) and self.checkpoint_manager:
+            interval = checkpoint_config.get("auto_save_interval", 300.0)
+            self.checkpoint_manager.auto_save_task = asyncio.create_task(
+                self.checkpoint_manager.auto_save(self.workspace, interval)
+            )
+            logger.info(f"💾 Auto-save enabled: interval={interval}s")
         
         # Start active cognitive loop (existing fast cycle for conversations)
         self.active_task = asyncio.create_task(self._active_cognitive_loop())
@@ -337,6 +384,15 @@ class CognitiveCore:
         logger.info("🧠 Stopping CognitiveCore...")
         self.running = False
         
+        # Stop auto-save if running
+        if self.checkpoint_manager and self.checkpoint_manager.auto_save_task:
+            self.checkpoint_manager.stop_auto_save()
+            self.checkpoint_manager.auto_save_task.cancel()
+            try:
+                await self.checkpoint_manager.auto_save_task
+            except asyncio.CancelledError:
+                pass
+        
         # Stop idle loop controller
         await self.continuous_consciousness.stop()
         
@@ -361,8 +417,17 @@ class CognitiveCore:
                    f"avg_cycle_time={avg_cycle_time*1000:.1f}ms, "
                    f"percepts_processed={self.metrics['percepts_processed']}")
         
-        # Save final workspace state if needed
-        # TODO: Implement persistence in Phase 2
+        # Save final workspace state on shutdown
+        checkpoint_config = self.config.get("checkpointing", {})
+        if checkpoint_config.get("checkpoint_on_shutdown", True) and self.checkpoint_manager:
+            try:
+                self.checkpoint_manager.save_checkpoint(
+                    self.workspace,
+                    metadata={"auto_save": False, "shutdown": True}
+                )
+                logger.info("💾 Final checkpoint saved on shutdown")
+            except Exception as e:
+                logger.error(f"Failed to save shutdown checkpoint: {e}")
         
         logger.info("🧠 CognitiveCore shutdown complete.")
 
@@ -718,6 +783,149 @@ class CognitiveCore:
             return output.get("text", "...")
         
         return "..."
+
+    def save_state(self, label: Optional[str] = None) -> Optional[Path]:
+        """
+        Save current workspace state to checkpoint.
+        
+        Creates a checkpoint with the current workspace state, optionally
+        with a user-provided label for identification.
+        
+        Args:
+            label: Optional user label for the checkpoint
+            
+        Returns:
+            Path to the saved checkpoint file, or None if checkpointing disabled
+            
+        Example:
+            >>> core = CognitiveCore()
+            >>> await core.start()
+            >>> checkpoint_path = core.save_state("Before risky experiment")
+        """
+        if not self.checkpoint_manager:
+            logger.warning("Cannot save state: checkpointing disabled")
+            return None
+        
+        try:
+            metadata = {
+                "auto_save": False,
+                "manual": True,
+            }
+            if label:
+                metadata["user_label"] = label
+            
+            path = self.checkpoint_manager.save_checkpoint(self.workspace, metadata)
+            logger.info(f"💾 State saved: {path.name}")
+            return path
+            
+        except Exception as e:
+            logger.error(f"Failed to save state: {e}")
+            return None
+    
+    def restore_state(self, checkpoint_path: Path) -> bool:
+        """
+        Restore workspace from checkpoint.
+        
+        Loads a checkpoint and replaces the current workspace state.
+        This should be called while the cognitive loop is stopped or
+        before starting.
+        
+        Args:
+            checkpoint_path: Path to the checkpoint file
+            
+        Returns:
+            True if restore succeeded, False otherwise
+            
+        Warning:
+            This will replace all current workspace state. Use with caution.
+            
+        Example:
+            >>> core = CognitiveCore()
+            >>> success = core.restore_state(checkpoint_path)
+            >>> if success:
+            ...     await core.start()
+        """
+        if not self.checkpoint_manager:
+            logger.warning("Cannot restore state: checkpointing disabled")
+            return False
+        
+        if self.running:
+            logger.warning("Cannot restore state while cognitive loop is running")
+            return False
+        
+        try:
+            self.workspace = self.checkpoint_manager.load_checkpoint(checkpoint_path)
+            logger.info(f"✅ State restored from {checkpoint_path.name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to restore state: {e}")
+            return False
+    
+    def enable_auto_checkpoint(self, interval: float = 300.0) -> bool:
+        """
+        Enable automatic periodic checkpointing.
+        
+        Starts a background task that saves checkpoints at regular intervals.
+        Can only be called after start() has been called.
+        
+        Args:
+            interval: Time between checkpoints in seconds (default: 300 = 5 minutes)
+            
+        Returns:
+            True if auto-checkpoint enabled, False otherwise
+            
+        Example:
+            >>> core = CognitiveCore()
+            >>> await core.start()
+            >>> core.enable_auto_checkpoint(interval=600)  # Every 10 minutes
+        """
+        if not self.checkpoint_manager:
+            logger.warning("Cannot enable auto-checkpoint: checkpointing disabled")
+            return False
+        
+        if not self.running:
+            logger.warning("Cannot enable auto-checkpoint: cognitive loop not running")
+            return False
+        
+        # Stop existing auto-save if running
+        if self.checkpoint_manager.auto_save_task:
+            self.checkpoint_manager.stop_auto_save()
+            self.checkpoint_manager.auto_save_task.cancel()
+        
+        # Start new auto-save task
+        self.checkpoint_manager.auto_save_task = asyncio.create_task(
+            self.checkpoint_manager.auto_save(self.workspace, interval)
+        )
+        logger.info(f"💾 Auto-checkpoint enabled: interval={interval}s")
+        return True
+    
+    def disable_auto_checkpoint(self) -> bool:
+        """
+        Disable automatic periodic checkpointing.
+        
+        Stops the background auto-save task if it's running.
+        
+        Returns:
+            True if auto-checkpoint disabled, False if it wasn't running
+            
+        Example:
+            >>> core = CognitiveCore()
+            >>> await core.start()
+            >>> core.enable_auto_checkpoint()
+            >>> # Later...
+            >>> core.disable_auto_checkpoint()
+        """
+        if not self.checkpoint_manager:
+            return False
+        
+        if not self.checkpoint_manager.auto_save_task:
+            return False
+        
+        self.checkpoint_manager.stop_auto_save()
+        self.checkpoint_manager.auto_save_task.cancel()
+        logger.info("💾 Auto-checkpoint disabled")
+        return True
 
     def _update_metrics(self, cycle_time: float) -> None:
         """

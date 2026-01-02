@@ -31,6 +31,7 @@ from .memory_integration import MemoryIntegration
 from .language_input import LanguageInputParser, IntentType, Intent, ParseResult
 from .language_output import LanguageOutputGenerator
 from .llm_client import LLMClient, GemmaClient, LlamaClient, MockLLMClient, LLMError
+from .checkpoint import CheckpointManager, CheckpointInfo
 from .structured_formats import (
     LLMInputParseRequest,
     LLMInputParseResponse,
@@ -94,6 +95,8 @@ __all__ = [
     "LlamaClient",
     "MockLLMClient",
     "LLMError",
+    "CheckpointManager",
+    "CheckpointInfo",
     "LLMInputParseRequest",
     "LLMInputParseResponse",
     "OutputGenerationRequest",

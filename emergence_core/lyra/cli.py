@@ -70,6 +70,13 @@ async def main():
                 print("   checkpoints         - List all available checkpoints")
                 print("   load <id>           - Load a specific checkpoint by ID")
                 print("   restore latest      - Restore from most recent checkpoint")
+                print("\n🧹 Memory Management:")
+                print("   memory stats        - Show memory health statistics")
+                print("   memory gc           - Manually trigger garbage collection")
+                print("   memory gc --threshold <value>  - Run GC with custom threshold")
+                print("   memory gc --dry-run - Preview what would be removed")
+                print("   memory autogc on    - Enable automatic GC")
+                print("   memory autogc off   - Disable automatic GC")
                 print("\n   Any other text will be sent to Lyra for conversation.\n")
                 continue
             
@@ -213,6 +220,103 @@ async def main():
                     await lyra.start()
                     print("✅ Lyra is online.\n")
                 continue
+            
+            # Memory management commands
+            if user_input.lower().startswith("memory"):
+                parts = user_input.lower().split()
+                
+                if len(parts) < 2:
+                    print("❌ Usage: memory <stats|gc|autogc>\n")
+                    continue
+                
+                command = parts[1]
+                
+                # memory stats
+                if command == "stats":
+                    print("📊 Analyzing memory health...")
+                    health = await lyra.core.memory.memory_manager.get_memory_health()
+                    
+                    print(f"\n🧹 Memory System Health:")
+                    print(f"   Total memories: {health.total_memories}")
+                    print(f"   Total size: {health.total_size_mb:.2f} MB")
+                    print(f"   Average significance: {health.avg_significance:.2f}")
+                    print(f"   Oldest memory: {health.oldest_memory_age_days:.1f} days")
+                    print(f"   Newest memory: {health.newest_memory_age_days:.1f} days")
+                    print(f"   Estimated duplicates: {health.estimated_duplicates}")
+                    print(f"   Needs collection: {'Yes' if health.needs_collection else 'No'}")
+                    print(f"   Recommended threshold: {health.recommended_threshold:.2f}")
+                    
+                    if health.significance_distribution:
+                        print(f"\n   Significance Distribution:")
+                        for bucket, count in sorted(health.significance_distribution.items()):
+                            print(f"      {bucket}: {count} memories")
+                    print()
+                    continue
+                
+                # memory gc
+                elif command == "gc":
+                    threshold = None
+                    dry_run = False
+                    
+                    # Parse options
+                    if "--threshold" in parts:
+                        try:
+                            idx = parts.index("--threshold")
+                            if idx + 1 < len(parts):
+                                threshold = float(parts[idx + 1])
+                        except (ValueError, IndexError):
+                            print("❌ Invalid threshold value\n")
+                            continue
+                    
+                    if "--dry-run" in parts:
+                        dry_run = True
+                    
+                    mode_str = "DRY RUN" if dry_run else "ACTIVE"
+                    threshold_str = f"threshold={threshold}" if threshold else "default threshold"
+                    print(f"🧹 Running garbage collection ({mode_str}, {threshold_str})...")
+                    
+                    stats = await lyra.core.memory.memory_manager.run_gc(
+                        threshold=threshold,
+                        dry_run=dry_run
+                    )
+                    
+                    print(f"\n✅ Garbage Collection Complete:")
+                    print(f"   Memories analyzed: {stats.memories_analyzed}")
+                    print(f"   Memories removed: {stats.memories_removed}")
+                    print(f"   Bytes freed: {stats.bytes_freed:,}")
+                    print(f"   Duration: {stats.duration_seconds:.2f}s")
+                    print(f"   Avg significance before: {stats.avg_significance_before:.2f}")
+                    print(f"   Avg significance after: {stats.avg_significance_after:.2f}")
+                    
+                    if stats.removal_reasons:
+                        print(f"\n   Removal Reasons:")
+                        for reason, count in stats.removal_reasons.items():
+                            print(f"      {reason}: {count}")
+                    print()
+                    continue
+                
+                # memory autogc
+                elif command == "autogc":
+                    if len(parts) < 3:
+                        print("❌ Usage: memory autogc <on|off>\n")
+                        continue
+                    
+                    action = parts[2]
+                    
+                    if action == "on":
+                        lyra.core.memory.memory_manager.enable_auto_gc()
+                        print("✅ Automatic garbage collection enabled\n")
+                    elif action == "off":
+                        lyra.core.memory.memory_manager.disable_auto_gc()
+                        print("✅ Automatic garbage collection disabled\n")
+                    else:
+                        print("❌ Usage: memory autogc <on|off>\n")
+                    
+                    continue
+                
+                else:
+                    print(f"❌ Unknown memory command: {command}\n")
+                    continue
             
             # Process turn
             print("💭 Thinking...")

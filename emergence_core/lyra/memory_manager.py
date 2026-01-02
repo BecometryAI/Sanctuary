@@ -394,7 +394,8 @@ class MemoryManager:
         base_dir: Path,
         chroma_dir: Path,
         blockchain_enabled: bool = False,
-        blockchain_config: Optional[Dict[str, Any]] = None
+        blockchain_config: Optional[Dict[str, Any]] = None,
+        gc_config: Optional[Dict[str, Any]] = None
     ):
         """Initialize the Memory Manager with tri-state storage.
         
@@ -403,6 +404,7 @@ class MemoryManager:
             chroma_dir: Directory for ChromaDB persistent storage
             blockchain_enabled: Whether to enable blockchain commits
             blockchain_config: Configuration for blockchain connection
+            gc_config: Configuration for garbage collection
             
         Raises:
             ValueError: If directories are invalid or inaccessible
@@ -421,6 +423,13 @@ class MemoryManager:
         # Initialize blockchain client if enabled
         if self.blockchain_enabled:
             self._initialize_blockchain()
+        
+        # Initialize garbage collector
+        from lyra.cognitive_core.memory_gc import MemoryGarbageCollector
+        self.gc = MemoryGarbageCollector(
+            memory_store=self.journal_collection,
+            config=gc_config or {}
+        )
         
         logger.info(
             f"MemoryManager initialized at {self.base_dir} "
@@ -1126,3 +1135,37 @@ class MemoryManager:
         except Exception as e:
             logger.error(f"Failed to get statistics: {e}")
             return {"error": str(e)}
+    
+    def enable_auto_gc(self, interval: float = 3600.0) -> None:
+        """Enable automatic garbage collection every interval seconds.
+        
+        Args:
+            interval: Time between GC runs in seconds (default: 1 hour)
+        """
+        self.gc.schedule_collection(interval)
+        logger.info(f"Automatic garbage collection enabled (interval={interval}s)")
+    
+    def disable_auto_gc(self) -> None:
+        """Disable automatic garbage collection."""
+        self.gc.stop_scheduled_collection()
+        logger.info("Automatic garbage collection disabled")
+    
+    async def run_gc(self, threshold: Optional[float] = None, dry_run: bool = False):
+        """Manually trigger garbage collection.
+        
+        Args:
+            threshold: Custom significance threshold (optional)
+            dry_run: If True, preview what would be removed without removing
+            
+        Returns:
+            CollectionStats from the garbage collection run
+        """
+        return await self.gc.collect(threshold=threshold, dry_run=dry_run)
+    
+    async def get_memory_health(self):
+        """Get current memory system health report.
+        
+        Returns:
+            MemoryHealthReport with system health metrics
+        """
+        return await self.gc.analyze_memory_health()

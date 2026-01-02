@@ -339,6 +339,13 @@ class CognitiveCore:
         
         self.running = True
         
+        # Enable auto-GC if configured
+        gc_config = self.config.get("memory_gc", {})
+        if gc_config.get("enabled", True):
+            interval = gc_config.get("collection_interval", 3600.0)
+            self.memory.memory_manager.enable_auto_gc(interval)
+            logger.info(f"🧹 Memory garbage collection enabled (interval: {interval}s)")
+        
         # Start auto-save if enabled
         checkpoint_config = self.config.get("checkpointing", {})
         if checkpoint_config.get("auto_save", False) and self.checkpoint_manager:
@@ -383,6 +390,10 @@ class CognitiveCore:
         """
         logger.info("🧠 Stopping CognitiveCore...")
         self.running = False
+        
+        # Disable GC before shutdown
+        self.memory.memory_manager.disable_auto_gc()
+        logger.info("🧹 Memory garbage collection disabled")
         
         # Stop auto-save if running
         if self.checkpoint_manager and self.checkpoint_manager.auto_save_task:

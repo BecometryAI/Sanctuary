@@ -92,6 +92,10 @@ model_cache/
 memories/
 .memories/
 
+# Checkpoint demo files (generated during demos)
+data/checkpoints_demo/
+data/checkpoints_demo_simple/
+
 # Test output and temporary files
 test_chain/
 test_memories/

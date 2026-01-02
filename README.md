@@ -298,6 +298,7 @@ All models are **pre-trained and ready to use** - no fine-tuning or training nec
   - Self​Monitor for introspection
   - IntrospectiveLoop implementation
   - Consciousness testing framework
+  - **Incremental journal saving** - Real-time persistence prevents data loss
 
 - ✅ **Phase 5.1: Pure GWT Architecture** (This Release)
   - Removed legacy "Cognitive Committee" specialist architecture
@@ -586,6 +587,37 @@ The autonomous cognitive loop runs automatically when the cognitive core initial
 - **Goal-directed behavior**: Internal motivations drive actions
 - **Emotional dynamics**: Affect influences all processing
 - **Meta-cognition**: Self-monitoring provides introspection
+- **Introspective Journal**: Real-time persistence of self-observations
+
+#### Incremental Journal Saving
+
+The introspective journal now uses **incremental saving** to prevent data loss:
+- Entries written immediately to disk (no batching)
+- JSONL format (one JSON object per line) for crash recovery
+- Automatic journal rotation when files exceed size limit
+- Compression of archived journals to save space
+- Recovery tools for validation and repair
+
+**Journal Files:**
+```
+data/introspection/journal_YYYY-MM-DD_HH-MM-SS.jsonl       # Active journal
+data/introspection/journal_YYYY-MM-DD_HH-MM-SS.jsonl.gz    # Archived (compressed)
+```
+
+**Recovery Tool:**
+```bash
+# Validate journal integrity
+python scripts/recover_journal.py validate data/introspection/journal_2026-01-03.jsonl
+
+# Extract entries by type
+python scripts/recover_journal.py extract --type realization --days 7
+
+# Merge multiple journals
+python scripts/recover_journal.py merge --output merged.jsonl
+
+# Repair corrupted journal
+python scripts/recover_journal.py repair corrupted.jsonl --output repaired.jsonl
+```
 
 **Discord Integration:**
 ```bash

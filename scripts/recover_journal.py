@@ -39,12 +39,14 @@ def load_journal_entries(journal_path: Path) -> List[Dict]:
     
     # Determine if compressed
     if journal_path.suffix == '.gz':
-        opener = lambda p: gzip.open(p, 'rt', encoding='utf-8')
+        def open_file(p):
+            return gzip.open(p, 'rt', encoding='utf-8')
     else:
-        opener = lambda p: open(p, 'r', encoding='utf-8')
+        def open_file(p):
+            return open(p, 'r', encoding='utf-8')
     
     try:
-        with opener(journal_path) as f:
+        with open_file(journal_path) as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if not line:

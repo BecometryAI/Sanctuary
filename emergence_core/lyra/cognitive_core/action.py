@@ -21,7 +21,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from .workspace import WorkspaceSnapshot, GoalType
+from .workspace import WorkspaceSnapshot, GoalType, Percept
+from .protocol_loader import ProtocolLoader, ProtocolViolation
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -141,6 +142,10 @@ class ActionSubsystem:
             "action_counts": {}
         }
         self.tool_registry: Dict[str, Dict[str, Any]] = {}
+        
+        # Initialize protocol loader
+        self.protocol_loader = ProtocolLoader()
+        self.protocol_loader.load_protocols()
         
         # Load identity constraints if identity provided
         if self.identity:
@@ -325,8 +330,8 @@ class ActionSubsystem:
         """
         Check if action violates constitutional protocols.
         
-        This method checks both legacy protocol_constraints and new identity-based
-        charter/protocols.
+        This method checks both legacy protocol_constraints and new protocol loader
+        constraints.
         
         Args:
             action: Action to check
@@ -345,6 +350,28 @@ class ActionSubsystem:
                     return True
             except Exception as e:
                 logger.error(f"Error testing constraint: {e}")
+        
+        # Check new protocol loader constraints
+        if self.protocol_loader and self.protocol_loader.protocols:
+            action_type_str = action.type.value if hasattr(action.type, 'value') else str(action.type)
+            is_compliant, violations = self.protocol_loader.check_action_compliance(
+                action_type=action_type_str,
+                action_parameters=action.parameters,
+                context=action.metadata
+            )
+            
+            if not is_compliant:
+                # Log violations and add to action metadata
+                action.metadata["protocol_violations"] = [
+                    {
+                        "protocol": v.protocol_title,
+                        "reason": v.reason,
+                        "severity": v.severity
+                    }
+                    for v in violations
+                ]
+                logger.warning(f"⚠️ Action {action.type} violates {len(violations)} protocol(s)")
+                return True
         
         # Check new identity-based constitutional constraints
         if self.identity:
@@ -525,12 +552,88 @@ class ActionSubsystem:
             - Actions blocked by protocols
             - Most common action types
         """
-        return {
+        stats = {
             "total_actions": self.action_stats["total_actions"],
             "blocked_actions": self.action_stats["blocked_actions"],
             "action_counts": self.action_stats["action_counts"].copy(),
             "history_size": len(self.action_history)
         }
+        
+        # Add protocol violation statistics if available
+        if self.protocol_loader:
+            stats["protocol_violations"] = self.protocol_loader.get_violation_summary()
+        
+        return stats
+    
+    def reload_protocols(self) -> int:
+        """
+        Hot-reload protocols from disk without system restart.
+        
+        Returns:
+            Number of protocols reloaded
+        """
+        if not self.protocol_loader:
+            logger.warning("⚠️ Protocol loader not initialized")
+            return 0
+        
+        count = self.protocol_loader.hot_reload()
+        logger.info(f"✅ Reloaded {count} protocols")
+        return count
+    
+    def generate_violation_percept(
+        self, 
+        violations: List[ProtocolViolation], 
+        action: Action
+    ) -> Optional[Percept]:
+        """
+        Generate introspective percept about protocol violations.
+        
+        Creates a meta-cognitive percept that allows the system to reason
+        about why an action was blocked and what constraints were violated.
+        
+        Args:
+            violations: List of protocol violations
+            action: The action that was blocked
+            
+        Returns:
+            Percept for introspection, or None if no violations
+        """
+        if not violations:
+            return None
+        
+        # Summarize violations
+        violation_summary = []
+        for v in violations:
+            violation_summary.append(
+                f"Protocol '{v.protocol_title}' violated: {v.reason}"
+            )
+        
+        percept_text = (
+            f"I attempted to {action.type.value} but this action violated "
+            f"{len(violations)} protocol(s): {'; '.join(violation_summary)}. "
+            f"I must respect these constitutional constraints."
+        )
+        
+        percept = Percept(
+            modality="introspection",
+            raw=percept_text,
+            complexity=2,
+            metadata={
+                "type": "protocol_violation",
+                "blocked_action": action.type.value,
+                "violations": [
+                    {
+                        "protocol_id": v.protocol_id,
+                        "protocol_title": v.protocol_title,
+                        "severity": v.severity,
+                        "reason": v.reason
+                    }
+                    for v in violations
+                ]
+            }
+        )
+        
+        return percept
     
     async def execute_action(self, action: Action) -> Any:
         """

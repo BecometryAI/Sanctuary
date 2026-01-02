@@ -9,7 +9,7 @@ Tests cover:
 """
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings, assume, HealthCheck
 from hypothesis import strategies as st
 
 from lyra.cognitive_core.workspace import GlobalWorkspace, Percept, Goal, GoalType
@@ -111,8 +111,8 @@ class TestAttentionProperties:
         
         assert selected_ids.issubset(original_ids)
     
-    @given(percept_lists, st.integers(min_value=5, max_value=100))
-    @settings(max_examples=50, deadline=None)
+    @given(st.lists(percepts(), min_size=3, max_size=15), st.integers(min_value=5, max_value=100))
+    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.data_too_large])
     def test_attention_budget_allocation(self, percepts_list, budget):
         """Property: Controller attempts to maximize use of attention budget."""
         assume(len(percepts_list) >= 3)

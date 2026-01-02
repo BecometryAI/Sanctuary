@@ -39,7 +39,7 @@ from .strategies import (
 class TestWorkspaceProperties:
     """Property-based tests for GlobalWorkspace invariants."""
     
-    @given(percept_lists, goal_lists, emotional_states)
+    @given(percept_lists, goal_lists, emotional_states())
     @settings(max_examples=100, deadline=None)
     def test_workspace_snapshot_immutability(self, percepts_list, goals_list, emotions):
         """Property: Workspace snapshots are immutable."""
@@ -97,7 +97,7 @@ class TestWorkspaceProperties:
         
         assert len(workspace.active_percepts) == len(unique_percepts)
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=100)
     def test_emotional_state_bounded(self, emotions):
         """Property: Emotional state VAD values always remain in [-1, 1]."""
@@ -155,7 +155,7 @@ class TestWorkspaceProperties:
         workspace.update([])
         assert workspace.cycle_count == initial_cycle + 2
     
-    @given(goal_lists, percept_lists, emotional_states)
+    @given(goal_lists, percept_lists, emotional_states())
     @settings(max_examples=50, deadline=None)
     def test_serialization_roundtrip(self, goals_list, percepts_list, emotions):
         """Property: Workspace can be serialized and deserialized without data loss."""

@@ -54,7 +54,7 @@ def create_snapshot_with_content(percepts_list, goals_list):
 class TestEmotionProperties:
     """Property-based tests for emotional dynamics invariants."""
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=100)
     def test_emotional_state_vad_bounded(self, initial_state):
         """Property: Emotional VAD values are always in valid ranges."""
@@ -67,7 +67,7 @@ class TestEmotionProperties:
         # Dominance should be in [-1, 1]
         assert -1.0 <= initial_state.dominance <= 1.0
     
-    @given(emotional_states, st.lists(percepts(), max_size=5))
+    @given(emotional_states(), st.lists(percepts(), max_size=5))
     @settings(max_examples=50, deadline=None)
     def test_emotional_update_maintains_bounds(self, initial_state, percepts_list):
         """Property: Emotional updates never exceed VAD bounds."""
@@ -84,7 +84,7 @@ class TestEmotionProperties:
         assert -1.0 <= affect.arousal <= 1.0
         assert -1.0 <= affect.dominance <= 1.0
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=100)
     def test_emotion_decay_moves_toward_baseline(self, initial_state):
         """Property: Repeated decay moves emotions toward baseline."""
@@ -119,7 +119,7 @@ class TestEmotionProperties:
         # (with small epsilon for floating point precision)
         assert final_distance <= initial_distance + 1e-6
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=100)
     def test_emotional_state_serialization(self, state):
         """Property: Emotional states can be serialized and deserialized."""
@@ -136,7 +136,7 @@ class TestEmotionProperties:
         assert state_dict["arousal"] == state.arousal
         assert state_dict["dominance"] == state.dominance
     
-    @given(emotional_states, st.floats(min_value=0.0, max_value=1.0))
+    @given(emotional_states(), st.floats(min_value=0.0, max_value=1.0))
     @settings(max_examples=50)
     def test_decay_rate_effect(self, initial_state, decay_rate):
         """Property: Higher decay rates lead to faster convergence to baseline."""
@@ -180,7 +180,7 @@ class TestEmotionProperties:
         if initial_distance > 0.1:  # Only test if starting away from baseline
             assert dist_fast <= dist_slow + 1e-6
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=100)
     def test_emotional_intensity_calculation(self, state):
         """Property: Emotional intensity is non-negative and bounded."""
@@ -188,7 +188,7 @@ class TestEmotionProperties:
         # Intensity should be bounded by sqrt(3) (max distance in unit cube)
         assert state.intensity <= 1.0 + 1e-6  # Small epsilon for floating point
     
-    @given(st.lists(emotional_states, min_size=1, max_size=20))
+    @given(st.lists(emotional_states(), min_size=1, max_size=20))
     @settings(max_examples=50)
     def test_emotional_history_tracking(self, states_list):
         """Property: AffectSubsystem maintains emotional history."""
@@ -210,7 +210,7 @@ class TestEmotionProperties:
         # History should not exceed max size
         assert len(affect.emotion_history) <= 10
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=100)
     def test_emotional_state_immutability(self, state):
         """Property: EmotionalState dataclass values are accessible."""
@@ -258,7 +258,7 @@ class TestEmotionProperties:
         assert abs(affect1.arousal - affect2.arousal) < 1e-10
         assert abs(affect1.dominance - affect2.dominance) < 1e-10
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=100)
     def test_emotion_to_vector_conversion(self, state):
         """Property: EmotionalState can be converted to numpy vector."""

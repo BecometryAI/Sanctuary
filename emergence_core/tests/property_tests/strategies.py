@@ -103,11 +103,12 @@ def memories(draw):
     Returns:
         Memory: A valid Memory instance
     """
-    # Generate timestamp within a reasonable range (past year)
-    now = datetime.now()
+    # Use fixed date range instead of datetime.now() for deterministic generation
+    min_date = datetime(2024, 1, 1)
+    max_date = datetime(2025, 12, 31)
     timestamp = draw(st.datetimes(
-        min_value=now - timedelta(days=365),
-        max_value=now
+        min_value=min_date,
+        max_value=max_date
     ))
     
     return Memory(

@@ -5,7 +5,6 @@ Standalone test for enhanced emotional appraisal rules.
 
 import sys
 from pathlib import Path
-from datetime import datetime
 
 # Direct import
 sys.path.insert(0, str(Path("emergence_core/lyra/cognitive_core")))

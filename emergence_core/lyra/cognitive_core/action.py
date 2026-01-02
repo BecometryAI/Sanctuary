@@ -141,7 +141,19 @@ class ActionSubsystem:
             "blocked_actions": 0,
             "action_counts": {}
         }
+        
+        # Initialize tool registry (legacy dict maintained for compatibility)
         self.tool_registry: Dict[str, Dict[str, Any]] = {}
+        
+        # Initialize new tool registry and cache
+        from .tool_registry import ToolRegistry, create_default_registry
+        from .tool_cache import ToolCache
+        
+        self.tool_reg = create_default_registry()
+        self.tool_cache = ToolCache(
+            max_size=self.config.get("tool_cache_size", 1000),
+            default_ttl=self.config.get("tool_cache_ttl", 3600.0)
+        )
         
         # Initialize protocol loader
         self.protocol_loader = ProtocolLoader()
@@ -154,6 +166,7 @@ class ActionSubsystem:
             # Fallback: Load protocol constraints from identity files
             self._load_protocol_constraints()
             logger.info("✅ ActionSubsystem initialized (legacy mode)")
+
     
     def _load_protocol_constraints(self) -> None:
         """Load protocol constraints from identity files (legacy fallback)."""
@@ -634,6 +647,144 @@ class ActionSubsystem:
         )
         
         return percept
+    
+    async def execute_tool_action(
+        self, 
+        action: Action,
+        use_cache: bool = True
+    ) -> Percept:
+        """
+        Execute a TOOL_CALL action via the tool registry.
+        
+        This method handles the execution of external tools, including:
+        - Checking cache for recent results
+        - Executing tool with timeout
+        - Caching successful results
+        - Creating percepts from tool outputs
+        - Handling errors gracefully
+        
+        Args:
+            action: Action with type TOOL_CALL
+            use_cache: Whether to use cached results
+            
+        Returns:
+            Percept containing tool result or error
+        """
+        if action.type != ActionType.TOOL_CALL:
+            logger.error(f"❌ execute_tool_action called with wrong action type: {action.type}")
+            return self._create_error_percept("Invalid action type for tool execution")
+        
+        tool_name = action.parameters.get("tool_name")
+        tool_params = action.parameters.get("parameters", {})
+        
+        if not tool_name:
+            logger.error("❌ TOOL_CALL action missing tool_name")
+            return self._create_error_percept("Tool name not specified")
+        
+        # Check if tool is registered
+        if not self.tool_reg.is_tool_registered(tool_name):
+            logger.error(f"❌ Tool '{tool_name}' not registered")
+            return self._create_error_percept(f"Tool '{tool_name}' not available")
+        
+        # Check cache first
+        if use_cache:
+            cached_result = self.tool_cache.get(tool_name, tool_params)
+            if cached_result is not None:
+                logger.info(f"🎯 Using cached result for {tool_name}")
+                return self._create_tool_result_percept(
+                    tool_name, 
+                    cached_result,
+                    from_cache=True
+                )
+        
+        # Execute tool
+        try:
+            tool_result = await self.tool_reg.execute_tool(tool_name, **tool_params)
+            
+            # Check if execution was successful
+            if tool_result.status.value == "success":
+                # Cache the result
+                if use_cache:
+                    self.tool_cache.set(tool_name, tool_params, tool_result.result)
+                
+                # Create percept from result
+                percept = self._create_tool_result_percept(
+                    tool_name,
+                    tool_result.result,
+                    execution_time=tool_result.execution_time
+                )
+            else:
+                # Tool execution failed
+                error_msg = tool_result.error or "Unknown error"
+                percept = self._create_error_percept(
+                    f"Tool '{tool_name}' {tool_result.status.value}: {error_msg}",
+                    tool_name=tool_name
+                )
+            
+            return percept
+            
+        except Exception as e:
+            logger.error(f"❌ Exception executing tool '{tool_name}': {e}")
+            return self._create_error_percept(
+                f"Tool execution exception: {str(e)}",
+                tool_name=tool_name
+            )
+    
+    def _create_tool_result_percept(
+        self,
+        tool_name: str,
+        result: Any,
+        from_cache: bool = False,
+        execution_time: float = 0.0
+    ) -> Percept:
+        """Create a percept from tool result."""
+        return Percept(
+            modality="tool_result",
+            raw=result,
+            complexity=2,
+            metadata={
+                "tool_name": tool_name,
+                "from_cache": from_cache,
+                "execution_time": execution_time
+            }
+        )
+    
+    def _create_error_percept(
+        self,
+        error_message: str,
+        tool_name: Optional[str] = None
+    ) -> Percept:
+        """Create an error percept."""
+        return Percept(
+            modality="error",
+            raw=error_message,
+            complexity=1,
+            metadata={
+                "type": "tool_error",
+                "tool_name": tool_name
+            }
+        )
+    
+    def get_available_tools(self) -> List[Dict[str, Any]]:
+        """
+        Get list of available tools with their metadata.
+        
+        Returns:
+            List of tool information dictionaries
+        """
+        return self.tool_reg.get_available_tools()
+    
+    def invalidate_tool_cache(self, tool_name: Optional[str] = None) -> int:
+        """
+        Invalidate cached tool results.
+        
+        Args:
+            tool_name: Specific tool to invalidate, or None for all
+            
+        Returns:
+            Number of cache entries invalidated
+        """
+        return self.tool_cache.invalidate(tool_name)
     
     async def execute_action(self, action: Action) -> Any:
         """

@@ -90,7 +90,7 @@ async def demo_auto_save():
     print("\n1. Starting cognitive core with auto-save...")
     
     # Start core (this will start auto-save in background)
-    start_task = asyncio.create_task(core.start())
+    asyncio.create_task(core.start())
     
     # Wait for core to start
     await asyncio.sleep(0.5)

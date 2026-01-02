@@ -21,7 +21,7 @@ import json
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional
 
 
 def load_journal_entries(journal_path: Path) -> List[Dict]:

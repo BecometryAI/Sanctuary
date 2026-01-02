@@ -13,24 +13,19 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 from pydantic import ValidationError
-from datetime import datetime
 
 from lyra.cognitive_core.workspace import (
     GlobalWorkspace,
     Goal,
     GoalType,
-    Percept,
-    Memory,
     WorkspaceSnapshot,
 )
 from .strategies import (
     percepts,
     goals,
-    memories,
     emotional_states,
     percept_lists,
     goal_lists,
-    memory_lists,
     make_unique_by_id,
 )
 

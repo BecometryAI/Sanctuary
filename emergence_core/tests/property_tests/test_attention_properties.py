@@ -12,11 +12,10 @@ import pytest
 from hypothesis import given, settings, assume, HealthCheck
 from hypothesis import strategies as st
 
-from lyra.cognitive_core.workspace import GlobalWorkspace, Percept, Goal, GoalType
-from lyra.cognitive_core.attention import AttentionController, AttentionMode
+from lyra.cognitive_core.workspace import GlobalWorkspace
+from lyra.cognitive_core.attention import AttentionController
 from .strategies import (
     percepts,
-    goals,
     percept_lists,
     goal_lists,
     make_unique_by_id,

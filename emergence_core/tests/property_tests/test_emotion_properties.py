@@ -9,19 +9,17 @@ Tests cover:
 """
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 import numpy as np
 
-from lyra.cognitive_core.workspace import GlobalWorkspace, WorkspaceSnapshot
+from lyra.cognitive_core.workspace import GlobalWorkspace
 from lyra.cognitive_core.affect import AffectSubsystem, EmotionalState
 from .strategies import (
     emotional_states,
     percepts,
-    goals,
     percept_lists,
     goal_lists,
-    make_unique_by_id,
 )
 
 

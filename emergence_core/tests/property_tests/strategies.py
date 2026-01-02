@@ -7,7 +7,7 @@ for property-based testing.
 """
 
 from hypothesis import strategies as st
-from datetime import datetime, timedelta
+from datetime import datetime
 import numpy as np
 from typing import List
 

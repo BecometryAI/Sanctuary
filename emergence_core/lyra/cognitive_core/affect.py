@@ -19,6 +19,7 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
 from collections import deque
+from enum import Enum
 import logging
 import numpy as np
 from numpy.typing import NDArray
@@ -28,6 +29,30 @@ from .action import Action, ActionType
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
+class EmotionCategory(Enum):
+    """
+    Primary emotion categories mapped from VAD space.
+    
+    Based on Plutchik's wheel and VAD emotion mappings:
+    - JOY: High valence, high arousal (happy, excited)
+    - SADNESS: Low valence, low arousal (sad, melancholy)
+    - ANGER: Low valence, high arousal, high dominance (angry, furious)
+    - FEAR: Low valence, high arousal, low dominance (afraid, anxious)
+    - SURPRISE: Neutral valence, high arousal (surprised, astonished)
+    - DISGUST: Low valence, low arousal (disgusted, repulsed)
+    - CONTENTMENT: Mid-high valence, low arousal (calm, peaceful)
+    - ANTICIPATION: Mid valence, mid arousal, high dominance (expectant)
+    """
+    JOY = "joy"
+    SADNESS = "sadness"
+    ANGER = "anger"
+    FEAR = "fear"
+    SURPRISE = "surprise"
+    DISGUST = "disgust"
+    CONTENTMENT = "contentment"
+    ANTICIPATION = "anticipation"
 
 
 @dataclass
@@ -239,6 +264,11 @@ class AffectSubsystem:
         """
         Compute emotional impact of goal states.
         
+        Enhanced appraisal including:
+        - Goal achievement → joy
+        - Goal failure → sadness
+        - Goal progress tracking → anticipation/disappointment
+        
         Args:
             goals: List of current goals
             
@@ -268,17 +298,33 @@ class AffectSubsystem:
             deltas["arousal"] += 0.15
             deltas["dominance"] += 0.1  # Important goals = agency
         
-        # Goal achievement (progress = 1.0)
+        # Goal achievement (progress = 1.0) → JOY
         completed = [g for g in goals if g.progress >= 1.0]
         if completed:
-            deltas["valence"] += 0.3 * len(completed)
-            deltas["dominance"] += 0.2
+            # Joy: high valence, high arousal, high dominance
+            deltas["valence"] += 0.4 * len(completed)
+            deltas["arousal"] += 0.3 * len(completed)
+            deltas["dominance"] += 0.25 * len(completed)
+        
+        # Goal failure (progress decreased) → SADNESS
+        # Check metadata for failed goals
+        failed_goals = [g for g in goals if g.metadata.get("failed", False)]
+        if failed_goals:
+            # Sadness: low valence, low arousal, low dominance
+            deltas["valence"] -= 0.4 * len(failed_goals)
+            deltas["arousal"] -= 0.2 * len(failed_goals)
+            deltas["dominance"] -= 0.2 * len(failed_goals)
         
         return deltas
     
     def _update_from_percepts(self, percepts: Dict[str, Any]) -> Dict[str, float]:
         """
         Compute emotional impact of percepts.
+        
+        Enhanced appraisal including:
+        - Novelty detection → surprise
+        - Social feedback → various emotions
+        - Value alignment → positive/negative affect
         
         Args:
             percepts: Dict of current percepts (keyed by ID)
@@ -293,8 +339,14 @@ class AffectSubsystem:
         
         # Emotional keyword detection
         emotional_keywords = {
-            "positive": ["happy", "joy", "excited", "love", "wonderful", "great"],
-            "negative": ["sad", "angry", "anxious", "worried", "afraid", "terrible"],
+            "joy": ["happy", "joy", "delighted", "wonderful", "excellent"],
+            "sadness": ["sad", "depressed", "melancholy", "disappointed"],
+            "anger": ["angry", "furious", "outraged", "irritated"],
+            "fear": ["afraid", "anxious", "worried", "scared", "terrified"],
+            "surprise": ["surprising", "unexpected", "shocked", "astonished"],
+            "disgust": ["disgusting", "repulsive", "revolting", "awful"],
+            "positive": ["love", "great", "amazing", "fantastic"],
+            "negative": ["terrible", "horrible", "bad", "awful"],
             "high_arousal": ["urgent", "crisis", "emergency", "panic", "exciting"],
             "low_dominance": ["helpless", "overwhelmed", "lost", "confused"]
         }
@@ -305,15 +357,45 @@ class AffectSubsystem:
                 raw = percept_data.get("raw", "")
                 modality = percept_data.get("modality", "")
                 complexity = percept_data.get("complexity", 0)
+                metadata = percept_data.get("metadata", {})
             else:
                 # Assume it's a Percept object
                 raw = getattr(percept_data, "raw", "")
                 modality = getattr(percept_data, "modality", "")
                 complexity = getattr(percept_data, "complexity", 0)
+                metadata = getattr(percept_data, "metadata", {})
             
             text = str(raw).lower()
             
-            # Check for emotional keywords
+            # Check for specific emotions
+            if any(kw in text for kw in emotional_keywords["joy"]):
+                deltas["valence"] += 0.3
+                deltas["arousal"] += 0.2
+            
+            if any(kw in text for kw in emotional_keywords["sadness"]):
+                deltas["valence"] -= 0.3
+                deltas["arousal"] -= 0.1
+                deltas["dominance"] -= 0.1
+            
+            if any(kw in text for kw in emotional_keywords["anger"]):
+                deltas["valence"] -= 0.3
+                deltas["arousal"] += 0.3
+                deltas["dominance"] += 0.2
+            
+            if any(kw in text for kw in emotional_keywords["fear"]):
+                deltas["valence"] -= 0.3
+                deltas["arousal"] += 0.4
+                deltas["dominance"] -= 0.3
+            
+            if any(kw in text for kw in emotional_keywords["surprise"]):
+                # SURPRISE: neutral valence, very high arousal
+                deltas["arousal"] += 0.5
+            
+            if any(kw in text for kw in emotional_keywords["disgust"]):
+                deltas["valence"] -= 0.3
+                deltas["arousal"] += 0.1
+            
+            # General positive/negative
             if any(kw in text for kw in emotional_keywords["positive"]):
                 deltas["valence"] += 0.2
             
@@ -327,13 +409,40 @@ class AffectSubsystem:
             if any(kw in text for kw in emotional_keywords["low_dominance"]):
                 deltas["dominance"] -= 0.2
             
+            # Social feedback appraisal
+            if "praise" in text or "well done" in text or "good job" in text:
+                # Positive social feedback → joy
+                deltas["valence"] += 0.3
+                deltas["arousal"] += 0.2
+                deltas["dominance"] += 0.2
+            
+            if "criticism" in text or "you failed" in text or "wrong" in text:
+                # Negative social feedback → sadness/anger
+                deltas["valence"] -= 0.2
+                deltas["arousal"] += 0.15
+            
+            # Novelty detection → SURPRISE
+            if metadata.get("novelty", 0) > 0.7 or "unexpected" in text:
+                deltas["arousal"] += 0.4
+            
+            # Value alignment detection
+            if metadata.get("value_aligned", False):
+                deltas["valence"] += 0.2
+                deltas["dominance"] += 0.1
+            
             # Introspective percepts
             if modality == "introspection":
                 if isinstance(raw, dict):
                     if raw.get("type") == "value_conflict":
+                        # Value conflict → disgust/anger
+                        deltas["valence"] -= 0.3
+                        deltas["arousal"] += 0.2
+                        deltas["dominance"] -= 0.1
+                    elif raw.get("type") == "protocol_violation":
+                        # Protocol violation → shame/fear
                         deltas["valence"] -= 0.25
                         deltas["arousal"] += 0.15
-                        deltas["dominance"] -= 0.1
+                        deltas["dominance"] -= 0.2
             
             # High complexity percepts increase arousal
             if complexity > 30:
@@ -411,39 +520,65 @@ class AffectSubsystem:
     
     def get_emotion_label(self) -> str:
         """
-        Convert VAD to emotion label using Russell's circumplex.
+        Convert VAD to emotion label using primary emotion categories.
+        
+        Maps continuous VAD state to categorical emotions using
+        distance-based classification in VAD space.
         
         Returns:
             String label for current emotional state
         """
+        categories = self.get_emotion_categories()
+        if categories:
+            return categories[0].value  # Return primary emotion
+        return "neutral"
+    
+    def get_emotion_categories(self) -> List[EmotionCategory]:
+        """
+        Get primary emotion categories from current VAD state.
+        
+        Maps VAD coordinates to one or more emotion categories.
+        Multiple emotions can be active if the state is between categories.
+        
+        Returns:
+            List of EmotionCategory enums, sorted by relevance
+        """
         v, a, d = self.valence, self.arousal, self.dominance
         
-        # High arousal emotions
-        if a > 0.6:
-            if v > 0.3:
-                return "excited" if d > 0.5 else "surprised"
-            elif v < -0.3:
-                return "angry" if d > 0.5 else "anxious"
-            else:
-                return "alert"
+        # Define emotion prototypes in VAD space
+        prototypes = {
+            EmotionCategory.JOY: (0.8, 0.7, 0.7),           # High valence, high arousal, high dominance
+            EmotionCategory.SADNESS: (-0.6, 0.2, 0.3),      # Low valence, low arousal, low dominance
+            EmotionCategory.ANGER: (-0.7, 0.8, 0.8),        # Low valence, high arousal, high dominance
+            EmotionCategory.FEAR: (-0.7, 0.8, 0.2),         # Low valence, high arousal, low dominance
+            EmotionCategory.SURPRISE: (0.0, 0.9, 0.5),      # Neutral valence, very high arousal
+            EmotionCategory.DISGUST: (-0.6, 0.3, 0.6),      # Low valence, low arousal, medium dominance
+            EmotionCategory.CONTENTMENT: (0.5, 0.2, 0.6),   # Mid-high valence, low arousal
+            EmotionCategory.ANTICIPATION: (0.3, 0.6, 0.7),  # Positive valence, mid arousal, high dominance
+        }
         
-        # Low arousal emotions
-        elif a < 0.4:
-            if v > 0.3:
-                return "content" if d > 0.5 else "relaxed"
-            elif v < -0.3:
-                return "depressed" if d < 0.5 else "bored"
-            else:
-                return "calm"
+        # Calculate distances to each prototype
+        current = np.array([v, a, d])
+        distances = []
         
-        # Mid arousal
-        else:
-            if v > 0.3:
-                return "pleased"
-            elif v < -0.3:
-                return "distressed"
-            else:
-                return "neutral"
+        for category, prototype in prototypes.items():
+            prototype_vec = np.array(prototype)
+            distance = np.linalg.norm(current - prototype_vec)
+            distances.append((distance, category))
+        
+        # Sort by distance (closest first)
+        distances.sort(key=lambda x: x[0])
+        
+        # Return emotions within threshold of closest
+        threshold = 1.0  # Only include emotions close to current state
+        closest_distance = distances[0][0]
+        
+        active_emotions = [
+            category for distance, category in distances
+            if distance <= closest_distance + threshold
+        ]
+        
+        return active_emotions if active_emotions else [EmotionCategory.CONTENTMENT]
     
     def get_state(self) -> Dict[str, Any]:
         """

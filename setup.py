@@ -16,6 +16,8 @@ setup(
         "sentence-transformers>=5.1.2",
         "langchain>=0.1.0",
         "langchain-core>=0.1.0",  # Required for Document import in newer LangChain versions
+        "langchain-text-splitters>=0.0.1",  # Required for text splitting in newer LangChain versions
+        "langchain-community>=0.0.1",  # Required for vectorstore and other community integrations
         "chromadb>=1.3.4",
         "accelerate>=0.28.0",
         "bitsandbytes>=0.41.0",

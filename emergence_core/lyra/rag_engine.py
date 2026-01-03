@@ -14,10 +14,28 @@ except ImportError:
     # Fall back to older import structure
     from langchain.schema import Document
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+try:
+    # Try newer LangChain import structure (0.1.0+)
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    # Fall back to older import structure
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+try:
+    # Try newer LangChain import structure (0.1.0+)
+    from langchain_community.vectorstores import Chroma
+except ImportError:
+    # Fall back to older import structure
+    from langchain.vectorstores import Chroma
+
+try:
+    # Try newer LangChain import structure (0.1.0+)
+    from langchain.chains import RetrievalQA
+    from langchain.prompts import PromptTemplate
+except ImportError:
+    # These should still work in newer versions
+    from langchain.chains import RetrievalQA
+    from langchain.prompts import PromptTemplate
 
 import torch
 import chromadb

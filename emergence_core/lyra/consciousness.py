@@ -24,9 +24,24 @@ class ConsciousnessCore:
         model_name: str = "sentence-transformers/all-mpnet-base-v2"
     ):
         """Initialize the consciousness core"""
+        # Initialize internal state first to avoid AttributeError in exception handler
+        self.internal_state = {
+            "attention_focus": None,
+            "emotional_valence": 0.0,
+            "cognitive_load": 0.0,
+            "current_context": [],
+            "model_loaded": False,
+            "processing": False,
+            "last_input": None,
+            "last_output": None
+        }
+        
         try:
-            # Initialize memory system
-            self.memory = MemoryManager(persistence_dir=memory_persistence_dir)
+            # Initialize memory system (requires both persistence_dir and chain_dir)
+            self.memory = MemoryManager(
+                persistence_dir=memory_persistence_dir,
+                chain_dir="chain"
+            )
             
             # Initialize context management system
             self.context_manager = ContextManager(persistence_dir=context_persistence_dir)
@@ -55,14 +70,8 @@ class ConsciousnessCore:
             self.model = SentenceTransformer(model_name)
             logging.info("Language model loaded successfully")
             
-            # Initialize base state
-            self.internal_state = {
-                "attention_focus": None,
-                "emotional_valence": 0.0,
-                "cognitive_load": 0.0,
-                "current_context": [],
-                "model_loaded": True
-            }
+            # Update state after successful model load
+            self.internal_state["model_loaded"] = True
             
             # Load initial responses
             self.response_templates = {

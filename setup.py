@@ -53,6 +53,7 @@ setup(
         "asyncio>=3.4.3",
         "anyio>=3.7.1",
         "schedule>=1.2.0",
+        "aioconsole>=0.7.0",  # Required for terminal interface
         
         # GPU monitoring (optional)
         "nvidia-ml-py>=12.560.30",

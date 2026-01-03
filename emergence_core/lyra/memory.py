@@ -9,7 +9,7 @@ This module implements a three-tier persistent memory architecture:
 Usage Example:
     Initialize and load existing data:
     
-    >>> from lyra.memory import MemoryManager
+    >>> from emergence_core.lyra.memory import MemoryManager
     >>> memory = MemoryManager(persistence_dir="memories", chain_dir="chain")
     >>> 
     >>> # Load all existing journals, protocols, and lexicon

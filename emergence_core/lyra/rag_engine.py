@@ -29,12 +29,21 @@ except ImportError:
     from langchain.vectorstores import Chroma
 
 try:
-    # Try newer LangChain import structure (0.1.0+)
+    # Try newer LangChain import structure (0.2.0+) - chains moved to langchain package
     from langchain.chains import RetrievalQA
-    from langchain.prompts import PromptTemplate
 except ImportError:
-    # These should still work in newer versions
-    from langchain.chains import RetrievalQA
+    try:
+        # Try older structure with specific module
+        from langchain.chains.retrieval_qa import RetrievalQA
+    except ImportError:
+        # Ultimate fallback
+        from langchain.chains import RetrievalQA
+
+try:
+    # Try newer LangChain import structure (0.1.0+)
+    from langchain_core.prompts import PromptTemplate
+except ImportError:
+    # Fall back to older import structure
     from langchain.prompts import PromptTemplate
 
 import torch

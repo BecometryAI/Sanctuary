@@ -1,4 +1,3 @@
-from langchain.schema import Document
 """
 RAG Engine implementation for Lyra's mind-brain integration.
 """
@@ -7,6 +6,13 @@ import logging
 from pathlib import Path
 import json
 from datetime import datetime
+
+try:
+    # Try newer LangChain import structure (0.1.0+)
+    from langchain_core.documents import Document
+except ImportError:
+    # Fall back to older import structure
+    from langchain.schema import Document
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma

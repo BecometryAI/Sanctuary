@@ -39,7 +39,7 @@ class ConsciousnessCore:
         try:
             # Initialize memory system (requires both persistence_dir and chain_dir)
             self.memory = MemoryManager(
-                memory_persistence_dir,
+                persistence_dir=memory_persistence_dir,
                 chain_dir="chain"
             )
             

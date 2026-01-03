@@ -60,8 +60,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from .lyra_chain import LyraChain
-from .rag_engine import MindVectorDB
+from lyra.lyra_chain import LyraChain
+from lyra.rag_engine import MindVectorDB
 
 logger = logging.getLogger(__name__)
 

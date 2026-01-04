@@ -14,7 +14,7 @@ from .strategies import emotional_states
 @pytest.mark.property
 class TestEmotionProperties:
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=50)
     def test_vad_bounds_enforced(self, emotion):
         """Property: VAD values always in [-1, 1] range."""
@@ -22,7 +22,7 @@ class TestEmotionProperties:
         assert -1.0 <= emotion['arousal'] <= 1.0
         assert -1.0 <= emotion['dominance'] <= 1.0
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=50)
     def test_emotional_state_has_required_keys(self, emotion):
         """Property: Emotional state has all required VAD keys."""
@@ -30,7 +30,7 @@ class TestEmotionProperties:
         assert 'arousal' in emotion
         assert 'dominance' in emotion
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=50)
     def test_emotional_state_values_are_floats(self, emotion):
         """Property: All VAD values are floats."""
@@ -38,7 +38,7 @@ class TestEmotionProperties:
         assert isinstance(emotion['arousal'], float)
         assert isinstance(emotion['dominance'], float)
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=50)
     def test_emotional_state_no_nan_or_inf(self, emotion):
         """Property: VAD values are not NaN or infinite."""

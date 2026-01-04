@@ -35,7 +35,7 @@ class TestAttentionProperties:
         assert total_complexity <= budget
         assert len(selected) <= len(percepts_list)
     
-    @given(percept_lists, goal_lists, emotional_states)
+    @given(percept_lists, goal_lists, emotional_states())
     @settings(max_examples=50, deadline=500)
     def test_attention_selection_subset(self, percepts_list, goals_list, emotions):
         """Property: Selected percepts are always a subset of candidates."""

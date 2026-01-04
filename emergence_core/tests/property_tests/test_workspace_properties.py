@@ -16,7 +16,7 @@ from .strategies import percepts, goals, emotional_states, percept_lists, goal_l
 @pytest.mark.property
 class TestWorkspaceProperties:
     
-    @given(percept_lists, goal_lists, emotional_states)
+    @given(percept_lists, goal_lists, emotional_states())
     @settings(max_examples=50, deadline=500)
     def test_workspace_snapshot_immutability(self, percepts_list, goals_list, emotions):
         """Property: Workspace snapshots are immutable after creation."""
@@ -106,7 +106,7 @@ class TestWorkspaceProperties:
         assert len(workspace.current_goals) == 0
         assert goal.id not in [g.id for g in workspace.current_goals]
     
-    @given(percept_lists, goal_lists, emotional_states)
+    @given(percept_lists, goal_lists, emotional_states())
     @settings(max_examples=50)
     def test_workspace_serialization_roundtrip(self, percepts_list, goals_list, emotions):
         """Property: Workspace state is preserved through serialization."""
@@ -133,7 +133,7 @@ class TestWorkspaceProperties:
         assert restored.emotional_state == workspace.emotional_state
         assert restored.cycle_count == workspace.cycle_count
     
-    @given(emotional_states)
+    @given(emotional_states())
     @settings(max_examples=50)
     def test_emotional_state_updates_correctly(self, emotions):
         """Property: Emotional state updates reflect the new values."""

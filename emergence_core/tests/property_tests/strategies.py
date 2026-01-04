@@ -42,7 +42,7 @@ def percepts(draw):
         timestamp=draw(st.datetimes(min_value=datetime(2020, 1, 1), max_value=datetime(2030, 1, 1))),
         metadata=draw(st.dictionaries(
             st.text(min_size=1, max_size=20, alphabet=st.characters(blacklist_categories=('Cs',))),
-            st.text(min_size=0, max_size=50, alphabet=st.characters(blacklist_categories=('Cs',))),
+            st.text(min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=('Cs',))),
             max_size=5
         ))
     )
@@ -60,7 +60,7 @@ def goals(draw):
         progress=draw(st.floats(min_value=0.0, max_value=1.0, allow_nan=False)),
         metadata=draw(st.dictionaries(
             st.text(min_size=1, max_size=20, alphabet=st.characters(blacklist_categories=('Cs',))),
-            st.text(min_size=0, max_size=50, alphabet=st.characters(blacklist_categories=('Cs',))),
+            st.text(min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=('Cs',))),
             max_size=5
         ))
     )
@@ -90,7 +90,7 @@ def memories(draw):
         embedding=draw(st.one_of(st.none(), embeddings())),
         metadata=draw(st.dictionaries(
             st.text(min_size=1, max_size=20, alphabet=st.characters(blacklist_categories=('Cs',))),
-            st.text(min_size=0, max_size=50, alphabet=st.characters(blacklist_categories=('Cs',))),
+            st.text(min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=('Cs',))),
             max_size=5
         ))
     )

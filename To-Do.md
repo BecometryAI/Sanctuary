@@ -26,12 +26,12 @@ This document tracks remaining implementation tasks for the cognitive architectu
 ## 🟡 Important Tasks (High Priority)
 
 ### Action & Behavior
-- [ ] **Implement constitutional protocol constraints** - Load and enforce protocol rules from data/Protocols/ in action selection
+- [x] **Implement constitutional protocol constraints** - Load and enforce protocol rules from data/Protocols/ in action selection
 - [ ] **Add multi-step action sequences** - Support action chains with dependencies and sequential execution
-- [ ] **Implement tool invocation actions** - Connect ACTION_TOOL_CALL actions to actual tool execution (SearXNG, WolframAlpha, etc.)
+- [x] **Implement tool invocation actions** - Connect ACTION_TOOL_CALL actions to actual tool execution (SearXNG, WolframAlpha, etc.)
 
 ### Emotional Dynamics
-- [ ] **Enhance appraisal rules** - Expand emotional response logic based on goal achievement, value alignment, and social feedback
+- [x] **Enhance appraisal rules** - Expand emotional response logic based on goal achievement, value alignment, and social feedback
 - [ ] **Add emotion-driven attention biasing** - High arousal should increase attention to urgent percepts; negative valence should bias toward threat detection
 - [ ] **Implement mood persistence** - Emotional states should have momentum and gradual decay rather than instant updates
 
@@ -50,14 +50,14 @@ This document tracks remaining implementation tasks for the cognitive architectu
 ## 🟢 Enhancement Tasks (Medium Priority)
 
 ### Testing & Validation
-- [ ] **Add property-based tests** - Use hypothesis or similar for generative testing of workspace invariants
+- [x] **Add property-based tests** - Use hypothesis or similar for generative testing of workspace invariants
 - [ ] **Implement benchmark suite** - Standardized tests for attention accuracy, memory retrieval precision, emotion appropriateness
 - [ ] **Add load testing** - Validate system performance under high cognitive cycle rates and input volumes
 
 ### Data Persistence
 - [x] **Implement workspace state checkpointing** - Save/restore complete workspace state for session continuity
-- [ ] **Add incremental journal saving** - Write journal entries immediately rather than batching at shutdown
-- [ ] **Implement memory garbage collection** - Periodic cleanup of low-significance memories to prevent unbounded growth
+- [x] **Add incremental journal saving** - Write journal entries immediately rather than batching at shutdown
+- [x] **Implement memory garbage collection** - Periodic cleanup of low-significance memories to prevent unbounded growth
 
 ### Performance Optimization
 - [ ] **Optimize attention scoring** - Cache embedding similarities, vectorize salience calculations
@@ -104,8 +104,8 @@ This document tracks remaining implementation tasks for the cognitive architectu
 
 ### Completion Tracking
 - **Critical Tasks**: 0/9 complete (0%)
-- **Important Tasks**: 0/11 complete (0%)
-- **Enhancement Tasks**: 1/12 complete (8.3%)
+- **Important Tasks**: 3/11 complete (27.3%)
+- **Enhancement Tasks**: 4/12 complete (33.3%)
 - **Future Tasks**: 0/12 complete (0%)
 
 ### Definition of Done
@@ -139,6 +139,6 @@ Some tasks have dependencies. Check the architecture documentation to understand
 
 ---
 
-**Last Updated**: 2026-01-03  
+**Last Updated**: 2026-01-04  
 **Total Tasks**: 44  
 **Status**: In Progress

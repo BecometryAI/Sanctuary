@@ -681,9 +681,28 @@ uv run pytest emergence_core/tests/test_interfaces.py
 
 ## Running the System
 
-### Starting the Cognitive Core
+### Quick Start: Minimal Single-Cycle Test
 
-The cognitive core is the main entry point for the pure GWT architecture:
+To verify the cognitive core is functional, run the minimal CLI:
+
+```bash
+# Run a single cognitive cycle and exit
+python emergence_core/run_cognitive_core_minimal.py
+```
+
+**Expected output:**
+- Initialization of all subsystems
+- Execution of one cognitive cycle
+- Display of workspace state (goals, percepts, emotions)
+- Performance metrics (cycle time, Hz, attention selections)
+- Verification checks (✅ pass or ❌ fail)
+- Exit code 0 if successful
+
+**Purpose:** This script proves the cognitive architecture runs without errors and provides a baseline for development.
+
+### Starting the Cognitive Core (Continuous Mode)
+
+For continuous operation, use the existing entry point:
 
 ```bash
 # Run the cognitive core

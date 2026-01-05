@@ -567,11 +567,13 @@ Models will be automatically downloaded from Hugging Face on first use. Ensure y
 
 ### Running the System
 
-**Option 1: Run Cognitive Core (New Architecture)**
+**Starting the Cognitive Core**
+
+The cognitive core is the main entry point for the pure GWT architecture:
+
 ```bash
-# Start the cognitive core with continuous recurrent loop
-# Note: Requires Phase 2+ completion. Check Project Status section for current phase.
-uv run python -m emergence_core.lyra.cognitive_core.core
+# Run the cognitive core with continuous recurrent loop
+python emergence_core/run_cognitive_core.py
 
 # The cognitive core will:
 # - Initialize GlobalWorkspace and all subsystems
@@ -620,10 +622,8 @@ python scripts/recover_journal.py repair corrupted.jsonl --output repaired.jsonl
 ```
 
 **Discord Integration:**
-```bash
-# Ensure DISCORD_TOKEN is set in .env
-uv run run_discord_bot.py
-```
+
+The Discord bot integration is planned for future development using the new cognitive core architecture.
 
 ### Troubleshooting
 
@@ -933,15 +933,6 @@ python scripts/demo_memory_gc.py
 ```
 
 For complete documentation, see [docs/MEMORY_GC_GUIDE.md](docs/MEMORY_GC_GUIDE.md).
-
-### Notes on Deprecated Files
-
-Some files from the old "Cognitive Committee" architecture remain in the repository but are marked as DEPRECATED:
-- `emergence_core/run.py` - Old API server
-- `emergence_core/run_lyra_bot.py` - Old Discord bot
-- `emergence_core/lyra/api.py` - Old REST API
-
-These files will be updated or removed in future releases. Use `run_cognitive_core.py` for the current pure GWT architecture.
 
 ### Contributing to the Cognitive Architecture
 

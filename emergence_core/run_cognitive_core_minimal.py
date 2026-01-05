@@ -140,6 +140,11 @@ async def main():
     print(f"Workspace Size: {metrics['workspace_size']}")
     print(f"Current Goals: {metrics['current_goals']}")
     print()
+    print("Timing Enforcement:")
+    print(f"  Slow Cycles (>100ms): {metrics['slow_cycles']} ({metrics['slow_cycle_percentage']:.1f}%)")
+    print(f"  Critical Cycles (>200ms): {metrics['critical_cycles']} ({metrics['critical_cycle_percentage']:.1f}%)")
+    print(f"  Slowest Cycle: {metrics['slowest_cycle_ms']:.2f} ms")
+    print()
     
     # Step 9: Stop the cognitive core
     print("Step 9: Stopping CognitiveCore...")

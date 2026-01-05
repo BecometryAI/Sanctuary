@@ -50,6 +50,11 @@ DEFAULT_CONFIG = {
     "attention_budget": 100,
     "max_queue_size": 100,
     "log_interval_cycles": 100,
+    "timing": {
+        "warn_threshold_ms": 100,      # Warn if cycle exceeds this
+        "critical_threshold_ms": 200,  # Critical warning threshold
+        "track_slow_cycles": True,     # Track frequency of slow cycles
+    },
     "checkpointing": {
         "enabled": True,
         "auto_save": False,
@@ -283,6 +288,9 @@ class CognitiveCore:
             'cycle_times': deque(maxlen=100),
             'attention_selections': 0,
             'percepts_processed': 0,
+            'slow_cycles': 0,           # NEW: Count of cycles > warn_threshold
+            'critical_cycles': 0,       # NEW: Count of cycles > critical_threshold
+            'slowest_cycle_ms': 0.0,    # NEW: Maximum cycle time observed
         }
         
         # Initialize checkpoint manager
@@ -595,6 +603,30 @@ class CognitiveCore:
             
             # 11. METRICS: Track performance
             cycle_time = time.time() - cycle_start
+            cycle_time_ms = cycle_time * 1000
+
+            # Check timing enforcement thresholds
+            timing_config = self.config.get("timing", {})
+            warn_threshold = timing_config.get("warn_threshold_ms", 100)
+            critical_threshold = timing_config.get("critical_threshold_ms", 200)
+
+            if cycle_time_ms > critical_threshold:
+                logger.warning(
+                    f"⚠️ CRITICAL: Cognitive cycle exceeded {critical_threshold}ms "
+                    f"(actual: {cycle_time_ms:.1f}ms, target: {self.cycle_duration*1000:.0f}ms). "
+                    f"Cycle {self.metrics['total_cycles'] + 1}. "
+                    f"System performance degraded."
+                )
+                self.metrics['critical_cycles'] += 1
+            elif cycle_time_ms > warn_threshold:
+                logger.warning(
+                    f"⚠️  Cognitive cycle exceeded target "
+                    f"(actual: {cycle_time_ms:.1f}ms, target: {warn_threshold:.0f}ms). "
+                    f"Cycle {self.metrics['total_cycles'] + 1}."
+                )
+                self.metrics['slow_cycles'] += 1
+
+            # Update metrics (includes slow cycle tracking)
             self._update_metrics(cycle_time)
             
             # Phase 4.3: Periodic accuracy snapshots (every 100 cycles)
@@ -605,7 +637,11 @@ class CognitiveCore:
             
             # 12. RATE LIMITING: Maintain ~10 Hz
             sleep_time = max(0, self.cycle_duration - cycle_time)
-            await asyncio.sleep(sleep_time)
+            if sleep_time > 0:
+                await asyncio.sleep(sleep_time)
+            else:
+                # Cycle took longer than target - no sleep needed
+                logger.debug(f"Cycle overran by {abs(sleep_time)*1000:.1f}ms, skipping sleep")
             
         except Exception as e:
             logger.error(f"Error in cognitive cycle: {e}", exc_info=True)
@@ -728,11 +764,19 @@ class CognitiveCore:
         - Attention selection statistics
         - Subsystem execution times
         - Resource utilization
+        - Timing enforcement statistics
         
         Returns:
             Dict containing performance metrics
         """
         avg_cycle_time = mean(self.metrics['cycle_times']) if self.metrics['cycle_times'] else 0.0
+        
+        # Calculate timing statistics
+        slow_cycle_pct = 0.0
+        critical_cycle_pct = 0.0
+        if self.metrics['total_cycles'] > 0:
+            slow_cycle_pct = (self.metrics['slow_cycles'] / self.metrics['total_cycles']) * 100
+            critical_cycle_pct = (self.metrics['critical_cycles'] / self.metrics['total_cycles']) * 100
         
         return {
             'total_cycles': self.metrics['total_cycles'],
@@ -743,6 +787,12 @@ class CognitiveCore:
             'percepts_processed': self.metrics['percepts_processed'],
             'workspace_size': len(self.workspace.active_percepts),
             'current_goals': len(self.workspace.current_goals),
+            # NEW: Timing enforcement metrics
+            'slow_cycles': self.metrics['slow_cycles'],
+            'slow_cycle_percentage': slow_cycle_pct,
+            'critical_cycles': self.metrics['critical_cycles'],
+            'critical_cycle_percentage': critical_cycle_pct,
+            'slowest_cycle_ms': self.metrics['slowest_cycle_ms'],
         }
     
     async def get_response(self, timeout: float = 5.0) -> Optional[Dict]:
@@ -957,6 +1007,11 @@ class CognitiveCore:
         """
         self.metrics['total_cycles'] += 1
         self.metrics['cycle_times'].append(cycle_time)
+        
+        # Track slowest cycle
+        cycle_time_ms = cycle_time * 1000
+        if cycle_time_ms > self.metrics['slowest_cycle_ms']:
+            self.metrics['slowest_cycle_ms'] = cycle_time_ms
         
         # Log every N cycles
         if self.metrics['total_cycles'] % self.config['log_interval_cycles'] == 0:

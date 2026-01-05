@@ -59,6 +59,7 @@ async def test_slow_cycle_warning():
             try:
                 await start_task
             except asyncio.CancelledError:
+                # Cancellation is expected when stopping the core; ignore this error.
                 pass
     
     # Check metrics
@@ -98,6 +99,7 @@ async def test_critical_cycle_warning():
             try:
                 await start_task
             except asyncio.CancelledError:
+                # Cancellation is expected when stopping the core; ignore this error.
                 pass
     
     metrics = core.get_metrics()

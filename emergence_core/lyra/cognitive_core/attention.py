@@ -267,6 +267,15 @@ class AttentionController:
                 recency * self.urgency_weight
             )
             
+            # Tool result boost: Tool results get attention priority
+            if percept.modality == "tool_result":
+                # Base boost for all tool results
+                base_score += 0.30
+                
+                # Additional boost for failed tools (errors need attention)
+                if percept.metadata.get("tool_success") is False:
+                    base_score += 0.20
+            
             # Apply affect modulation if affect subsystem is available
             if self.affect:
                 total_score = self.affect.influence_attention(base_score, percept)
@@ -345,6 +354,15 @@ class AttentionController:
             emotion_sal * self.emotion_weight +
             recency * self.urgency_weight
         )
+        
+        # Tool result boost: Tool results get attention priority
+        if percept.modality == "tool_result":
+            # Base boost for all tool results
+            base_score += 0.30
+            
+            # Additional boost for failed tools (errors need attention)
+            if percept.metadata.get("tool_success") is False:
+                base_score += 0.20
         
         # Apply affect modulation if affect subsystem is available
         if self.affect:

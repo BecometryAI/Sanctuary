@@ -23,6 +23,11 @@ from enum import Enum
 
 logger = logging.getLogger(__name__)
 
+# Import for percept generation (avoiding circular import)
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .workspace import Percept
+
 
 class ToolStatus(str, Enum):
     """Status of tool execution."""
@@ -52,6 +57,35 @@ class ToolResult:
     error: Optional[str] = None
     execution_time: float = 0.0
     timestamp: datetime = field(default_factory=datetime.now)
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ToolExecutionResult:
+    """
+    Result of tool execution with percept generation for feedback loop.
+    
+    This class extends ToolResult to include percept generation, enabling
+    bidirectional feedback where tool results automatically create percepts
+    that inform future cognitive cycles.
+    
+    Attributes:
+        tool_name: Name of the tool that was executed
+        success: Whether execution succeeded
+        result: Actual result data (if successful)
+        error: Error message (if failed)
+        execution_time_ms: How long execution took (milliseconds)
+        timestamp: When execution completed
+        percept: Generated percept for feedback loop (can be None)
+        metadata: Additional context about execution
+    """
+    tool_name: str
+    success: bool
+    result: Optional[Any] = None
+    error: Optional[str] = None
+    execution_time_ms: float = 0.0
+    timestamp: datetime = field(default_factory=datetime.now)
+    percept: Optional['Percept'] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -333,6 +367,209 @@ class ToolRegistry:
         """Clear execution history."""
         self.execution_history.clear()
         logger.info("🧹 Cleared tool execution history")
+    
+    async def execute_tool_with_percept(
+        self,
+        name: str,
+        parameters: Optional[Dict[str, Any]] = None,
+        create_percept: bool = True,
+        **kwargs
+    ) -> ToolExecutionResult:
+        """
+        Execute tool and optionally create percept for feedback loop.
+        
+        This method extends execute_tool to generate percepts from tool results,
+        enabling bidirectional feedback where tool execution automatically creates
+        percepts that inform future cognitive cycles.
+        
+        Args:
+            name: Name of tool to execute
+            parameters: Tool parameters (alternative to **kwargs)
+            create_percept: Whether to create percept from result (default: True)
+            **kwargs: Additional parameters to pass to tool handler
+            
+        Returns:
+            ToolExecutionResult with success status and generated percept
+        """
+        import time
+        start_time = time.time()
+        
+        # Merge parameters
+        if parameters:
+            kwargs.update(parameters)
+        
+        if name not in self.tools:
+            error_msg = f"Tool '{name}' not found"
+            execution_time_ms = (time.time() - start_time) * 1000
+            percept = self._create_error_percept(name, error_msg, execution_time_ms) if create_percept else None
+            return ToolExecutionResult(
+                tool_name=name,
+                success=False,
+                error=error_msg,
+                execution_time_ms=execution_time_ms,
+                percept=percept
+            )
+        
+        tool = self.tools[name]
+        try:
+            # Execute with timeout
+            result = await asyncio.wait_for(
+                tool.handler(**kwargs),
+                timeout=tool.timeout
+            )
+            execution_time_ms = (time.time() - start_time) * 1000
+            
+            # Create percept from successful result
+            percept = self._create_result_percept(
+                name, 
+                result, 
+                execution_time_ms
+            ) if create_percept else None
+            
+            # Update stats
+            self.stats[name]["total_calls"] += 1
+            self.stats[name]["successes"] += 1
+            self.stats[name]["total_time"] += execution_time_ms / 1000
+            
+            logger.info(f"✅ Tool '{name}' executed successfully ({execution_time_ms:.1f}ms)")
+            
+            return ToolExecutionResult(
+                tool_name=name,
+                success=True,
+                result=result,
+                execution_time_ms=execution_time_ms,
+                percept=percept
+            )
+        except asyncio.TimeoutError:
+            execution_time_ms = (time.time() - start_time) * 1000
+            error_msg = f"Tool execution exceeded timeout of {tool.timeout}s"
+            
+            # Create percept from timeout
+            percept = self._create_error_percept(
+                name, 
+                error_msg, 
+                execution_time_ms
+            ) if create_percept else None
+            
+            # Update stats
+            self.stats[name]["total_calls"] += 1
+            self.stats[name]["timeouts"] += 1
+            self.stats[name]["total_time"] += execution_time_ms / 1000
+            
+            logger.warning(f"⏱️ Tool '{name}' timed out after {execution_time_ms:.1f}ms")
+            
+            return ToolExecutionResult(
+                tool_name=name,
+                success=False,
+                error=error_msg,
+                execution_time_ms=execution_time_ms,
+                percept=percept
+            )
+        except Exception as e:
+            execution_time_ms = (time.time() - start_time) * 1000
+            error_msg = str(e)
+            
+            # Create percept from error
+            percept = self._create_error_percept(
+                name, 
+                error_msg, 
+                execution_time_ms
+            ) if create_percept else None
+            
+            # Update stats
+            self.stats[name]["total_calls"] += 1
+            self.stats[name]["failures"] += 1
+            self.stats[name]["total_time"] += execution_time_ms / 1000
+            
+            logger.error(f"❌ Tool '{name}' failed: {e}")
+            
+            return ToolExecutionResult(
+                tool_name=name,
+                success=False,
+                error=error_msg,
+                execution_time_ms=execution_time_ms,
+                percept=percept
+            )
+    
+    def _create_result_percept(
+        self, 
+        tool_name: str, 
+        result: Any, 
+        execution_time_ms: float
+    ) -> 'Percept':
+        """
+        Create percept from successful tool execution.
+        
+        Args:
+            tool_name: Name of the tool
+            result: Tool execution result
+            execution_time_ms: Execution time in milliseconds
+            
+        Returns:
+            Percept for feedback loop
+        """
+        from .workspace import Percept
+        
+        return Percept(
+            modality="tool_result",
+            raw=result,
+            complexity=self._estimate_complexity(result),
+            metadata={
+                "tool_name": tool_name,
+                "tool_success": True,
+                "execution_time_ms": execution_time_ms,
+                "result_type": type(result).__name__
+            }
+        )
+    
+    def _create_error_percept(
+        self, 
+        tool_name: str, 
+        error: str, 
+        execution_time_ms: float = 0.0
+    ) -> 'Percept':
+        """
+        Create percept from failed tool execution.
+        
+        Args:
+            tool_name: Name of the tool
+            error: Error message
+            execution_time_ms: Execution time in milliseconds
+            
+        Returns:
+            Percept for feedback loop
+        """
+        from .workspace import Percept
+        
+        return Percept(
+            modality="tool_result",
+            raw={"error": error},
+            complexity=5,  # Errors require attention
+            metadata={
+                "tool_name": tool_name,
+                "tool_success": False,
+                "tool_error": error,
+                "execution_time_ms": execution_time_ms
+            }
+        )
+    
+    def _estimate_complexity(self, result: Any) -> int:
+        """
+        Estimate percept complexity based on result size.
+        
+        Args:
+            result: Tool execution result
+            
+        Returns:
+            Complexity score (1-10)
+        """
+        if isinstance(result, str):
+            return min(10, max(1, len(result) // 100))
+        elif isinstance(result, (list, dict)):
+            return min(10, max(1, len(str(result)) // 200))
+        else:
+            return 3
+
 
 
 # Example tool implementations

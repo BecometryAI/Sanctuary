@@ -293,6 +293,9 @@ class CognitiveCore:
             'slowest_cycle_ms': 0.0,    # NEW: Maximum cycle time observed
         }
         
+        # NEW: Initialize pending tool percepts for feedback loop
+        self._pending_tool_percepts = []
+        
         # Initialize checkpoint manager
         checkpoint_config = self.config.get("checkpointing", {})
         if checkpoint_config.get("enabled", True):
@@ -483,6 +486,14 @@ class CognitiveCore:
             # 1. PERCEPTION: Process queued inputs
             step_start = time.time()
             new_percepts = await self._gather_percepts()
+            
+            # NEW: Add any pending tool result percepts from previous cycle
+            if hasattr(self, '_pending_tool_percepts'):
+                new_percepts.extend(self._pending_tool_percepts)
+                if self._pending_tool_percepts:
+                    logger.info(f"🔄 Adding {len(self._pending_tool_percepts)} tool result percepts to cycle")
+                self._pending_tool_percepts = []
+            
             subsystem_timings['perception'] = (time.time() - step_start) * 1000  # ms
             
             # 2. MEMORY RETRIEVAL: Check for memory retrieval goals
@@ -545,8 +556,17 @@ class CognitiveCore:
                     )
             
             # Execute immediate actions
+            step_start = time.time()
+            tool_percepts = []  # NEW: Collect tool result percepts
             for action in actions:
-                await self._execute_action(action)
+                # NEW: Check if this is a tool call and handle specially
+                from .action import ActionType
+                if action.type == ActionType.TOOL_CALL:
+                    tool_percept = await self._execute_tool_action(action)
+                    if tool_percept:
+                        tool_percepts.append(tool_percept)
+                else:
+                    await self._execute_action(action)
                 
                 # Extract action outcome for self-model update
                 actual_outcome = self._extract_action_outcome(action)
@@ -567,6 +587,12 @@ class CognitiveCore:
                     # Trigger self-model refinement if error detected
                     if validated and not validated.correct and validated.error_magnitude > self.meta_cognition.refinement_threshold:
                         self.meta_cognition.refine_self_model_from_errors([validated])
+            
+            # NEW: Store tool percepts for next cycle (feedback loop)
+            if not hasattr(self, '_pending_tool_percepts'):
+                self._pending_tool_percepts = []
+            self._pending_tool_percepts.extend(tool_percepts)
+            
             subsystem_timings['action'] = (time.time() - step_start) * 1000
             
             # 6. META-COGNITION: Introspect
@@ -1213,6 +1239,68 @@ class CognitiveCore:
                 
         except Exception as e:
             logger.error(f"Error executing action {action.type}: {e}", exc_info=True)
+    
+    async def _execute_tool_action(self, action: Any) -> Optional[Percept]:
+        """
+        Execute a tool call action and return the result percept.
+        
+        This method handles TOOL_CALL actions by executing the tool via the
+        tool registry and returning the generated percept for the feedback loop.
+        
+        Args:
+            action: TOOL_CALL action with tool_name and parameters
+            
+        Returns:
+            Percept from tool execution, or None on error
+        """
+        from .action import ActionType
+        
+        if action.type != ActionType.TOOL_CALL:
+            logger.error(f"_execute_tool_action called with non-TOOL_CALL action: {action.type}")
+            return None
+        
+        try:
+            # Extract tool information from action
+            tool_name = action.parameters.get("tool_name")
+            tool_params = action.parameters.get("parameters", {})
+            
+            if not tool_name:
+                logger.error("TOOL_CALL action missing tool_name parameter")
+                return None
+            
+            # Check if action subsystem has the new tool registry with percept generation
+            if hasattr(self.action, 'tool_reg'):
+                # Use new tool registry with percept generation
+                result = await self.action.tool_reg.execute_tool_with_percept(
+                    tool_name,
+                    parameters=tool_params,
+                    create_percept=True
+                )
+                
+                # Log execution result
+                if result.success:
+                    logger.info(
+                        f"✅ Tool '{tool_name}' executed: success "
+                        f"({result.execution_time_ms:.1f}ms)"
+                    )
+                else:
+                    logger.warning(
+                        f"❌ Tool '{tool_name}' failed: {result.error} "
+                        f"({result.execution_time_ms:.1f}ms)"
+                    )
+                
+                # Return the generated percept
+                return result.percept
+            else:
+                # Fallback to legacy tool execution (no percept generation)
+                logger.warning("Action subsystem missing tool_reg, using legacy execution")
+                result = await self.action.execute_action(action)
+                logger.debug(f"Action TOOL_CALL (legacy): result={result}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error executing tool action: {e}", exc_info=True)
+            return None
     
     def _extract_action_outcome(self, action: Any) -> Dict[str, Any]:
         """

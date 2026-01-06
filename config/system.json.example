@@ -1,0 +1,7 @@
+{
+    "base_dir": ".",
+    "chroma_dir": "./data/chroma",
+    "model_dir": "./models",
+    "cache_dir": "./data/cache",
+    "log_dir": "./logs"
+}

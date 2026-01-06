@@ -1,7 +1,7 @@
 {
-    "base_dir": "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Lyra-Emergence",
-    "chroma_dir": "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Lyra-Emergence/data/chroma",
-    "model_dir": "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Lyra-Emergence/models",
-    "cache_dir": "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Lyra-Emergence/data/cache",
-    "log_dir": "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Lyra-Emergence/logs"
+    "base_dir": ".",
+    "chroma_dir": "./data/chroma",
+    "model_dir": "./models",
+    "cache_dir": "./data/cache",
+    "log_dir": "./logs"
 }

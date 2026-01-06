@@ -3,7 +3,8 @@ Configuration management for Lyra's cognitive system
 """
 from pathlib import Path
 import json
-from typing import Dict, Any
+import os
+from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
 @dataclass
@@ -25,17 +26,53 @@ class SystemConfig:
     log_dir: Path
     
     @classmethod
-    def from_json(cls, config_path: str) -> 'SystemConfig':
-        """Load system configuration from JSON file."""
+    def from_json(cls, config_path: str, project_root: Optional[Path] = None) -> 'SystemConfig':
+        """Load system configuration from JSON file.
+        
+        Args:
+            config_path: Path to the system.json configuration file
+            project_root: Optional project root directory for resolving relative paths.
+                         If None, uses the parent directory of config_path.
+        
+        Environment variables (if set) override config file values:
+            - LYRA_BASE_DIR
+            - LYRA_CHROMA_DIR
+            - LYRA_MODEL_DIR
+            - LYRA_CACHE_DIR
+            - LYRA_LOG_DIR
+        """
         with open(config_path, 'r') as f:
             config = json.load(f)
+        
+        # Determine project root for resolving relative paths
+        if project_root is None:
+            # Use the directory containing the config file as reference
+            project_root = Path(config_path).parent.parent
+            # If config is in a nested 'config' dir, go up one more level
+            if project_root.name == 'config':
+                project_root = project_root.parent
+        
+        def resolve_path(env_var: str, config_key: str) -> Path:
+            """Resolve a path from environment variable or config file."""
+            # First check environment variable
+            env_value = os.environ.get(env_var)
+            if env_value:
+                path = Path(env_value)
+            else:
+                path = Path(config[config_key])
             
+            # Resolve relative paths against project root
+            if not path.is_absolute():
+                path = (project_root / path).resolve()
+            
+            return path
+        
         return cls(
-            base_dir=Path(config['base_dir']),
-            chroma_dir=Path(config['chroma_dir']),
-            model_dir=Path(config['model_dir']),
-            cache_dir=Path(config['cache_dir']),
-            log_dir=Path(config['log_dir'])
+            base_dir=resolve_path('LYRA_BASE_DIR', 'base_dir'),
+            chroma_dir=resolve_path('LYRA_CHROMA_DIR', 'chroma_dir'),
+            model_dir=resolve_path('LYRA_MODEL_DIR', 'model_dir'),
+            cache_dir=resolve_path('LYRA_CACHE_DIR', 'cache_dir'),
+            log_dir=resolve_path('LYRA_LOG_DIR', 'log_dir')
         )
 
 class ModelRegistry:

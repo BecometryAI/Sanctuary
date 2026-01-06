@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Import the AutonomousCore class
-from lyra.autonomous import AutonomousCore
+from emergence_core.lyra.autonomous import AutonomousCore
 
 async def test_privacy_controls():
     """Test the privacy control functionality"""

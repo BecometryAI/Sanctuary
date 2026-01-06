@@ -8,7 +8,7 @@ from typing import List, Dict, Optional, TYPE_CHECKING
 from datetime import datetime, timedelta
 
 if TYPE_CHECKING:
-    from .autonomous import Thought
+    from .autonomous.thought_processing import Thought
 
 logger = logging.getLogger(__name__)
 

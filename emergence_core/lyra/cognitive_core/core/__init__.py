@@ -29,6 +29,7 @@ from .timing import TimingManager
 from .lifecycle import LifecycleManager
 from .cycle_executor import CycleExecutor
 from .cognitive_loop import CognitiveLoop
+from .action_executor import ActionExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -102,8 +103,11 @@ class CognitiveCore:
         # Initialize timing manager
         self.timing = TimingManager(self.config)
         
+        # Initialize action executor
+        self.action_executor = ActionExecutor(self.subsystems, self.state)
+        
         # Initialize cycle executor
-        self.cycle_executor = CycleExecutor(self.subsystems, self.state)
+        self.cycle_executor = CycleExecutor(self.subsystems, self.state, self.action_executor)
         
         # Initialize cognitive loop orchestrator
         self.loop = CognitiveLoop(self.subsystems, self.state, self.timing, self.cycle_executor)

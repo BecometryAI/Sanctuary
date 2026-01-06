@@ -9,15 +9,15 @@ from __future__ import annotations
 
 import time
 import logging
-from typing import TYPE_CHECKING, Dict, Any, Optional
-from datetime import datetime
+from typing import TYPE_CHECKING, Dict, Optional
 
-from ..workspace import GoalType, Percept
+from ..workspace import GoalType
 from ..action import ActionType
 
 if TYPE_CHECKING:
     from .subsystem_coordinator import SubsystemCoordinator
     from .state_manager import StateManager
+    from .action_executor import ActionExecutor
 
 logger = logging.getLogger(__name__)
 
@@ -38,16 +38,18 @@ class CycleExecutor:
     9. MEMORY CONSOLIDATION: Store significant states to long-term memory
     """
     
-    def __init__(self, subsystems: 'SubsystemCoordinator', state: 'StateManager'):
+    def __init__(self, subsystems: 'SubsystemCoordinator', state: 'StateManager', action_executor: 'ActionExecutor'):
         """
         Initialize cycle executor.
         
         Args:
             subsystems: SubsystemCoordinator instance
             state: StateManager instance
+            action_executor: ActionExecutor instance for handling actions
         """
         self.subsystems = subsystems
         self.state = state
+        self.action_executor = action_executor
     
     async def execute_cycle(self) -> Dict[str, float]:
         """
@@ -141,14 +143,14 @@ class CycleExecutor:
         for action in actions:
             # Check if this is a tool call and handle specially
             if action.type == ActionType.TOOL_CALL:
-                tool_percept = await self._execute_tool_action(action)
+                tool_percept = await self.action_executor.execute_tool(action)
                 if tool_percept:
                     self.state.add_pending_tool_percept(tool_percept)
             else:
-                await self._execute_action(action)
+                await self.action_executor.execute(action)
             
             # Extract action outcome for self-model update
-            actual_outcome = self._extract_action_outcome(action)
+            actual_outcome = self.action_executor.extract_outcome(action)
             
             # Update self-model based on action execution
             self.subsystems.meta_cognition.update_self_model(snapshot, actual_outcome)
@@ -192,158 +194,6 @@ class CycleExecutor:
         # Trigger self-model refinement if error detected
         if validated and not validated.correct and validated.error_magnitude > self.subsystems.meta_cognition.refinement_threshold:
             self.subsystems.meta_cognition.refine_self_model_from_errors([validated])
-    
-    async def _execute_action(self, action) -> None:
-        """Execute a single action."""
-        try:
-            if action.type == ActionType.SPEAK:
-                await self._execute_speak_action(action)
-            elif action.type == ActionType.SPEAK_AUTONOMOUS:
-                await self._execute_speak_autonomous_action(action)
-            elif action.type == ActionType.COMMIT_MEMORY:
-                logger.debug(f"Action COMMIT_MEMORY: {action.reason}")
-            elif action.type == ActionType.RETRIEVE_MEMORY:
-                query = action.parameters.get("query", "")
-                logger.debug(f"Action RETRIEVE_MEMORY: query='{query}'")
-            elif action.type == ActionType.INTROSPECT:
-                logger.debug(f"Action INTROSPECT: {action.reason}")
-            elif action.type == ActionType.UPDATE_GOAL:
-                logger.debug(f"Action UPDATE_GOAL: {action.reason}")
-            elif action.type == ActionType.WAIT:
-                logger.debug("Action WAIT: maintaining current state")
-            elif action.type == ActionType.TOOL_CALL:
-                result = await self.subsystems.action.execute_action(action)
-                logger.debug(f"Action TOOL_CALL: result={result}")
-        except Exception as e:
-            logger.error(f"Error executing action {action.type}: {e}", exc_info=True)
-    
-    async def _execute_speak_action(self, action) -> None:
-        """Execute SPEAK action."""
-        snapshot = self.state.workspace.broadcast()
-        context = {
-            "user_input": action.metadata.get("responding_to", "")
-        }
-        
-        # Generate response using language output generator
-        response = await self.subsystems.language_output.generate(snapshot, context)
-        
-        # Queue response for external retrieval
-        await self.state.queue_output({
-            "type": "SPEAK",
-            "text": response,
-            "emotion": snapshot.emotions,
-            "timestamp": datetime.now()
-        })
-        logger.info(f"🗣️ Lyra: {response[:100]}...")
-    
-    async def _execute_speak_autonomous_action(self, action) -> None:
-        """Execute SPEAK_AUTONOMOUS action."""
-        snapshot = self.state.workspace.broadcast()
-        context = {
-            "autonomous": True,
-            "trigger": action.metadata.get("trigger"),
-            "introspection_content": action.metadata.get("introspection_content")
-        }
-        
-        # Generate response using language output generator
-        response = await self.subsystems.language_output.generate(snapshot, context)
-        
-        # Queue autonomous response for external retrieval
-        await self.state.queue_output({
-            "type": "SPEAK_AUTONOMOUS",
-            "text": response,
-            "trigger": action.metadata.get("trigger"),
-            "emotion": snapshot.emotions,
-            "timestamp": datetime.now()
-        })
-        logger.info(f"🗣️💭 Lyra (autonomous): {response[:100]}...")
-    
-    async def _execute_tool_action(self, action) -> Optional[Percept]:
-        """
-        Execute a tool call action and return the result percept.
-        
-        Args:
-            action: TOOL_CALL action with tool_name and parameters
-            
-        Returns:
-            Percept from tool execution, or None on error
-        """
-        if action.type != ActionType.TOOL_CALL:
-            logger.error(f"_execute_tool_action called with non-TOOL_CALL action: {action.type}")
-            return None
-        
-        try:
-            # Extract tool information from action
-            tool_name = action.parameters.get("tool_name")
-            tool_params = action.parameters.get("parameters", {})
-            
-            if not tool_name:
-                logger.error("TOOL_CALL action missing tool_name parameter")
-                return None
-            
-            # Check if action subsystem has the new tool registry with percept generation
-            if hasattr(self.subsystems.action, 'tool_reg'):
-                # Use new tool registry with percept generation
-                result = await self.subsystems.action.tool_reg.execute_tool_with_percept(
-                    tool_name,
-                    parameters=tool_params,
-                    create_percept=True
-                )
-                
-                # Log execution result
-                if result.success:
-                    logger.info(
-                        f"✅ Tool '{tool_name}' executed: success "
-                        f"({result.execution_time_ms:.1f}ms)"
-                    )
-                else:
-                    logger.warning(
-                        f"❌ Tool '{tool_name}' failed: {result.error} "
-                        f"({result.execution_time_ms:.1f}ms)"
-                    )
-                
-                # Return the generated percept
-                return result.percept
-            else:
-                # Fallback to legacy tool execution (no percept generation)
-                logger.warning("Action subsystem missing tool_reg, using legacy execution")
-                result = await self.subsystems.action.execute_action(action)
-                logger.debug(f"Action TOOL_CALL (legacy): result={result}")
-                return None
-                
-        except Exception as e:
-            logger.error(f"Error executing tool action: {e}", exc_info=True)
-            return None
-    
-    def _extract_action_outcome(self, action) -> Dict[str, Any]:
-        """
-        Extract outcome information from an executed action.
-        
-        Args:
-            action: The action that was executed
-            
-        Returns:
-            Dictionary containing outcome details for self-model update
-        """
-        outcome = {
-            "action_type": str(action.type) if hasattr(action, 'type') else "unknown",
-            "timestamp": datetime.now().isoformat(),
-            "success": True,
-            "reason": ""
-        }
-        
-        # Add action-specific details
-        if hasattr(action, 'metadata'):
-            outcome["metadata"] = action.metadata
-        
-        if hasattr(action, 'reason'):
-            outcome["reason"] = action.reason
-        
-        # Check for failure indicators
-        if hasattr(action, 'status'):
-            outcome["success"] = action.status == "success"
-        
-        return outcome
     
     async def _run_meta_cognition(self) -> list:
         """

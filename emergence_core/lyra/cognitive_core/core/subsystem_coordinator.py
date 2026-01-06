@@ -171,7 +171,14 @@ class SubsystemCoordinator:
         )
     
     def _initialize_llm_clients(self) -> None:
-        """Initialize LLM clients for language interfaces."""
+        """
+        Initialize LLM clients for language interfaces.
+        
+        Note: LLM clients are imported here (not at module level) because they
+        may not be available in all environments. This allows the module to be
+        imported without requiring the LLM dependencies, and only fails at
+        runtime if LLM functionality is actually used.
+        """
         from ..llm_client import MockLLMClient, GemmaClient, LlamaClient
         
         input_llm_config = self.config.get("input_llm", {})

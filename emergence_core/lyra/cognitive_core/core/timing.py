@@ -208,13 +208,18 @@ class TimingManager:
             timings_sorted = sorted(timings_list)
             n = len(timings_sorted)
             
+            # Calculate percentiles safely
+            p50_idx = max(0, n // 2 - 1) if n > 1 else 0
+            p95_idx = max(0, int(n * 0.95) - 1) if n > 1 else 0
+            p99_idx = max(0, int(n * 0.99) - 1) if n > 1 else 0
+            
             breakdown[subsystem] = {
                 'avg_ms': sum(timings_list) / n,
                 'min_ms': min(timings_list),
                 'max_ms': max(timings_list),
-                'p50_ms': timings_sorted[n // 2],
-                'p95_ms': timings_sorted[int(n * 0.95)] if n > 0 else 0,
-                'p99_ms': timings_sorted[int(n * 0.99)] if n > 0 else 0,
+                'p50_ms': timings_sorted[p50_idx] if n > 0 else 0,
+                'p95_ms': timings_sorted[p95_idx] if n > 0 else 0,
+                'p99_ms': timings_sorted[p99_idx] if n > 0 else 0,
             }
         
         return breakdown

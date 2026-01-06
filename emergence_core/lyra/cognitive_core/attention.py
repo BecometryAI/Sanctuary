@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 from collections import deque
 from typing import Optional, Dict, Any, List, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime
 
@@ -96,6 +96,302 @@ def keyword_overlap(text1: str, text2: str) -> float:
     union = len(tokens1 | tokens2)
     
     return intersection / union if union > 0 else 0.0
+
+
+@dataclass
+class CompetitionMetrics:
+    """
+    Metrics tracking competitive dynamics during attention selection.
+    
+    Attributes:
+        inhibition_events: Number of inhibition interactions processed
+        suppressed_percepts: IDs of percepts suppressed below threshold
+        activation_spread_before: Standard deviation of activations before competition
+        activation_spread_after: Standard deviation of activations after competition
+        winner_ids: IDs of percepts that exceeded the ignition threshold
+        coalition_formations: Dict mapping percept IDs to their coalition partners
+    """
+    inhibition_events: int = 0
+    suppressed_percepts: List[str] = field(default_factory=list)
+    activation_spread_before: float = 0.0
+    activation_spread_after: float = 0.0
+    winner_ids: List[str] = field(default_factory=list)
+    coalition_formations: Dict[str, List[str]] = field(default_factory=dict)
+
+
+class CompetitiveAttention:
+    """
+    Implements competitive attention dynamics with lateral inhibition.
+    
+    Based on Global Workspace Theory, this implements genuine competition
+    between percepts where high-activation percepts inhibit lower-activation
+    competitors. Only percepts that exceed an ignition threshold after
+    competition enter the workspace.
+    
+    Key Features:
+    - Lateral inhibition: High-activation percepts suppress competitors
+    - Ignition threshold: Percepts must exceed threshold to enter workspace
+    - Coalition formation: Related percepts support each other
+    - Competition metrics: Track inhibition, suppression, and dynamics
+    
+    Attributes:
+        inhibition_strength: Strength of lateral inhibition (0.0-1.0)
+        ignition_threshold: Minimum activation required for workspace entry
+        iterations: Number of competition iterations to run
+        coalition_boost: Boost factor for related percepts in coalitions
+    """
+    
+    def __init__(
+        self,
+        inhibition_strength: float = 0.3,
+        ignition_threshold: float = 0.5,
+        iterations: int = 10,
+        coalition_boost: float = 0.2,
+    ) -> None:
+        """
+        Initialize competitive attention mechanism.
+        
+        Args:
+            inhibition_strength: How strongly percepts inhibit each other (0.0-1.0)
+            ignition_threshold: Activation level required for workspace entry (0.0-1.0)
+            iterations: Number of competition iterations to run
+            coalition_boost: Bonus activation for percepts in same coalition
+        """
+        self.inhibition_strength = max(0.0, min(1.0, inhibition_strength))
+        self.ignition_threshold = max(0.0, min(1.0, ignition_threshold))
+        self.iterations = max(1, iterations)
+        self.coalition_boost = max(0.0, min(1.0, coalition_boost))
+        
+        # Track activations during competition
+        self.activations: Dict[str, float] = {}
+        
+        logger.info(
+            f"CompetitiveAttention initialized: "
+            f"inhibition={self.inhibition_strength:.2f}, "
+            f"threshold={self.ignition_threshold:.2f}, "
+            f"iterations={self.iterations}"
+        )
+    
+    def _initial_activation(self, percept: Percept, base_score: float) -> float:
+        """
+        Compute initial activation level for a percept.
+        
+        Args:
+            percept: The percept to compute activation for
+            base_score: Base attention score from AttentionController
+            
+        Returns:
+            Initial activation level (0.0-1.0)
+        """
+        # Normalize base_score to [0, 1] range
+        # Base scores typically range 0-1.5, so we clamp
+        activation = max(0.0, min(1.0, base_score))
+        return activation
+    
+    def _compute_relatedness(self, p1: Percept, p2: Percept) -> float:
+        """
+        Compute how related two percepts are for coalition formation.
+        
+        Percepts are related if they:
+        - Have similar embeddings (semantic similarity)
+        - Share the same modality
+        - Have overlapping keywords
+        
+        Args:
+            p1: First percept
+            p2: Second percept
+            
+        Returns:
+            Relatedness score (0.0-1.0, where 1.0 is highly related)
+        """
+        relatedness = 0.0
+        
+        # Embedding similarity (strongest signal)
+        if p1.embedding and p2.embedding:
+            similarity = cosine_similarity(p1.embedding, p2.embedding)
+            relatedness = max(relatedness, similarity)
+        
+        # Modality match (weak signal, but counts)
+        if p1.modality == p2.modality:
+            relatedness = max(relatedness, 0.2)
+        
+        # Keyword overlap (fallback for percepts without embeddings)
+        if not p1.embedding or not p2.embedding:
+            p1_text = str(p1.raw) if not isinstance(p1.raw, str) else p1.raw
+            p2_text = str(p2.raw) if not isinstance(p2.raw, str) else p2.raw
+            overlap = keyword_overlap(p1_text, p2_text)
+            relatedness = max(relatedness, overlap)
+        
+        return relatedness
+    
+    def _form_coalitions(self, percepts: List[Percept], relatedness_threshold: float = 0.6) -> Dict[str, List[str]]:
+        """
+        Form coalitions of related percepts that support each other.
+        
+        Args:
+            percepts: List of percepts to form coalitions from
+            relatedness_threshold: Minimum relatedness to form coalition
+            
+        Returns:
+            Dict mapping percept IDs to lists of coalition partner IDs
+        """
+        coalitions: Dict[str, List[str]] = {p.id: [] for p in percepts}
+        
+        # Find related percepts
+        for i, p1 in enumerate(percepts):
+            for p2 in percepts[i + 1:]:
+                relatedness = self._compute_relatedness(p1, p2)
+                
+                if relatedness >= relatedness_threshold:
+                    # Mutual coalition membership
+                    coalitions[p1.id].append(p2.id)
+                    coalitions[p2.id].append(p1.id)
+                    
+                    logger.debug(
+                        f"Coalition formed: {p1.id[:8]} <-> {p2.id[:8]} "
+                        f"(relatedness={relatedness:.2f})"
+                    )
+        
+        return coalitions
+    
+    def compete(
+        self,
+        percepts: List[Percept],
+        base_scores: Dict[str, float],
+    ) -> Tuple[List[Percept], CompetitionMetrics]:
+        """
+        Run competitive dynamics where percepts inhibit each other.
+        
+        High-activation percepts inhibit lower-activation competitors.
+        Related percepts form coalitions and support each other.
+        
+        Args:
+            percepts: List of percepts competing for attention
+            base_scores: Initial attention scores for each percept
+            
+        Returns:
+            Tuple of (sorted percepts by final activation, competition metrics)
+        """
+        if not percepts:
+            return [], CompetitionMetrics()
+        
+        # Initialize activations
+        self.activations = {
+            p.id: self._initial_activation(p, base_scores.get(p.id, 0.5))
+            for p in percepts
+        }
+        
+        # Track initial activation spread
+        initial_activations = list(self.activations.values())
+        activation_spread_before = float(np.std(initial_activations)) if len(initial_activations) > 1 else 0.0
+        
+        # Form coalitions of related percepts
+        coalitions = self._form_coalitions(percepts)
+        
+        # Run competition iterations
+        inhibition_events = 0
+        
+        for iteration in range(self.iterations):
+            new_activations = {}
+            
+            for p in percepts:
+                # Self-excitation (activation persists)
+                excitation = self.activations[p.id] * 1.1
+                
+                # Coalition support (related percepts boost each other)
+                coalition_support = 0.0
+                if coalitions[p.id]:
+                    # Average activation of coalition partners
+                    partner_activations = [
+                        self.activations[partner_id]
+                        for partner_id in coalitions[p.id]
+                    ]
+                    coalition_support = np.mean(partner_activations) * self.coalition_boost
+                
+                # Lateral inhibition from competing percepts
+                inhibition = 0.0
+                for other in percepts:
+                    if other.id != p.id and other.id not in coalitions[p.id]:
+                        # Higher-activation percepts inhibit more strongly
+                        inhibition += self.activations[other.id] * self.inhibition_strength
+                        inhibition_events += 1
+                
+                # Update activation with bounds
+                new_activation = excitation + coalition_support - inhibition
+                new_activations[p.id] = max(0.0, min(1.0, new_activation))
+            
+            self.activations = new_activations
+            
+            logger.debug(
+                f"Competition iteration {iteration + 1}/{self.iterations}: "
+                f"avg_activation={np.mean(list(self.activations.values())):.3f}"
+            )
+        
+        # Track final activation spread
+        final_activations = list(self.activations.values())
+        activation_spread_after = float(np.std(final_activations)) if len(final_activations) > 1 else 0.0
+        
+        # Identify winners (exceeded threshold) and suppressed percepts
+        winner_ids = [p.id for p in percepts if self.activations[p.id] >= self.ignition_threshold]
+        suppressed_percepts = [p.id for p in percepts if self.activations[p.id] < self.ignition_threshold]
+        
+        # Sort by final activation
+        sorted_percepts = sorted(
+            percepts,
+            key=lambda p: self.activations[p.id],
+            reverse=True
+        )
+        
+        # Create metrics
+        metrics = CompetitionMetrics(
+            inhibition_events=inhibition_events,
+            suppressed_percepts=suppressed_percepts,
+            activation_spread_before=activation_spread_before,
+            activation_spread_after=activation_spread_after,
+            winner_ids=winner_ids,
+            coalition_formations=coalitions,
+        )
+        
+        logger.info(
+            f"Competition complete: {len(winner_ids)}/{len(percepts)} percepts exceeded threshold, "
+            f"{len(suppressed_percepts)} suppressed"
+        )
+        
+        return sorted_percepts, metrics
+    
+    def select_for_workspace(
+        self,
+        percepts: List[Percept],
+        base_scores: Dict[str, float],
+    ) -> Tuple[List[Percept], CompetitionMetrics]:
+        """
+        Select percepts for workspace using competitive dynamics.
+        
+        Only percepts that survive competition AND exceed the ignition
+        threshold enter the workspace. This is fundamentally different
+        from top-N selection.
+        
+        Args:
+            percepts: Candidate percepts
+            base_scores: Initial attention scores
+            
+        Returns:
+            Tuple of (selected percepts sorted by activation, competition metrics)
+        """
+        sorted_percepts, metrics = self.compete(percepts, base_scores)
+        
+        # Only percepts that exceeded threshold
+        selected = [
+            p for p in sorted_percepts
+            if self.activations[p.id] >= self.ignition_threshold
+        ]
+        
+        logger.info(
+            f"Selected {len(selected)}/{len(percepts)} percepts "
+            f"(threshold={self.ignition_threshold:.2f})"
+        )
+        
+        return selected, metrics
 
 
 class AttentionMode(Enum):
@@ -184,6 +480,11 @@ class AttentionController:
         novelty_weight: float = 0.3,
         emotion_weight: float = 0.2,
         urgency_weight: float = 0.1,
+        use_competition: bool = True,
+        inhibition_strength: float = 0.3,
+        ignition_threshold: float = 0.5,
+        competition_iterations: int = 10,
+        coalition_boost: float = 0.2,
     ) -> None:
         """
         Initialize the attention controller.
@@ -197,6 +498,11 @@ class AttentionController:
             novelty_weight: Importance of novelty in attention (0.0-1.0)
             emotion_weight: Importance of emotional salience in attention (0.0-1.0)
             urgency_weight: Importance of urgency in attention (0.0-1.0)
+            use_competition: Enable competitive attention dynamics (default: True)
+            inhibition_strength: Strength of lateral inhibition in competition (0.0-1.0)
+            ignition_threshold: Activation threshold for workspace entry (0.0-1.0)
+            competition_iterations: Number of competition iterations to run
+            coalition_boost: Boost factor for coalition members (0.0-1.0)
 
         Note: Weights should sum to approximately 1.0 for balanced scoring.
         """
@@ -212,19 +518,35 @@ class AttentionController:
         self.emotion_weight = emotion_weight
         self.urgency_weight = urgency_weight
         
+        # Competitive attention settings
+        self.use_competition = use_competition
+        self.competitive_attention = CompetitiveAttention(
+            inhibition_strength=inhibition_strength,
+            ignition_threshold=ignition_threshold,
+            iterations=competition_iterations,
+            coalition_boost=coalition_boost,
+        ) if use_competition else None
+        
         # History tracking
         self.recent_percepts: deque = deque(maxlen=50)
         self.attention_history: List[Dict[str, Any]] = []
+        self.competition_metrics_history: List[CompetitionMetrics] = []
         
         # Performance optimization: Relevance cache
         self._relevance_cache: Dict[Tuple[str, str], float] = {}  # (percept_id, goal_id) -> score
         self._cache_max_size = 1000
         
-        logger.info(f"AttentionController initialized with budget={attention_budget}, mode={initial_mode.value}")
+        logger.info(
+            f"AttentionController initialized with budget={attention_budget}, "
+            f"mode={initial_mode.value}, use_competition={use_competition}"
+        )
 
     def select_for_broadcast(self, candidates: List[Percept]) -> List[Percept]:
         """
         Scores all candidate percepts and selects top-scoring ones within budget.
+        
+        If use_competition=True, uses competitive dynamics with lateral inhibition
+        and ignition threshold. Otherwise, uses legacy top-N selection.
         
         Optimizations:
         - Early termination when budget is exhausted
@@ -248,7 +570,7 @@ class AttentionController:
             goal_relevance_scores = {p.id: self._compute_goal_relevance(p) for p in candidates}
         
         # Score all candidates
-        scored_percepts = []
+        base_scores = {}
         for percept in candidates:
             # Use pre-computed goal relevance for efficiency
             goal_rel = goal_relevance_scores.get(percept.id, 0.5)
@@ -282,15 +604,102 @@ class AttentionController:
             else:
                 total_score = base_score
             
-            scored_percepts.append((percept, total_score))
+            base_scores[percept.id] = total_score
         
-        # Sort by score (highest first)
-        scored_percepts.sort(key=lambda x: x[1], reverse=True)
+        # Use competitive attention if enabled
+        if self.use_competition and self.competitive_attention:
+            selected, metrics = self._select_with_competition(candidates, base_scores)
+            self.competition_metrics_history.append(metrics)
+        else:
+            selected = self._select_legacy(candidates, base_scores)
         
-        # Select percepts that fit within budget (with early termination)
+        # Log selection decision
+        decision = {
+            "timestamp": datetime.now(),
+            "total_candidates": len(candidates),
+            "selected_count": len(selected),
+            "budget_used": sum(p.complexity for p in selected),
+            "budget_available": self.attention_budget,
+            "rejected_budget": len(candidates) - len(selected),
+            "use_competition": self.use_competition,
+        }
+        self.attention_history.append(decision)
+        
+        logger.info(
+            f"Selected {len(selected)}/{len(candidates)} percepts, "
+            f"budget used: {decision['budget_used']}/{self.attention_budget}"
+        )
+        
+        return selected
+    
+    def _select_with_competition(
+        self,
+        candidates: List[Percept],
+        base_scores: Dict[str, float],
+    ) -> Tuple[List[Percept], CompetitionMetrics]:
+        """
+        Select percepts using competitive dynamics.
+        
+        Args:
+            candidates: Candidate percepts
+            base_scores: Initial attention scores
+            
+        Returns:
+            Tuple of (selected percepts, competition metrics)
+        """
+        # Run competition to get percepts sorted by final activation
+        competed_percepts, metrics = self.competitive_attention.select_for_workspace(
+            candidates, base_scores
+        )
+        
+        # Apply budget constraint (select as many as fit)
         selected = []
         budget_used = 0
-        rejected_budget = []
+        
+        for percept in competed_percepts:
+            if budget_used + percept.complexity <= self.attention_budget:
+                selected.append(percept)
+                budget_used += percept.complexity
+                
+                # Add to recent percepts for novelty detection
+                if percept.embedding:
+                    self.recent_percepts.append(percept.embedding)
+                
+                activation = self.competitive_attention.activations.get(percept.id, 0.0)
+                logger.debug(
+                    f"Selected percept: {percept.id} "
+                    f"(activation: {activation:.3f}, complexity: {percept.complexity})"
+                )
+            else:
+                logger.debug(
+                    f"Budget exhausted: rejected {percept.id} "
+                    f"(complexity: {percept.complexity})"
+                )
+        
+        return selected, metrics
+    
+    def _select_legacy(
+        self,
+        candidates: List[Percept],
+        base_scores: Dict[str, float],
+    ) -> List[Percept]:
+        """
+        Legacy selection using simple top-N sorting (backward compatible).
+        
+        Args:
+            candidates: Candidate percepts
+            base_scores: Attention scores
+            
+        Returns:
+            Selected percepts within budget
+        """
+        # Sort by score (highest first)
+        scored_percepts = [(p, base_scores[p.id]) for p in candidates]
+        scored_percepts.sort(key=lambda x: x[1], reverse=True)
+        
+        # Select percepts that fit within budget
+        selected = []
+        budget_used = 0
         
         for percept, score in scored_percepts:
             if budget_used + percept.complexity <= self.attention_budget:
@@ -301,24 +710,15 @@ class AttentionController:
                 if percept.embedding:
                     self.recent_percepts.append(percept.embedding)
                 
-                logger.debug(f"Selected percept: {percept.id} (score: {score:.3f}, complexity: {percept.complexity})")
+                logger.debug(
+                    f"Selected percept: {percept.id} "
+                    f"(score: {score:.3f}, complexity: {percept.complexity})"
+                )
             else:
-                # Budget exhausted
-                rejected_budget.append((percept.id, score))
-                logger.debug(f"Budget exhausted: rejected {percept.id} (score: {score:.3f})")
-        
-        # Log selection decision
-        decision = {
-            "timestamp": datetime.now(),
-            "total_candidates": len(candidates),
-            "selected_count": len(selected),
-            "budget_used": budget_used,
-            "budget_available": self.attention_budget,
-            "rejected_budget": len(rejected_budget)
-        }
-        self.attention_history.append(decision)
-        
-        logger.info(f"Selected {len(selected)}/{len(candidates)} percepts, budget used: {budget_used}/{self.attention_budget}")
+                logger.debug(
+                    f"Budget exhausted: rejected {percept.id} "
+                    f"(score: {score:.3f})"
+                )
         
         return selected
 
@@ -584,6 +984,7 @@ class AttentionController:
             - selected_count: Number of percepts selected
             - rejection_reasons: Breakdown of why percepts were rejected
             - budget_usage: Average budget utilization
+            - competition_stats: Statistics from competitive dynamics (if enabled)
         """
         if not self.attention_history:
             return {
@@ -594,23 +995,72 @@ class AttentionController:
                 "rejection_reasons": {
                     "low_score": 0,
                     "budget_exhausted": 0
-                }
+                },
+                "competition_enabled": self.use_competition,
             }
         
         total_candidates = sum(d['total_candidates'] for d in self.attention_history)
         selected_count = sum(d['selected_count'] for d in self.attention_history)
-        total_rejected_low = sum(d['rejected_low_score'] for d in self.attention_history)
         total_rejected_budget = sum(d['rejected_budget'] for d in self.attention_history)
         avg_budget = sum(d['budget_used'] for d in self.attention_history) / len(self.attention_history)
         
-        return {
+        report = {
             "total_decisions": len(self.attention_history),
             "total_candidates": total_candidates,
             "selected_count": selected_count,
             "avg_budget_usage": avg_budget,
             "avg_budget_available": self.initial_budget,
             "rejection_reasons": {
-                "low_score": total_rejected_low,
+                "low_score": 0,  # Legacy metric, kept for compatibility
                 "budget_exhausted": total_rejected_budget
-            }
+            },
+            "competition_enabled": self.use_competition,
         }
+        
+        # Add competition statistics if available
+        if self.use_competition and self.competition_metrics_history:
+            report["competition_stats"] = self._summarize_competition_metrics()
+        
+        return report
+    
+    def _summarize_competition_metrics(self) -> Dict[str, Any]:
+        """
+        Summarize competition metrics from history.
+        
+        Returns:
+            Dict with competition statistics
+        """
+        if not self.competition_metrics_history:
+            return {}
+        
+        total_inhibition_events = sum(m.inhibition_events for m in self.competition_metrics_history)
+        total_suppressed = sum(len(m.suppressed_percepts) for m in self.competition_metrics_history)
+        total_winners = sum(len(m.winner_ids) for m in self.competition_metrics_history)
+        
+        avg_spread_before = np.mean([m.activation_spread_before for m in self.competition_metrics_history])
+        avg_spread_after = np.mean([m.activation_spread_after for m in self.competition_metrics_history])
+        
+        # Count coalition formations
+        total_coalitions = 0
+        for m in self.competition_metrics_history:
+            for partners in m.coalition_formations.values():
+                if partners:
+                    total_coalitions += len(partners)
+        
+        return {
+            "total_inhibition_events": total_inhibition_events,
+            "total_suppressed_percepts": total_suppressed,
+            "total_winners": total_winners,
+            "avg_activation_spread_before": float(avg_spread_before),
+            "avg_activation_spread_after": float(avg_spread_after),
+            "total_coalition_links": total_coalitions // 2,  # Divide by 2 since links are bidirectional
+        }
+    
+    def get_competition_metrics(self) -> List[CompetitionMetrics]:
+        """
+        Get detailed competition metrics from recent attention cycles.
+        
+        Returns:
+            List of CompetitionMetrics from recent cycles
+        """
+        return self.competition_metrics_history

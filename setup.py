@@ -36,11 +36,6 @@ setup(
         "librosa>=0.11.0",
         "scipy>=1.16.3",
         
-        # Blockchain and storage
-        "web3[async]>=6.0.0",
-        "eth-account>=0.8.0",
-        "aioipfs>=0.6.1",
-        
         # Integration tools
         "arxiv>=2.3.0",
         "wikipedia>=1.4.0",

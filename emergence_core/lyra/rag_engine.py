@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 class MindVectorDB:
     """
     MindVectorDB Component - The Architectural Sanctuary
-    Uses ChromaDB to vectorize and store the Mind for querying with blockchain verification.
+    Uses ChromaDB to vectorize and store the Mind for querying.
     """
     def __init__(self, db_path: str, mind_file: str, chain_dir: str = "chain", chroma_settings=None):
         self.db_path = Path(db_path)
@@ -74,7 +74,7 @@ class MindVectorDB:
         # )
 
     def load_and_chunk_mind(self) -> List[Dict[str, Any]]:
-        """Loads the consolidated Mind and splits it into searchable chunks with blockchain verification."""
+        """Loads the consolidated Mind and splits it into searchable chunks."""
         logger.info(f"Loading and chunking mind file: {self.mind_file}")
         try:
             with open(self.mind_file, 'r', encoding='utf-8') as f:
@@ -91,7 +91,7 @@ class MindVectorDB:
                     # Split content into chunks
                     entry_chunks = self.text_splitter.split_text(json.dumps(entry))
                     
-                    # Add each chunk with blockchain reference
+                    # Add each chunk with reference
                     for i, chunk in enumerate(entry_chunks):
                         chunks.append({
                             "page_content": chunk,
@@ -287,7 +287,7 @@ class RAGQueryEngine:
 
     async def query(self, query: str, verify_response: bool = True) -> Dict[str, Any]:
         """
-        Queries the RAG chain with blockchain verification of retrieved context.
+        Queries the RAG chain with verification of retrieved context.
         Returns both the response and verification metadata.
         """
         logger.info(f"Querying chain: {query}")
@@ -295,12 +295,12 @@ class RAGQueryEngine:
         # Get raw response from chain
         response = await self.qa_chain.run(query)
         
-        # If verification requested, add blockchain proof
+        # If verification requested, add proof
         if verify_response:
             # Get source documents used in response
             source_docs = await self.qa_chain.retriever.get_relevant_documents(query)
             
-            # Verify each source through blockchain
+            # Verify each source
             verified_sources = []
             for doc in source_docs:
                 if block_hash := doc.metadata.get('block_hash'):

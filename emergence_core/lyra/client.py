@@ -24,7 +24,7 @@ import asyncio
 import logging
 from typing import Dict, List, Any, Optional
 
-from .cognitive_core.core import CognitiveCore
+from .cognitive_core import CognitiveCore
 from .cognitive_core.conversation import ConversationManager, ConversationTurn
 
 logger = logging.getLogger(__name__)

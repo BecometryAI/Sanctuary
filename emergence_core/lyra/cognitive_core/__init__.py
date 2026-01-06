@@ -12,7 +12,7 @@ cognitive substrate.
 
 from __future__ import annotations
 
-from .core import CognitiveCore
+from .core import CognitiveCore  # Now imported from core/ module
 from .workspace import (
     GlobalWorkspace,
     Goal,

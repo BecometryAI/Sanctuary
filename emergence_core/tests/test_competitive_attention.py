@@ -479,20 +479,21 @@ class TestAttentionControllerIntegration:
 class TestBackwardCompatibility:
     """Test backward compatibility with existing code."""
     
-    def test_default_behavior_uses_legacy(self):
-        """Test that default initialization uses legacy mode (backward compatible)."""
+    def test_default_behavior_uses_competition(self):
+        """Test that default initialization uses competitive dynamics."""
         controller = AttentionController()
         
-        # Default should be legacy mode for backward compatibility
-        assert controller.use_competition is False
-    
-    def test_competition_opt_in(self):
-        """Test that competition can be explicitly enabled."""
-        controller = AttentionController(use_competition=True)
-        
-        # Should have competition enabled when explicitly requested
+        # Default should be competitive mode
         assert controller.use_competition is True
         assert controller.competitive_attention is not None
+    
+    def test_legacy_mode_opt_in(self):
+        """Test that legacy mode can be explicitly enabled."""
+        controller = AttentionController(use_competition=False)
+        
+        # Should have legacy mode when explicitly requested
+        assert controller.use_competition is False
+        assert controller.competitive_attention is None
     
     def test_legacy_mode_works(self):
         """Test that legacy mode still works correctly."""

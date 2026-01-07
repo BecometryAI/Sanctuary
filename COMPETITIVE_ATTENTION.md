@@ -91,21 +91,32 @@ class CompetitionMetrics:
 
 ## Usage
 
-### Basic Usage (Backward Compatible)
+### Basic Usage (Competitive Dynamics)
 
-By default, the system uses legacy mode for backward compatibility:
+By default, the system uses competitive attention dynamics:
 
 ```python
 from lyra.cognitive_core.attention import AttentionController
 
-# Legacy mode (default)
+# Competitive mode (default)
 controller = AttentionController()
 selected = controller.select_for_broadcast(percepts)
 ```
 
-### Enable Competitive Dynamics
+### Use Legacy Mode
 
-To use genuine competitive attention:
+To use the original top-N selection mode:
+
+```python
+controller = AttentionController(
+    use_competition=False,          # Disable competitive dynamics
+)
+selected = controller.select_for_broadcast(percepts)
+```
+
+### Configure Competitive Dynamics
+
+To customize competitive attention parameters:
 
 ```python
 controller = AttentionController(
@@ -271,9 +282,10 @@ return (selected_percepts, metrics)
   - Coalition formations recorded
 
 - [x] **Existing AttentionController API maintained** (backward compatible)
-  - Default behavior unchanged (use_competition=False)
+  - Default behavior now uses competitive dynamics (use_competition=True)
   - All existing parameters preserved
-  - Tests remain compatible
+  - Legacy mode available via use_competition=False
+  - Tests updated to reflect new default
 
 - [x] **Tests verify competitive dynamics**
   - High-activation suppresses low-activation ✓

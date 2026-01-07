@@ -444,12 +444,11 @@ class AttentionController:
     thresholds, and coalition formation. This is fundamentally different from
     simple top-N selection.
     
-    **Backward Compatibility:**
-    By default, `use_competition=False` to maintain backward compatibility with
-    existing code. To adopt the new GWT-compliant competitive dynamics, explicitly
-    set `use_competition=True` when initializing the controller. Future versions
-    may change the default to True once the system is thoroughly validated in
-    production.
+    **Default Behavior:**
+    By default, `use_competition=True` to enable genuine competitive attention
+    dynamics compliant with Global Workspace Theory. For legacy behavior using
+    simple top-N selection, set `use_competition=False` when initializing the
+    controller.
 
     Key Responsibilities:
     - Evaluate attention worthiness of candidate information
@@ -497,7 +496,7 @@ class AttentionController:
         novelty_weight: float = 0.3,
         emotion_weight: float = 0.2,
         urgency_weight: float = 0.1,
-        use_competition: bool = False,
+        use_competition: bool = True,
         inhibition_strength: float = 0.3,
         ignition_threshold: float = 0.5,
         competition_iterations: int = 10,
@@ -515,7 +514,7 @@ class AttentionController:
             novelty_weight: Importance of novelty in attention (0.0-1.0)
             emotion_weight: Importance of emotional salience in attention (0.0-1.0)
             urgency_weight: Importance of urgency in attention (0.0-1.0)
-            use_competition: Enable competitive attention dynamics (default: False for backward compatibility)
+            use_competition: Enable competitive attention dynamics (default: True)
             inhibition_strength: Strength of lateral inhibition in competition (0.0-1.0)
             ignition_threshold: Activation threshold for workspace entry (0.0-1.0)
             competition_iterations: Number of competition iterations to run

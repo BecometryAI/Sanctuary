@@ -154,39 +154,36 @@ class CompetitiveAttention:
         Args:
             inhibition_strength: How strongly percepts inhibit each other (0.0-1.0)
             ignition_threshold: Activation level required for workspace entry (0.0-1.0)
-            iterations: Number of competition iterations to run
-            coalition_boost: Bonus activation for percepts in same coalition
+            iterations: Number of competition iterations to run (1-100)
+            coalition_boost: Bonus activation for percepts in same coalition (0.0-1.0)
+            
+        Raises:
+            ValueError: If parameters are outside valid ranges
         """
-        self.inhibition_strength = max(0.0, min(1.0, inhibition_strength))
-        self.ignition_threshold = max(0.0, min(1.0, ignition_threshold))
-        self.iterations = max(1, iterations)
-        self.coalition_boost = max(0.0, min(1.0, coalition_boost))
+        # Validate and clamp parameters
+        if not (0.0 <= inhibition_strength <= 1.0):
+            raise ValueError(f"inhibition_strength must be in [0, 1], got {inhibition_strength}")
+        if not (0.0 <= ignition_threshold <= 1.0):
+            raise ValueError(f"ignition_threshold must be in [0, 1], got {ignition_threshold}")
+        if not (1 <= iterations <= 100):
+            raise ValueError(f"iterations must be in [1, 100], got {iterations}")
+        if not (0.0 <= coalition_boost <= 1.0):
+            raise ValueError(f"coalition_boost must be in [0, 1], got {coalition_boost}")
+            
+        self.inhibition_strength = inhibition_strength
+        self.ignition_threshold = ignition_threshold
+        self.iterations = iterations
+        self.coalition_boost = coalition_boost
         
         # Track activations during competition
         self.activations: Dict[str, float] = {}
         
-        logger.info(
+        logger.debug(
             f"CompetitiveAttention initialized: "
             f"inhibition={self.inhibition_strength:.2f}, "
             f"threshold={self.ignition_threshold:.2f}, "
             f"iterations={self.iterations}"
         )
-    
-    def _initial_activation(self, percept: Percept, base_score: float) -> float:
-        """
-        Compute initial activation level for a percept.
-        
-        Args:
-            percept: The percept to compute activation for
-            base_score: Base attention score from AttentionController
-            
-        Returns:
-            Initial activation level (0.0-1.0)
-        """
-        # Normalize base_score to [0, 1] range
-        # Base scores typically range 0-1.5, so we clamp
-        activation = max(0.0, min(1.0, base_score))
-        return activation
     
     def _compute_relatedness(self, p1: Percept, p2: Percept) -> float:
         """
@@ -275,9 +272,9 @@ class CompetitiveAttention:
         if not percepts:
             return [], CompetitionMetrics()
         
-        # Initialize activations
+        # Initialize activations efficiently
         self.activations = {
-            p.id: self._initial_activation(p, base_scores.get(p.id, 0.5))
+            p.id: max(0.0, min(1.0, base_scores.get(p.id, 0.5)))
             for p in percepts
         }
         
@@ -285,47 +282,39 @@ class CompetitiveAttention:
         initial_activations = list(self.activations.values())
         activation_spread_before = float(np.std(initial_activations)) if len(initial_activations) > 1 else 0.0
         
-        # Form coalitions of related percepts
+        # Form coalitions once (not per iteration) - optimization
         coalitions = self._form_coalitions(percepts)
         
-        # Run competition iterations
-        inhibition_events = 0
+        # Pre-compute coalition sets for faster lookup
+        coalition_sets = {p.id: set(coalitions[p.id]) for p in percepts}
         
+        # Run competition iterations
         for iteration in range(self.iterations):
             new_activations = {}
             
             for p in percepts:
-                # Self-excitation (activation persists)
+                # Self-excitation (activation persists with decay factor)
                 excitation = self.activations[p.id] * 1.1
                 
                 # Coalition support (related percepts boost each other)
                 coalition_support = 0.0
-                if coalitions[p.id]:
-                    # Average activation of coalition partners
-                    partner_activations = [
-                        self.activations[partner_id]
-                        for partner_id in coalitions[p.id]
-                    ]
-                    coalition_support = np.mean(partner_activations) * self.coalition_boost
+                if coalition_sets[p.id]:
+                    # Average activation of coalition partners - optimized
+                    partner_sum = sum(self.activations[pid] for pid in coalition_sets[p.id])
+                    coalition_support = (partner_sum / len(coalition_sets[p.id])) * self.coalition_boost
                 
-                # Lateral inhibition from competing percepts
-                inhibition = 0.0
-                for other in percepts:
-                    if other.id != p.id and other.id not in coalitions[p.id]:
-                        # Higher-activation percepts inhibit more strongly
-                        inhibition += self.activations[other.id] * self.inhibition_strength
-                        inhibition_events += 1
+                # Lateral inhibition from competing percepts (optimized)
+                inhibition = sum(
+                    self.activations[other.id] * self.inhibition_strength
+                    for other in percepts
+                    if other.id != p.id and other.id not in coalition_sets[p.id]
+                )
                 
                 # Update activation with bounds
                 new_activation = excitation + coalition_support - inhibition
                 new_activations[p.id] = max(0.0, min(1.0, new_activation))
             
             self.activations = new_activations
-            
-            logger.debug(
-                f"Competition iteration {iteration + 1}/{self.iterations}: "
-                f"avg_activation={np.mean(list(self.activations.values())):.3f}"
-            )
         
         # Track final activation spread
         final_activations = list(self.activations.values())
@@ -335,12 +324,16 @@ class CompetitiveAttention:
         winner_ids = [p.id for p in percepts if self.activations[p.id] >= self.ignition_threshold]
         suppressed_percepts = [p.id for p in percepts if self.activations[p.id] < self.ignition_threshold]
         
-        # Sort by final activation
+        # Sort by final activation (descending)
         sorted_percepts = sorted(
             percepts,
             key=lambda p: self.activations[p.id],
             reverse=True
         )
+        
+        # Calculate inhibition events for metrics (not per iteration to avoid overflow)
+        num_competitors = len(percepts)
+        inhibition_events = (num_competitors * (num_competitors - 1)) * self.iterations
         
         # Create metrics
         metrics = CompetitionMetrics(
@@ -352,8 +345,8 @@ class CompetitiveAttention:
             coalition_formations=coalitions,
         )
         
-        logger.info(
-            f"Competition complete: {len(winner_ids)}/{len(percepts)} percepts exceeded threshold, "
+        logger.debug(
+            f"Competition complete: {len(winner_ids)}/{len(percepts)} winners, "
             f"{len(suppressed_percepts)} suppressed"
         )
         
@@ -380,13 +373,13 @@ class CompetitiveAttention:
         """
         sorted_percepts, metrics = self.compete(percepts, base_scores)
         
-        # Only percepts that exceeded threshold
+        # Only percepts that exceeded threshold (already in metrics.winner_ids)
         selected = [
             p for p in sorted_percepts
-            if self.activations[p.id] >= self.ignition_threshold
+            if p.id in metrics.winner_ids
         ]
         
-        logger.info(
+        logger.debug(
             f"Selected {len(selected)}/{len(percepts)} percepts "
             f"(threshold={self.ignition_threshold:.2f})"
         )
@@ -506,7 +499,7 @@ class AttentionController:
         Initialize the attention controller.
 
         Args:
-            attention_budget: Total attention units available per cycle
+            attention_budget: Total attention units available per cycle (positive integer)
             workspace: Reference to the workspace for context
             affect: Reference to the affect subsystem for emotional modulation
             initial_mode: Starting attention mode (focused, diffuse, vigilant, relaxed)
@@ -514,18 +507,18 @@ class AttentionController:
             novelty_weight: Importance of novelty in attention (0.0-1.0)
             emotion_weight: Importance of emotional salience in attention (0.0-1.0)
             urgency_weight: Importance of urgency in attention (0.0-1.0)
-            use_competition: Enable competitive attention dynamics (default: True)
-            inhibition_strength: Strength of lateral inhibition in competition (0.0-1.0)
+            use_competition: Enable GWT-compliant competitive dynamics (default: True)
+            inhibition_strength: Strength of lateral inhibition (0.0-1.0)
             ignition_threshold: Activation threshold for workspace entry (0.0-1.0)
-            competition_iterations: Number of competition iterations to run
+            competition_iterations: Number of competition iterations (1-100)
             coalition_boost: Boost factor for coalition members (0.0-1.0)
 
         Note: Weights should sum to approximately 1.0 for balanced scoring.
-        
-        To enable genuine competitive attention dynamics based on Global Workspace Theory,
-        set use_competition=True. This implements lateral inhibition, ignition thresholds,
-        and coalition formation instead of simple top-N selection.
         """
+        # Validate inputs
+        if attention_budget <= 0:
+            raise ValueError(f"attention_budget must be positive, got {attention_budget}")
+        
         self.attention_budget = attention_budget
         self.initial_budget = attention_budget
         self.workspace = workspace
@@ -538,7 +531,7 @@ class AttentionController:
         self.emotion_weight = emotion_weight
         self.urgency_weight = urgency_weight
         
-        # Competitive attention settings
+        # Competitive attention settings (GWT-compliant by default)
         self.use_competition = use_competition
         self.competitive_attention = CompetitiveAttention(
             inhibition_strength=inhibition_strength,
@@ -553,37 +546,43 @@ class AttentionController:
         self.competition_metrics_history: List[CompetitionMetrics] = []
         
         # Performance optimization: Relevance cache
-        self._relevance_cache: Dict[Tuple[str, str], float] = {}  # (percept_id, goal_id) -> score
+        self._relevance_cache: Dict[Tuple[str, str], float] = {}
         self._cache_max_size = 1000
         
         logger.info(
-            f"AttentionController initialized with budget={attention_budget}, "
-            f"mode={initial_mode.value}, use_competition={use_competition}"
+            f"AttentionController initialized: budget={attention_budget}, "
+            f"mode={initial_mode.value}, GWT_competitive={use_competition}"
         )
 
     def select_for_broadcast(self, candidates: List[Percept]) -> List[Percept]:
         """
-        Scores all candidate percepts and selects top-scoring ones within budget.
+        Scores candidate percepts and selects top-scoring ones within budget.
         
-        If use_competition=True, uses competitive dynamics with lateral inhibition
-        and ignition threshold. Otherwise, uses legacy top-N selection.
-        
-        Optimizations:
-        - Early termination when budget is exhausted
-        - Batch goal relevance computation for performance
-        - Heuristic pre-filtering for large candidate sets
+        Uses GWT-compliant competitive dynamics by default (use_competition=True),
+        or legacy top-N selection if disabled.
         
         Args:
             candidates: List of candidate percepts to evaluate
             
         Returns:
             Sorted list of selected percepts (highest scoring first)
+            
+        Raises:
+            TypeError: If candidates is not a list or contains non-Percept items
         """
+        # Validate inputs
+        if not isinstance(candidates, list):
+            raise TypeError(f"candidates must be a list, got {type(candidates)}")
+        
         if not candidates:
             logger.debug("No candidates to select from")
             return []
         
-        # For large candidate sets, use batch goal relevance computation
+        # Validate all items are Percepts
+        if not all(isinstance(p, Percept) for p in candidates):
+            raise TypeError("All candidates must be Percept instances")
+        
+        # Compute goal relevance scores (batched for efficiency)
         if len(candidates) > 10:
             goal_relevance_scores = self._compute_goal_relevance_batch(candidates)
         else:
@@ -592,16 +591,16 @@ class AttentionController:
         # Score all candidates
         base_scores = {}
         for percept in candidates:
-            # Use pre-computed goal relevance for efficiency
+            # Compute base score from multiple factors
             goal_rel = goal_relevance_scores.get(percept.id, 0.5)
             novelty = self._compute_novelty(percept)
             emotion_sal = self._compute_emotional_salience(percept)
             
-            # Recency bonus: newer percepts get slight boost
+            # Recency bonus for recent percepts
             time_diff = (datetime.now() - percept.timestamp).total_seconds()
             recency = 0.2 if time_diff < 1.0 else 0.1 if time_diff < 5.0 else 0.0
             
-            # Weighted average
+            # Weighted combination
             base_score = (
                 goal_rel * self.goal_weight +
                 novelty * self.novelty_weight +
@@ -609,16 +608,13 @@ class AttentionController:
                 recency * self.urgency_weight
             )
             
-            # Tool result boost: Tool results get attention priority
+            # Tool result boost
             if percept.modality == "tool_result":
-                # Base boost for all tool results
                 base_score += 0.30
-                
-                # Additional boost for failed tools (errors need attention)
                 if percept.metadata.get("tool_success") is False:
-                    base_score += 0.20
+                    base_score += 0.20  # Failed tools need attention
             
-            # Apply affect modulation if affect subsystem is available
+            # Apply affect modulation if available
             if self.affect:
                 total_score = self.affect.influence_attention(base_score, percept)
             else:
@@ -626,28 +622,29 @@ class AttentionController:
             
             base_scores[percept.id] = total_score
         
-        # Use competitive attention if enabled
+        # Select using competitive dynamics (GWT) or legacy mode
         if self.use_competition and self.competitive_attention:
             selected, metrics = self._select_with_competition(candidates, base_scores)
             self.competition_metrics_history.append(metrics)
         else:
             selected = self._select_legacy(candidates, base_scores)
         
-        # Log selection decision
+        # Record decision for tracking
         decision = {
             "timestamp": datetime.now(),
             "total_candidates": len(candidates),
             "selected_count": len(selected),
             "budget_used": sum(p.complexity for p in selected),
             "budget_available": self.attention_budget,
-            "rejected_budget": len(candidates) - len(selected),
-            "use_competition": self.use_competition,
+            "rejected_count": len(candidates) - len(selected),
+            "gwt_competitive": self.use_competition,
         }
         self.attention_history.append(decision)
         
-        logger.info(
-            f"Selected {len(selected)}/{len(candidates)} percepts, "
-            f"budget used: {decision['budget_used']}/{self.attention_budget}"
+        logger.debug(
+            f"Selected {len(selected)}/{len(candidates)} percepts "
+            f"(budget: {decision['budget_used']}/{self.attention_budget}, "
+            f"GWT: {self.use_competition})"
         )
         
         return selected

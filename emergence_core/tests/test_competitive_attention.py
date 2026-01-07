@@ -53,15 +53,29 @@ class TestCompetitiveAttentionBasics:
         assert comp.iterations == 5
         assert comp.coalition_boost == 0.3
     
-    def test_parameter_bounds_clamping(self):
-        """Test that parameters are clamped to valid ranges."""
-        comp = CompetitiveAttention(
-            inhibition_strength=1.5,  # Should clamp to 1.0
-            ignition_threshold=-0.1,  # Should clamp to 0.0
-        )
+    def test_parameter_bounds_validation(self):
+        """Test that parameters are validated with exceptions."""
+        # Invalid inhibition_strength
+        with pytest.raises(ValueError, match="inhibition_strength must be in"):
+            CompetitiveAttention(inhibition_strength=1.5)
         
-        assert comp.inhibition_strength == 1.0
-        assert comp.ignition_threshold == 0.0
+        # Invalid ignition_threshold
+        with pytest.raises(ValueError, match="ignition_threshold must be in"):
+            CompetitiveAttention(ignition_threshold=-0.1)
+        
+        # Invalid iterations
+        with pytest.raises(ValueError, match="iterations must be in"):
+            CompetitiveAttention(iterations=0)
+        
+        # Valid parameters should work
+        comp = CompetitiveAttention(
+            inhibition_strength=0.5,
+            ignition_threshold=0.7,
+            iterations=5
+        )
+        assert comp.inhibition_strength == 0.5
+        assert comp.ignition_threshold == 0.7
+        assert comp.iterations == 5
 
 
 class TestLateralInhibition:

@@ -331,9 +331,13 @@ class CompetitiveAttention:
             reverse=True
         )
         
-        # Calculate inhibition events for metrics (not per iteration to avoid overflow)
-        num_competitors = len(percepts)
-        inhibition_events = (num_competitors * (num_competitors - 1)) * self.iterations
+        # Calculate actual inhibition events accounting for coalitions
+        # Each percept inhibits all non-coalition members, across all iterations
+        inhibition_events = 0
+        for p_id, coalition_partners in coalition_sets.items():
+            # Number of percepts this one inhibits (all except self and coalition)
+            num_inhibited = len(percepts) - 1 - len(coalition_partners)
+            inhibition_events += num_inhibited * self.iterations
         
         # Create metrics
         metrics = CompetitionMetrics(
@@ -373,10 +377,11 @@ class CompetitiveAttention:
         """
         sorted_percepts, metrics = self.compete(percepts, base_scores)
         
-        # Only percepts that exceeded threshold (already in metrics.winner_ids)
+        # Only percepts that exceeded threshold (convert to set for O(1) lookup)
+        winner_ids_set = set(metrics.winner_ids)
         selected = [
             p for p in sorted_percepts
-            if p.id in metrics.winner_ids
+            if p.id in winner_ids_set
         ]
         
         logger.debug(

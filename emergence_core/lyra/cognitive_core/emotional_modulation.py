@@ -25,6 +25,31 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
+# Constants for modulation ranges
+class ModulationConstants:
+    """Constants defining modulation parameter ranges."""
+    # Arousal modulation ranges
+    ATTENTION_ITERATIONS_MIN = 5
+    ATTENTION_ITERATIONS_MAX = 10
+    IGNITION_THRESHOLD_MIN = 0.4
+    IGNITION_THRESHOLD_MAX = 0.6
+    MEMORY_RETRIEVAL_MIN = 2
+    MEMORY_RETRIEVAL_MAX = 5
+    PROCESSING_TIMEOUT_MIN = 1.0
+    PROCESSING_TIMEOUT_MAX = 2.0
+    
+    # Dominance modulation range
+    DECISION_THRESHOLD_MIN = 0.5
+    DECISION_THRESHOLD_MAX = 0.7
+    
+    # Valence modulation
+    VALENCE_BIAS_STRENGTH = 0.3  # Max adjustment
+    VALENCE_THRESHOLD = 0.2  # Minimum valence to apply bias
+    
+    # Metrics
+    MAX_CORRELATION_HISTORY = 100
+
+
 @dataclass
 class ProcessingParams:
     """
@@ -203,7 +228,18 @@ class EmotionalModulation:
         
         Returns:
             ProcessingParams with emotionally-modulated values
+            
+        Raises:
+            ValueError: If parameters are outside valid ranges
         """
+        # Validate inputs
+        if not -1.0 <= arousal <= 1.0:
+            raise ValueError(f"Arousal must be in [-1, 1], got {arousal}")
+        if not -1.0 <= valence <= 1.0:
+            raise ValueError(f"Valence must be in [-1, 1], got {valence}")
+        if not 0.0 <= dominance <= 1.0:
+            raise ValueError(f"Dominance must be in [0, 1], got {dominance}")
+        
         if not self.enabled:
             # Return baseline parameters (for ablation testing)
             return self.baseline_params
@@ -247,29 +283,37 @@ class EmotionalModulation:
         Returns:
             ProcessingParams with arousal modulation
         """
-        # Attention iterations: 5-10 range (inverse with arousal)
+        # Attention iterations: inverse relationship with arousal
         # High arousal → fewer iterations (snap decisions)
         # Low arousal → more iterations (careful analysis)
-        attention_iterations = int(10 - (arousal * 5))
-        attention_iterations = max(5, min(10, attention_iterations))
+        iterations_range = ModulationConstants.ATTENTION_ITERATIONS_MAX - ModulationConstants.ATTENTION_ITERATIONS_MIN
+        attention_iterations = int(ModulationConstants.ATTENTION_ITERATIONS_MAX - (arousal * iterations_range))
+        attention_iterations = max(ModulationConstants.ATTENTION_ITERATIONS_MIN, 
+                                  min(ModulationConstants.ATTENTION_ITERATIONS_MAX, attention_iterations))
         
-        # Ignition threshold: 0.4-0.6 range (inverse with arousal)
+        # Ignition threshold: inverse relationship with arousal
         # High arousal → lower threshold (react to more stimuli)
         # Low arousal → higher threshold (more selective)
-        ignition_threshold = 0.6 - (arousal * 0.2)
-        ignition_threshold = max(0.4, min(0.6, ignition_threshold))
+        threshold_range = ModulationConstants.IGNITION_THRESHOLD_MAX - ModulationConstants.IGNITION_THRESHOLD_MIN
+        ignition_threshold = ModulationConstants.IGNITION_THRESHOLD_MAX - (arousal * threshold_range)
+        ignition_threshold = max(ModulationConstants.IGNITION_THRESHOLD_MIN,
+                                min(ModulationConstants.IGNITION_THRESHOLD_MAX, ignition_threshold))
         
-        # Memory retrieval limit: 2-5 range (inverse with arousal)
+        # Memory retrieval limit: inverse relationship with arousal
         # High arousal → fewer memories (less deliberation)
         # Low arousal → more memories (thorough consideration)
-        memory_retrieval_limit = int(5 - (arousal * 3))
-        memory_retrieval_limit = max(2, min(5, memory_retrieval_limit))
+        memory_range = ModulationConstants.MEMORY_RETRIEVAL_MAX - ModulationConstants.MEMORY_RETRIEVAL_MIN
+        memory_retrieval_limit = int(ModulationConstants.MEMORY_RETRIEVAL_MAX - (arousal * memory_range))
+        memory_retrieval_limit = max(ModulationConstants.MEMORY_RETRIEVAL_MIN,
+                                    min(ModulationConstants.MEMORY_RETRIEVAL_MAX, memory_retrieval_limit))
         
-        # Processing timeout: 1.0-2.0 seconds (inverse with arousal)
+        # Processing timeout: inverse relationship with arousal
         # High arousal → shorter timeout (quick response)
         # Low arousal → longer timeout (take time to think)
-        processing_timeout = 2.0 - (arousal * 1.0)
-        processing_timeout = max(1.0, min(2.0, processing_timeout))
+        timeout_range = ModulationConstants.PROCESSING_TIMEOUT_MAX - ModulationConstants.PROCESSING_TIMEOUT_MIN
+        processing_timeout = ModulationConstants.PROCESSING_TIMEOUT_MAX - (arousal * timeout_range)
+        processing_timeout = max(ModulationConstants.PROCESSING_TIMEOUT_MIN,
+                                min(ModulationConstants.PROCESSING_TIMEOUT_MAX, processing_timeout))
         
         return ProcessingParams(
             attention_iterations=attention_iterations,
@@ -298,12 +342,13 @@ class EmotionalModulation:
         Returns:
             Modified ProcessingParams
         """
-        # Decision threshold: 0.5-0.7 range (inverse with dominance)
+        # Decision threshold: inverse relationship with dominance
         # High dominance → lower threshold (act with less certainty)
         # Low dominance → higher threshold (need more certainty)
-        base_threshold = 0.7
-        decision_threshold = base_threshold - (dominance * 0.2)
-        decision_threshold = max(0.5, min(0.7, decision_threshold))
+        threshold_range = ModulationConstants.DECISION_THRESHOLD_MAX - ModulationConstants.DECISION_THRESHOLD_MIN
+        decision_threshold = ModulationConstants.DECISION_THRESHOLD_MAX - (dominance * threshold_range)
+        decision_threshold = max(ModulationConstants.DECISION_THRESHOLD_MIN,
+                                min(ModulationConstants.DECISION_THRESHOLD_MAX, decision_threshold))
         
         params.decision_threshold = decision_threshold
         return params
@@ -328,62 +373,60 @@ class EmotionalModulation:
         Returns:
             List of actions with modulated priorities
         """
-        if not self.enabled or abs(valence) < 0.2:
+        if not self.enabled or abs(valence) < ModulationConstants.VALENCE_THRESHOLD:
             # No significant valence, return unchanged
             return actions
         
         # Bias strength scales with valence magnitude
-        bias_strength = abs(valence) * 0.3  # Max 0.3 adjustment
+        bias_strength = abs(valence) * ModulationConstants.VALENCE_BIAS_STRENGTH
         
-        # Approach actions (boosted by positive valence)
-        approach_types = ['speak', 'tool_call', 'commit_memory', 'engage', 'explore', 'create', 'connect']
-        
-        # Avoidance actions (boosted by negative valence)
-        avoidance_types = ['wait', 'introspect', 'withdraw', 'defend', 'avoid', 'reject']
+        # Define action categories
+        approach_types = {'speak', 'tool_call', 'commit_memory', 'engage', 'explore', 'create', 'connect'}
+        avoidance_types = {'wait', 'introspect', 'withdraw', 'defend', 'avoid', 'reject'}
         
         for action in actions:
-            # Get action type (handle both dict and object)
-            if isinstance(action, dict):
-                action_type = action.get(action_type_attr, '')
-                priority = action.get('priority', 0.5)
-            else:
-                action_type = getattr(action, action_type_attr, '')
-                priority = getattr(action, 'priority', 0.5)
+            action_type_str = self._get_action_type(action, action_type_attr).lower()
+            priority = self._get_action_priority(action)
             
-            # Convert to string for comparison
-            action_type_str = str(action_type).lower()
+            # Determine if this is an approach or avoidance action
+            is_approach = any(atype in action_type_str for atype in approach_types)
+            is_avoidance = any(atype in action_type_str for atype in avoidance_types)
             
-            # Apply bias based on valence
-            if valence > 0:
-                # Positive valence: boost approach, reduce avoidance
-                if any(approach in action_type_str for approach in approach_types):
-                    new_priority = min(1.0, priority + (valence * bias_strength))
-                    if isinstance(action, dict):
-                        action['priority'] = new_priority
-                    else:
-                        action.priority = new_priority
-                elif any(avoid in action_type_str for avoid in avoidance_types):
-                    new_priority = max(0.0, priority - (valence * bias_strength))
-                    if isinstance(action, dict):
-                        action['priority'] = new_priority
-                    else:
-                        action.priority = new_priority
-            else:
-                # Negative valence: reduce approach, boost avoidance
-                if any(approach in action_type_str for approach in approach_types):
-                    new_priority = max(0.0, priority + (valence * bias_strength))  # valence is negative
-                    if isinstance(action, dict):
-                        action['priority'] = new_priority
-                    else:
-                        action.priority = new_priority
-                elif any(avoid in action_type_str for avoid in avoidance_types):
-                    new_priority = min(1.0, priority - (valence * bias_strength))  # valence is negative
-                    if isinstance(action, dict):
-                        action['priority'] = new_priority
-                    else:
-                        action.priority = new_priority
+            if not (is_approach or is_avoidance):
+                continue  # Skip actions that aren't categorized
+            
+            # Calculate new priority based on valence and action type
+            if is_approach:
+                # Approach actions: boosted by positive valence, reduced by negative
+                new_priority = priority + (valence * bias_strength)
+            else:  # is_avoidance
+                # Avoidance actions: reduced by positive valence, boosted by negative
+                new_priority = priority - (valence * bias_strength)
+            
+            # Clamp to valid range and update
+            new_priority = max(0.0, min(1.0, new_priority))
+            self._set_action_priority(action, new_priority)
         
         return actions
+    
+    def _get_action_type(self, action: Any, attr_name: str) -> str:
+        """Extract action type from action object or dict."""
+        if isinstance(action, dict):
+            return str(action.get(attr_name, ''))
+        return str(getattr(action, attr_name, ''))
+    
+    def _get_action_priority(self, action: Any) -> float:
+        """Extract priority from action object or dict."""
+        if isinstance(action, dict):
+            return action.get('priority', 0.5)
+        return getattr(action, 'priority', 0.5)
+    
+    def _set_action_priority(self, action: Any, priority: float) -> None:
+        """Set priority on action object or dict."""
+        if isinstance(action, dict):
+            action['priority'] = priority
+        else:
+            action.priority = priority
     
     def _update_metrics(
         self,
@@ -399,46 +442,43 @@ class EmotionalModulation:
         """
         self.metrics.total_modulations += 1
         
-        # Track arousal effects
+        # Track arousal effects (categorize into high/low)
         if arousal > 0.7:
             self.metrics.high_arousal_fast_processing += 1
         elif arousal < 0.3:
             self.metrics.low_arousal_slow_processing += 1
         
-        # Record arousal-attention correlation
-        self.metrics.arousal_attention_correlations.append(
-            (arousal, params.attention_iterations, params.ignition_threshold)
-        )
-        
-        # Track valence effects
+        # Track valence effects (categorize into positive/negative)
         if valence > 0.3:
             self.metrics.positive_valence_approach_bias += 1
         elif valence < -0.3:
             self.metrics.negative_valence_avoidance_bias += 1
         
-        # Record valence-action correlation
-        self.metrics.valence_action_correlations.append(
-            (valence, params.action_bias_strength)
-        )
-        
-        # Track dominance effects
+        # Track dominance effects (categorize into high/low)
         if dominance > 0.7:
             self.metrics.high_dominance_assertive += 1
         elif dominance < 0.3:
             self.metrics.low_dominance_cautious += 1
         
-        # Record dominance-threshold correlation
-        self.metrics.dominance_threshold_correlations.append(
+        # Append correlations (bounded to prevent unbounded growth)
+        self._append_bounded_correlation(
+            self.metrics.arousal_attention_correlations,
+            (arousal, params.attention_iterations, params.ignition_threshold)
+        )
+        self._append_bounded_correlation(
+            self.metrics.valence_action_correlations,
+            (valence, params.action_bias_strength)
+        )
+        self._append_bounded_correlation(
+            self.metrics.dominance_threshold_correlations,
             (dominance, params.decision_threshold)
         )
-        
-        # Keep correlation lists bounded (last 100)
-        if len(self.metrics.arousal_attention_correlations) > 100:
-            self.metrics.arousal_attention_correlations.pop(0)
-        if len(self.metrics.valence_action_correlations) > 100:
-            self.metrics.valence_action_correlations.pop(0)
-        if len(self.metrics.dominance_threshold_correlations) > 100:
-            self.metrics.dominance_threshold_correlations.pop(0)
+    
+    def _append_bounded_correlation(self, correlation_list: List[tuple], item: tuple) -> None:
+        """Append item to correlation list, removing oldest if at max size."""
+        correlation_list.append(item)
+        if len(correlation_list) > ModulationConstants.MAX_CORRELATION_HISTORY:
+            correlation_list.pop(0)
     
     def get_metrics(self) -> Dict[str, Any]:
         """

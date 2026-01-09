@@ -23,6 +23,28 @@ def test_basic_functionality():
     assert modulation.enabled is True
     print("✓ Initialization successful")
     
+    # Test input validation
+    try:
+        modulation.modulate_processing(arousal=1.5, valence=0.0, dominance=0.5)
+        assert False, "Should have raised ValueError for invalid arousal"
+    except ValueError as e:
+        assert "Arousal must be in" in str(e)
+        print("✓ Input validation: arousal range checked")
+    
+    try:
+        modulation.modulate_processing(arousal=0.5, valence=2.0, dominance=0.5)
+        assert False, "Should have raised ValueError for invalid valence"
+    except ValueError as e:
+        assert "Valence must be in" in str(e)
+        print("✓ Input validation: valence range checked")
+    
+    try:
+        modulation.modulate_processing(arousal=0.5, valence=0.0, dominance=1.5)
+        assert False, "Should have raised ValueError for invalid dominance"
+    except ValueError as e:
+        assert "Dominance must be in" in str(e)
+        print("✓ Input validation: dominance range checked")
+    
     # Test high arousal produces fast processing
     params = modulation.modulate_processing(arousal=0.9, valence=0.0, dominance=0.5)
     assert params.attention_iterations < 7, f"Expected <7, got {params.attention_iterations}"

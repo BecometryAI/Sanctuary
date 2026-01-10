@@ -7,7 +7,8 @@ High-emotion memories get preferential treatment.
 Author: Lyra Emergence Team
 """
 import logging
-from typing import Dict, Any, List
+import math
+from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -146,3 +147,52 @@ class EmotionalWeighting:
             logger.info(f"Updated emotion weight: {emotion} -> {weight}")
         else:
             logger.warning(f"Invalid weight value {weight} for emotion {emotion}, must be 0.0-1.0")
+    
+    def emotional_congruence_pad(
+        self,
+        current_state: Dict[str, float],
+        memory_state: Optional[Dict[str, float]]
+    ) -> float:
+        """
+        Calculate emotional congruence using PAD (Pleasure-Arousal-Dominance) model.
+        
+        Memories encoded in similar emotional states are easier to retrieve.
+        Based on Euclidean distance in PAD space.
+        
+        Args:
+            current_state: Current PAD state with keys 'valence', 'arousal', 'dominance'
+            memory_state: Memory's PAD state (same keys), or None if unavailable
+            
+        Returns:
+            Congruence score (0.0-1.0, higher = more congruent)
+        """
+        if not memory_state or not current_state:
+            return 0.5  # Neutral if no state available
+        
+        # Extract PAD dimensions (with fallbacks)
+        current_pleasure = current_state.get("valence", 0.0)
+        current_arousal = current_state.get("arousal", 0.0)
+        current_dominance = current_state.get("dominance", 0.0)
+        
+        memory_pleasure = memory_state.get("valence", 0.0)
+        memory_arousal = memory_state.get("arousal", 0.0)
+        memory_dominance = memory_state.get("dominance", 0.0)
+        
+        # Calculate Euclidean distance in PAD space
+        distance = math.sqrt(
+            (current_pleasure - memory_pleasure) ** 2 +
+            (current_arousal - memory_arousal) ** 2 +
+            (current_dominance - memory_dominance) ** 2
+        )
+        
+        # Max distance in normalized PAD space (each dimension ranges ~-1 to 1)
+        # Assuming range is roughly [-1, 1] for valence and [0, 1] for arousal/dominance
+        # Conservative estimate: sqrt(2^2 + 1^2 + 1^2) = sqrt(6) ≈ 2.45
+        max_distance = math.sqrt(6.0)
+        
+        # Convert distance to similarity (1.0 = identical, 0.0 = maximally different)
+        congruence = 1.0 - (distance / max_distance)
+        congruence = max(0.0, min(1.0, congruence))  # Clamp to [0, 1]
+        
+        logger.debug(f"PAD congruence: {congruence:.3f} (distance: {distance:.3f})")
+        return congruence

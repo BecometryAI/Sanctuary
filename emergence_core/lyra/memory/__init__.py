@@ -6,6 +6,7 @@ This module provides a modular memory system with:
 - Memory encoding and retrieval
 - Episodic, semantic, and working memory
 - Emotional weighting and consolidation
+- Cue-dependent retrieval with spreading activation
 
 Public API:
     MemoryStorage - Storage backend
@@ -20,7 +21,7 @@ Public API:
 
 from .storage import MemoryStorage
 from .encoding import MemoryEncoder
-from .retrieval import MemoryRetriever
+from .retrieval import MemoryRetriever, CueDependentRetrieval
 from .consolidation import MemoryConsolidator
 from .emotional_weighting import EmotionalWeighting
 from .episodic import EpisodicMemory
@@ -31,6 +32,7 @@ __all__ = [
     "MemoryStorage",
     "MemoryEncoder",
     "MemoryRetriever",
+    "CueDependentRetrieval",
     "MemoryConsolidator",
     "EmotionalWeighting",
     "EpisodicMemory",

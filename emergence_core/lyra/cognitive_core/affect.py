@@ -733,4 +733,39 @@ class AffectSubsystem:
             Dictionary of metrics showing how emotions are modulating processing
         """
         return self.emotional_modulation.get_metrics()
+    
+    def get_baseline_disposition(self) -> Dict[str, float]:
+        """
+        Compute baseline emotional disposition from historical patterns.
+        
+        This averages emotional states over time to determine the system's
+        typical emotional baseline, which becomes part of computed identity.
+        
+        Returns:
+            Dictionary with valence, arousal, dominance baseline values
+        """
+        if not self.emotion_history:
+            # Return current state if no history
+            return {
+                "valence": self.valence,
+                "arousal": self.arousal,
+                "dominance": self.dominance
+            }
+        
+        # Use recent history (last 100 states or all if fewer)
+        recent_states = list(self.emotion_history)[-100:]
+        
+        # Calculate averages
+        avg_valence = np.mean([s.valence for s in recent_states])
+        avg_arousal = np.mean([s.arousal for s in recent_states])
+        avg_dominance = np.mean([s.dominance for s in recent_states])
+        
+        logger.debug(f"Baseline disposition computed from {len(recent_states)} states: "
+                    f"V={avg_valence:.2f}, A={avg_arousal:.2f}, D={avg_dominance:.2f}")
+        
+        return {
+            "valence": float(avg_valence),
+            "arousal": float(avg_arousal),
+            "dominance": float(avg_dominance)
+        }
 

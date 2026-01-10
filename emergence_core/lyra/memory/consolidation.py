@@ -16,6 +16,12 @@ from typing import Dict, Any, List, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
+# Pattern extraction constants
+MAX_PATTERN_TAGS = 3  # Maximum tags to consider for pattern identification
+MAX_SOURCE_EPISODES = 10  # Maximum source episodes to track per pattern
+PATTERN_CONFIDENCE_DIVISOR = 10.0  # Divisor for confidence calculation
+PATTERN_EXTRACTION_WEAKENING_FACTOR = 0.8  # Factor to weaken episodes after pattern extraction
+
 
 class MemoryConsolidator:
     """
@@ -634,8 +640,8 @@ class MemoryConsolidator:
             # Group by tags
             tags = metadata.get("tags", [])
             if tags and isinstance(tags, list):
-                # Create pattern key from sorted tags
-                pattern_key = tuple(sorted(tags[:3]))  # Use first 3 tags
+                # Create pattern key from sorted tags (limited by MAX_PATTERN_TAGS)
+                pattern_key = tuple(sorted(tags[:MAX_PATTERN_TAGS]))
                 if pattern_key:
                     patterns[pattern_key].append(mem_id)
         
@@ -666,8 +672,8 @@ class MemoryConsolidator:
             "tags": tags,
             "pattern": " ".join(tags),
             "occurrences": len(occurrence_ids),
-            "source_episodes": occurrence_ids[:10],  # Limit stored episodes
-            "confidence": min(1.0, len(occurrence_ids) / 10.0),
+            "source_episodes": occurrence_ids[:MAX_SOURCE_EPISODES],
+            "confidence": min(1.0, len(occurrence_ids) / PATTERN_CONFIDENCE_DIVISOR),
             "extracted_at": datetime.now().isoformat(),
             "created_from_consolidation": True
         }
@@ -687,7 +693,7 @@ class MemoryConsolidator:
                 
                 metadata = result["metadatas"][0]
                 current_activation = float(metadata.get("base_activation", 1.0))
-                metadata["base_activation"] = current_activation * 0.8  # 20% reduction
+                metadata["base_activation"] = current_activation * PATTERN_EXTRACTION_WEAKENING_FACTOR
                 
                 self._update_memory_metadata(mem_id, metadata)
                 

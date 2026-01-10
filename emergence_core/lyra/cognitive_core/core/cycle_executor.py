@@ -92,10 +92,24 @@ class CycleExecutor:
             attended = []
             subsystem_timings['attention'] = 0.0
         
-        # 4. AFFECT: Update emotional state
+        # 4. AFFECT: Update emotional state and get processing parameters
         try:
             step_start = time.time()
             affect_update = self.subsystems.affect.compute_update(self.state.workspace.broadcast())
+            
+            # Log emotional modulation parameters for tracking
+            if hasattr(self.subsystems.affect, 'get_processing_params'):
+                processing_params = self.subsystems.affect.get_processing_params()
+                logger.debug(
+                    f"Emotional modulation active: "
+                    f"V={processing_params.valence_level:.2f} "
+                    f"A={processing_params.arousal_level:.2f} "
+                    f"D={processing_params.dominance_level:.2f} → "
+                    f"iters={processing_params.attention_iterations} "
+                    f"thresh={processing_params.ignition_threshold:.2f} "
+                    f"decision={processing_params.decision_threshold:.2f}"
+                )
+            
             subsystem_timings['affect'] = (time.time() - step_start) * 1000
         except Exception as e:
             logger.error(f"Affect step failed: {e}", exc_info=True)

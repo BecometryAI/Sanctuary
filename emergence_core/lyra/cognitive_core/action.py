@@ -184,6 +184,7 @@ class ActionSubsystem:
         Main decision-making method.
         
         Generates candidate actions based on workspace state,
+        applies emotional modulation (valence bias),
         filters by protocol constraints, prioritizes by urgency
         and goal alignment, and returns ordered list of actions.
         
@@ -195,6 +196,14 @@ class ActionSubsystem:
         """
         # Generate candidate actions
         candidates = self._generate_candidates(snapshot)
+        
+        # Apply emotional modulation (valence-based action biasing) BEFORE filtering
+        # This makes emotions functionally modulate action selection
+        if self.affect and hasattr(self.affect, 'apply_valence_bias_to_actions'):
+            candidates = self.affect.apply_valence_bias_to_actions(candidates)
+            logger.debug(
+                f"Applied emotional valence bias to {len(candidates)} candidate actions"
+            )
         
         # Filter by protocol constraints
         valid_actions = []
@@ -212,8 +221,21 @@ class ActionSubsystem:
         ]
         scored_actions.sort(reverse=True, key=lambda x: x[0])
         
-        # Return top actions (limit to 3)
-        selected = [action for score, action in scored_actions[:3]]
+        # Apply dominance-based decision threshold (from emotional modulation)
+        decision_threshold = 0.5  # Default threshold
+        if self.affect and hasattr(self.affect, 'get_processing_params'):
+            processing_params = self.affect.get_processing_params()
+            decision_threshold = processing_params.decision_threshold
+            logger.debug(
+                f"Emotional modulation: decision_threshold={decision_threshold:.2f} "
+                f"(dominance={processing_params.dominance_level:.2f})"
+            )
+        
+        # Filter by decision threshold (only execute actions above threshold)
+        selected = [
+            action for score, action in scored_actions
+            if score >= decision_threshold
+        ][:3]  # Still limit to top 3
         
         # Track in history
         self.action_history.extend(selected)

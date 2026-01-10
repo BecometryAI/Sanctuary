@@ -629,6 +629,18 @@ class AttentionController:
         
         # Select using competitive dynamics (GWT) or legacy mode
         if self.use_competition and self.competitive_attention:
+            # Apply emotional modulation to competition parameters BEFORE selection
+            if self.affect and hasattr(self.affect, 'get_processing_params'):
+                processing_params = self.affect.get_processing_params()
+                # Modulate competition iterations and ignition threshold based on arousal
+                self.competitive_attention.iterations = processing_params.attention_iterations
+                self.competitive_attention.ignition_threshold = processing_params.ignition_threshold
+                logger.debug(
+                    f"Emotional modulation: iterations={processing_params.attention_iterations}, "
+                    f"threshold={processing_params.ignition_threshold:.2f} "
+                    f"(arousal={processing_params.arousal_level:.2f})"
+                )
+            
             selected, metrics = self._select_with_competition(candidates, base_scores)
             self.competition_metrics_history.append(metrics)
         else:

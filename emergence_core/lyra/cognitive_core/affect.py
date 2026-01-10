@@ -26,6 +26,7 @@ from numpy.typing import NDArray
 
 from .workspace import WorkspaceSnapshot, Goal
 from .action import Action, ActionType
+from .emotional_modulation import EmotionalModulation, ProcessingParams
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -164,6 +165,7 @@ class AffectSubsystem:
                 - decay_rate: Rate of return to baseline (0.0-1.0)
                 - sensitivity: How strongly events affect emotions (0.0-1.0)
                 - history_size: Number of emotional states to maintain
+                - enable_modulation: Whether to enable emotional modulation (default: True)
         """
         self.config = config or {}
         
@@ -187,7 +189,11 @@ class AffectSubsystem:
         history_size = self.config.get("history_size", 100)
         self.emotion_history: deque = deque(maxlen=history_size)
         
-        logger.info(f"✅ AffectSubsystem initialized with baseline: {self.baseline}")
+        # Initialize emotional modulation system
+        enable_modulation = self.config.get("enable_modulation", True)
+        self.emotional_modulation = EmotionalModulation(enabled=enable_modulation)
+        
+        logger.info(f"✅ AffectSubsystem initialized with baseline: {self.baseline}, modulation: {enable_modulation}")
 
     
     def compute_update(self, snapshot: WorkspaceSnapshot) -> Dict[str, float]:
@@ -685,4 +691,46 @@ class AffectSubsystem:
                 modifier *= 1.2
         
         return base_priority * modifier
+    
+    def get_processing_params(self) -> ProcessingParams:
+        """
+        Get processing parameters modulated by current emotional state.
+        
+        This method makes emotions functionally efficacious by directly affecting
+        cognitive processing parameters BEFORE any LLM invocation.
+        
+        Returns:
+            ProcessingParams with emotionally-modulated values
+        """
+        return self.emotional_modulation.modulate_processing(
+            arousal=self.arousal,
+            valence=self.valence,
+            dominance=self.dominance
+        )
+    
+    def apply_valence_bias_to_actions(self, actions: List[Any]) -> List[Any]:
+        """
+        Apply valence-based approach/avoidance bias to actions.
+        
+        This makes valence functionally modulate action selection BEFORE LLM scoring.
+        
+        Args:
+            actions: List of action objects or dicts
+            
+        Returns:
+            Actions with valence-biased priorities
+        """
+        return self.emotional_modulation.bias_action_selection(
+            actions=actions,
+            valence=self.valence
+        )
+    
+    def get_modulation_metrics(self) -> Dict[str, Any]:
+        """
+        Get metrics tracking emotional modulation effects.
+        
+        Returns:
+            Dictionary of metrics showing how emotions are modulating processing
+        """
+        return self.emotional_modulation.get_metrics()
 

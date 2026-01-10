@@ -113,90 +113,74 @@ class MemoryStorage:
         logger.info(f"  - Procedural memories: {self.procedural_memory.count()}")
     
     def add_to_blockchain(self, data: Dict[str, Any]) -> tuple[str, int]:
-        """
-        Add data to blockchain and mint memory token.
+        """Add data to blockchain and mint memory token."""
+        if not data or not isinstance(data, dict):
+            raise ValueError("Data must be a non-empty dictionary")
         
-        Args:
-            data: Data to add to blockchain
-            
-        Returns:
-            Tuple of (block_hash, token_id)
-        """
-        block_hash = self.chain.add_block(data)
-        token_id = self.chain.token.mint_memory_token(block_hash)
-        return block_hash, token_id
+        try:
+            block_hash = self.chain.add_block(data)
+            token_id = self.chain.token.mint_memory_token(block_hash)
+            return block_hash, token_id
+        except Exception as e:
+            logger.error(f"Blockchain operation failed: {e}")
+            raise
     
     def verify_block(self, block_hash: str) -> Optional[Dict[str, Any]]:
-        """
-        Verify a memory block in the blockchain.
+        """Verify a memory block in the blockchain."""
+        if not block_hash or not isinstance(block_hash, str):
+            logger.warning("Invalid block hash provided")
+            return None
         
-        Args:
-            block_hash: Hash of the block to verify
-            
-        Returns:
-            Block data if valid, None otherwise
-        """
-        return self.chain.verify_block(block_hash)
+        try:
+            return self.chain.verify_block(block_hash)
+        except Exception as e:
+            logger.error(f"Block verification failed: {e}")
+            return None
     
-    def add_episodic(
-        self,
-        document: str,
-        metadata: Dict[str, Any],
-        doc_id: str
-    ) -> None:
-        """
-        Add a document to episodic memory collection.
+    def add_episodic(self, document: str, metadata: Dict[str, Any], doc_id: str) -> None:
+        """Add a document to episodic memory collection."""
+        if not all([document, metadata, doc_id]) or not isinstance(doc_id, str):
+            raise ValueError("Document, metadata, and doc_id are required")
         
-        Args:
-            document: JSON-serialized document content
-            metadata: Document metadata
-            doc_id: Unique document identifier
-        """
-        self.episodic_memory.add(
-            documents=[document],
-            metadatas=[metadata],
-            ids=[doc_id]
-        )
+        try:
+            self.episodic_memory.add(
+                documents=[document],
+                metadatas=[metadata],
+                ids=[doc_id]
+            )
+        except Exception as e:
+            logger.error(f"Failed to add episodic memory: {e}")
+            raise
     
-    def add_semantic(
-        self,
-        document: str,
-        metadata: Dict[str, Any],
-        doc_id: str
-    ) -> None:
-        """
-        Add a document to semantic memory collection.
+    def add_semantic(self, document: str, metadata: Dict[str, Any], doc_id: str) -> None:
+        """Add a document to semantic memory collection."""
+        if not all([document, metadata, doc_id]) or not isinstance(doc_id, str):
+            raise ValueError("Document, metadata, and doc_id are required")
         
-        Args:
-            document: JSON-serialized document content
-            metadata: Document metadata
-            doc_id: Unique document identifier
-        """
-        self.semantic_memory.add(
-            documents=[document],
-            metadatas=[metadata],
-            ids=[doc_id]
-        )
+        try:
+            self.semantic_memory.add(
+                documents=[document],
+                metadatas=[metadata],
+                ids=[doc_id]
+            )
+        except Exception as e:
+            logger.error(f"Failed to add semantic memory: {e}")
+            raise
     
-    def add_procedural(
-        self,
-        document: str,
-        metadata: Dict[str, Any],
-        doc_id: str
-    ) -> None:
-        """
-        Add a document to procedural memory collection.
+    def add_procedural(self, document: str, metadata: Dict[str, Any], doc_id: str) -> None:
+        """Add a document to procedural memory collection."""
+        if not all([document, metadata, doc_id]) or not isinstance(doc_id, str):
+            raise ValueError("Document, metadata, and doc_id are required")
         
-        Args:
-            document: JSON-serialized document content
-            metadata: Document metadata
-            doc_id: Unique document identifier
-        """
-        self.procedural_memory.add(
-            documents=[document],
-            metadatas=[metadata],
-            ids=[doc_id]
-        )
+        try:
+            self.procedural_memory.add(
+                documents=[document],
+                metadatas=[metadata],
+                ids=[doc_id]
+            )
+        except Exception as e:
+            logger.error(f"Failed to add procedural memory: {e}")
+            raise
     
     def get_episodic(self, doc_ids: List[str]) -> Dict[str, Any]:
         """Get documents from episodic memory by IDs."""

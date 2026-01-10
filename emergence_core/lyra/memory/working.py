@@ -28,14 +28,15 @@ class WorkingMemory:
         self.memory: Dict[str, Dict[str, Any]] = {}
     
     def update(self, key: str, value: Any, ttl_seconds: Optional[int] = None) -> None:
-        """
-        Update working memory with optional time-to-live.
+        """Update working memory with optional time-to-live."""
+        if not key or not isinstance(key, str):
+            logger.warning("Invalid key provided to working memory")
+            return
         
-        Args:
-            key: Memory key identifier
-            value: Memory value (any JSON-serializable data)
-            ttl_seconds: Optional time-to-live in seconds (None = no expiration)
-        """
+        if ttl_seconds is not None and (not isinstance(ttl_seconds, int) or ttl_seconds < 0):
+            logger.warning(f"Invalid TTL: {ttl_seconds}, ignoring")
+            ttl_seconds = None
+        
         entry = {
             "value": value,
             "created_at": datetime.now().isoformat(),
@@ -43,28 +44,20 @@ class WorkingMemory:
             "expires_at": (datetime.now().timestamp() + ttl_seconds) if ttl_seconds else None
         }
         self.memory[key] = entry
-        
-        # Clean expired entries
         self._clean_expired()
     
     def get(self, key: str) -> Any:
-        """
-        Retrieve from working memory.
+        """Retrieve from working memory."""
+        if not key or not isinstance(key, str):
+            return None
         
-        Args:
-            key: Memory key to retrieve
-            
-        Returns:
-            Memory value if exists and not expired, None otherwise
-        """
-        # Clean expired entries first
         self._clean_expired()
-        
         entry = self.memory.get(key)
+        
         if entry is None:
             return None
         
-        # Check if expired
+        # Check expiration
         if entry.get("expires_at") and datetime.now().timestamp() > entry["expires_at"]:
             del self.memory[key]
             return None
@@ -72,28 +65,16 @@ class WorkingMemory:
         return entry.get("value")
     
     def get_context(self, max_items: int = 10) -> List[Dict[str, Any]]:
-        """
-        Get recent working memory as context.
+        """Get recent working memory as context."""
+        if max_items <= 0:
+            return []
         
-        Returns most recent non-expired items from working memory,
-        formatted for use in context windows.
-        
-        Args:
-            max_items: Maximum number of items to return
-            
-        Returns:
-            List of memory dictionaries with key, value, and metadata
-        """
         self._clean_expired()
         
-        # Sort by creation time (most recent first)
         items = [
-            {
-                "key": key,
-                "value": entry["value"],
-                "created_at": entry["created_at"]
-            }
+            {"key": key, "value": entry["value"], "created_at": entry["created_at"]}
             for key, entry in self.memory.items()
+            if isinstance(entry, dict) and "value" in entry and "created_at" in entry
         ]
         
         items.sort(key=lambda x: x["created_at"], reverse=True)

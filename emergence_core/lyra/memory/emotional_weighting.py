@@ -46,53 +46,38 @@ class EmotionalWeighting:
         }
     
     def calculate_salience(self, memory: Dict[str, Any]) -> float:
-        """
-        Calculate emotional salience score for a memory.
+        """Calculate emotional salience score for a memory."""
+        if not memory:
+            return 0.5
         
-        Args:
-            memory: Memory dictionary with emotional_tone field
-            
-        Returns:
-            Salience score (0.0-1.0), higher means more emotionally significant
-        """
         emotional_tones = memory.get("emotional_tone", [])
+        if not emotional_tones or not isinstance(emotional_tones, list):
+            return 0.5
         
-        if not emotional_tones:
-            return 0.5  # Neutral baseline
+        # Calculate average weight, filtering invalid entries
+        weights = [
+            self.emotion_weights.get(tone.lower(), 0.5)
+            for tone in emotional_tones
+            if isinstance(tone, str) and tone.strip()
+        ]
         
-        # Calculate average weight of all emotional tones
-        weights = []
-        for tone in emotional_tones:
-            tone_lower = tone.lower()
-            weight = self.emotion_weights.get(tone_lower, 0.5)
-            weights.append(weight)
+        if not weights:
+            return 0.5
         
-        if weights:
-            salience = sum(weights) / len(weights)
-            logger.debug(f"Calculated salience {salience:.2f} for tones: {emotional_tones}")
-            return salience
-        
-        return 0.5
+        salience = sum(weights) / len(weights)
+        logger.debug(f"Salience {salience:.2f} for tones: {emotional_tones}")
+        return salience
     
     def should_prioritize_storage(self, memory: Dict[str, Any], threshold: float = 0.7) -> bool:
-        """
-        Determine if a memory should get prioritized storage.
+        """Determine if a memory should get prioritized storage."""
+        if not memory or not isinstance(threshold, (int, float)) or threshold < 0 or threshold > 1:
+            return False
         
-        High emotional salience memories get immediate indexing
-        and enhanced storage priority.
-        
-        Args:
-            memory: Memory to evaluate
-            threshold: Salience threshold for prioritization
-            
-        Returns:
-            True if should prioritize, False otherwise
-        """
         salience = self.calculate_salience(memory)
         should_prioritize = salience >= threshold
         
         if should_prioritize:
-            logger.info(f"Memory prioritized for storage (salience: {salience:.2f})")
+            logger.info(f"Memory prioritized (salience: {salience:.2f})")
         
         return should_prioritize
     
@@ -101,43 +86,34 @@ class EmotionalWeighting:
         memories: List[Dict[str, Any]],
         current_emotional_state: List[str] = None
     ) -> List[Dict[str, Any]]:
-        """
-        Bias retrieval results based on emotional congruence.
-        
-        Memories matching current emotional state get boosted scores.
-        This simulates mood-congruent memory retrieval.
-        
-        Args:
-            memories: List of retrieved memories
-            current_emotional_state: Current emotional tones
-            
-        Returns:
-            Weighted and re-sorted memory list
-        """
-        if not current_emotional_state:
+        """Bias retrieval results based on emotional congruence."""
+        if not memories or not current_emotional_state:
             return memories
         
-        current_state_lower = [tone.lower() for tone in current_emotional_state]
+        # Filter and normalize current state
+        current_state_lower = [
+            tone.lower() for tone in current_emotional_state 
+            if isinstance(tone, str) and tone.strip()
+        ]
         
-        # Add emotional congruence scores
+        if not current_state_lower:
+            return memories
+        
+        # Calculate emotional congruence for each memory
         for memory in memories:
-            memory_tones = [tone.lower() for tone in memory.get("emotional_tone", [])]
+            if not isinstance(memory, dict):
+                continue
+                
+            memory_tones = [
+                tone.lower() for tone in memory.get("emotional_tone", [])
+                if isinstance(tone, str) and tone.strip()
+            ]
             
-            # Calculate overlap between current state and memory
+            # Calculate overlap
             overlap = len(set(current_state_lower) & set(memory_tones))
-            congruence = overlap / max(len(current_state_lower), 1)
-            
-            # Store congruence score
-            memory["emotional_congruence"] = congruence
-            
-            # Boost overall score if congruent
-            if congruence > 0:
-                logger.debug(
-                    f"Memory emotional congruence: {congruence:.2f} "
-                    f"(current: {current_emotional_state}, memory: {memory_tones})"
-                )
+            memory["emotional_congruence"] = overlap / len(current_state_lower) if overlap > 0 else 0.0
         
-        # Sort by congruence (higher first), then by original order
+        # Sort by congruence and timestamp
         memories.sort(
             key=lambda m: (m.get("emotional_congruence", 0), m.get("timestamp", "")),
             reverse=True

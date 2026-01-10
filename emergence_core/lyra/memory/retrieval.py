@@ -41,65 +41,43 @@ class MemoryRetriever:
         k: int = 5,
         use_rag: bool = True
     ) -> List[Dict[str, Any]]:
-        """
-        Retrieve relevant memories based on a query.
+        """Retrieve relevant memories based on a query."""
+        if not query or not isinstance(query, str) or not query.strip():
+            logger.warning("Empty or invalid query provided")
+            return []
         
-        Supports two retrieval modes:
-        1. RAG-based semantic search (recommended): Uses vector similarity
-        2. Direct ChromaDB query: Faster but less semantic understanding
-        
-        Args:
-            query: The search query (natural language)
-            k: Number of results to return
-            use_rag: Whether to use RAG system (True) or direct ChromaDB (False)
-            
-        Returns:
-            List of memory dictionaries, sorted by relevance
-        """
-        memories = []
+        if k <= 0:
+            logger.warning(f"Invalid k value: {k}, using default of 5")
+            k = 5
         
         try:
-            if use_rag:
-                memories = self._retrieve_with_rag(query, k)
-            else:
-                memories = self._retrieve_direct(query, k)
-            
-            # Sort by verification status and timestamp
+            memories = self._retrieve_with_rag(query, k) if use_rag else self._retrieve_direct(query, k)
             memories.sort(key=self._sort_key, reverse=True)
             
-            logger.info(
-                f"Retrieved {len(memories[:k])} memories "
-                f"(verified: {sum(1 for m in memories if m.get('verification', {}).get('status') == 'verified')})"
-            )
+            verified_count = sum(1 for m in memories if m.get('verification', {}).get('status') == 'verified')
+            logger.info(f"Retrieved {len(memories[:k])} memories (verified: {verified_count})")
             return memories[:k]
             
         except Exception as e:
-            logger.error(f"Failed to retrieve memories: {e}", exc_info=True)
-            raise RuntimeError(f"Memory retrieval failed: {e}") from e
+            logger.error(f"Memory retrieval failed: {e}", exc_info=True)
+            return []  # Return empty list instead of raising to maintain system stability
     
     def _retrieve_with_rag(self, query: str, k: int) -> List[Dict[str, Any]]:
-        """
-        Retrieve memories using RAG system for deep semantic search.
-        
-        Args:
-            query: Search query
-            k: Number of results
-            
-        Returns:
-            List of memory dictionaries
-        """
-        logger.debug(f"RAG retrieval for query: {query[:50]}...")
+        """Retrieve memories using RAG system for deep semantic search."""
+        logger.debug(f"RAG retrieval for: {query[:50]}...")
         memories = []
         
-        retriever = self.vector_db.as_retriever({"k": k})
-        docs = retriever.get_relevant_documents(query)
+        try:
+            retriever = self.vector_db.as_retriever({"k": k})
+            docs = retriever.get_relevant_documents(query)
+        except Exception as e:
+            logger.error(f"RAG retrieval failed: {e}")
+            return memories
         
         for doc in docs:
             try:
-                # Parse the memory content
                 content = json.loads(doc.page_content) if isinstance(doc.page_content, str) else doc.page_content
                 
-                # Verify through blockchain if hash exists
                 if block_hash := doc.metadata.get("block_hash"):
                     verified_data = self.storage.verify_block(block_hash)
                     if verified_data:
@@ -112,16 +90,14 @@ class MemoryRetriever:
                         }
                         memories.append(verified_data)
                     else:
-                        logger.warning(f"Memory verification failed for block: {block_hash}")
                         content["verification"] = {"status": "verification_failed", "block_hash": block_hash}
                         memories.append(content)
                 else:
-                    # Legacy memory without blockchain
                     content["verification"] = {"status": "legacy"}
                     memories.append(content)
                     
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse memory content: {e}")
+            except (json.JSONDecodeError, AttributeError, KeyError) as e:
+                logger.warning(f"Failed to parse memory: {e}")
                 continue
         
         return memories

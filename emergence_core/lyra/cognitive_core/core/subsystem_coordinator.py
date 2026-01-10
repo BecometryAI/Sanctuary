@@ -96,7 +96,8 @@ class SubsystemCoordinator:
         self.meta_cognition = SelfMonitor(
             workspace=workspace,
             config=config.get("meta_cognition", {}),
-            identity=self.identity
+            identity=self.identity,
+            identity_manager=self.identity_manager
         )
         
         # Create introspective journal

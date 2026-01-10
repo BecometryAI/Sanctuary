@@ -60,7 +60,8 @@ class SelfMonitor:
         self,
         workspace: Optional[GlobalWorkspace] = None,
         config: Optional[Dict] = None,
-        identity: Optional[Any] = None
+        identity: Optional[Any] = None,
+        identity_manager: Optional[Any] = None
     ):
         """
         Initialize the self-monitor.
@@ -69,10 +70,12 @@ class SelfMonitor:
             workspace: GlobalWorkspace instance to observe
             config: Optional configuration dict
             identity: Optional IdentityLoader instance with charter and protocols
+            identity_manager: Optional IdentityManager for computed identity
         """
         self.workspace = workspace
         self.config = config or {}
         self.identity = identity
+        self.identity_manager = identity_manager
         
         # Load identity files
         charter_text = ""
@@ -422,6 +425,80 @@ class SelfMonitor:
                 "systematic_biases": []
             }
         }
+    
+    def introspect_identity(self) -> str:
+        """
+        Generate identity description from computed identity.
+        
+        This method uses the computed identity system to generate a
+        self-description based on actual system state rather than
+        static configuration.
+        
+        Returns:
+            Human-readable identity description
+        """
+        if self.identity_manager:
+            # Use computed identity if available
+            return self.identity_manager.introspect_identity()
+        elif self.identity and self.identity.charter:
+            # Fallback to charter-based identity
+            charter = self.identity.charter
+            lines = ["Based on my charter and protocols:"]
+            
+            if charter.core_values:
+                values_str = ", ".join(charter.core_values)
+                lines.append(f"- Core values: {values_str}")
+            
+            if charter.purpose_statement:
+                lines.append(f"- Purpose: {charter.purpose_statement}")
+            
+            lines.append("- Identity source: configuration (static)")
+            
+            return "\n".join(lines)
+        else:
+            return "Identity information not available"
+    
+    def get_computed_identity_percept(self) -> Optional[Percept]:
+        """
+        Generate an introspective percept about computed identity.
+        
+        Returns:
+            Percept containing identity introspection or None if no identity manager
+        """
+        if not self.identity_manager:
+            return None
+        
+        try:
+            # Get identity introspection from manager
+            description = self.identity_manager.introspect_identity()
+            
+            # Get continuity information
+            continuity_score = self.identity_manager.get_continuity_score()
+            
+            percept_text = f"""Meta-Cognitive Observation: Identity State
+
+{description}
+
+Identity Continuity Score: {continuity_score:.2f}
+
+This identity is computed from actual system state, not loaded from configuration.
+It reflects what I actually DO, not what I was TOLD to be.
+"""
+            
+            # Create introspection percept
+            from ..workspace import Percept
+            return Percept(
+                modality="introspection",
+                raw=percept_text,
+                complexity=5,
+                metadata={
+                    "type": "identity_introspection",
+                    "source": "computed_identity"
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error generating identity introspection: {e}")
+            return None
 
 
 # Export main classes for backward compatibility

@@ -7,6 +7,7 @@ This module provides a modular memory system with:
 - Episodic, semantic, and working memory
 - Emotional weighting and consolidation
 - Cue-dependent retrieval with spreading activation
+- Idle detection and consolidation scheduling
 
 Public API:
     MemoryStorage - Storage backend
@@ -17,6 +18,9 @@ Public API:
     EpisodicMemory - Autobiographical memory management
     SemanticMemory - Facts and knowledge storage
     WorkingMemory - Short-term buffer
+    IdleDetector - Idle period detection
+    ConsolidationScheduler - Background consolidation scheduler
+    ConsolidationMetrics - Consolidation metrics tracking
 """
 
 from .storage import MemoryStorage
@@ -27,6 +31,8 @@ from .emotional_weighting import EmotionalWeighting
 from .episodic import EpisodicMemory
 from .semantic import SemanticMemory
 from .working import WorkingMemory
+from .idle_detector import IdleDetector
+from .scheduler import ConsolidationScheduler, ConsolidationMetrics
 
 __all__ = [
     "MemoryStorage",
@@ -38,4 +44,7 @@ __all__ = [
     "EpisodicMemory",
     "SemanticMemory",
     "WorkingMemory",
+    "IdleDetector",
+    "ConsolidationScheduler",
+    "ConsolidationMetrics",
 ]

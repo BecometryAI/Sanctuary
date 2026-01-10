@@ -121,7 +121,8 @@ class ActionSubsystem:
         self,
         config: Optional[Dict] = None,
         affect: Optional[Any] = None,
-        identity: Optional[Any] = None
+        identity: Optional[Any] = None,
+        behavior_logger: Optional[Any] = None
     ) -> None:
         """
         Initialize the action subsystem.
@@ -130,10 +131,12 @@ class ActionSubsystem:
             config: Optional configuration dict
             affect: Optional reference to the affect subsystem for emotional modulation
             identity: Optional IdentityLoader instance with charter and protocols
+            behavior_logger: Optional BehaviorLogger for tracking actions for identity computation
         """
         self.config = config or {}
         self.affect = affect
         self.identity = identity
+        self.behavior_logger = behavior_logger
         self.protocol_constraints: List[Any] = []
         self.action_history: deque = deque(maxlen=50)
         self.action_stats: Dict[str, Any] = {
@@ -244,6 +247,10 @@ class ActionSubsystem:
             action_type_str = action.type.value if hasattr(action.type, 'value') else str(action.type)
             self.action_stats["action_counts"][action_type_str] = \
                 self.action_stats["action_counts"].get(action_type_str, 0) + 1
+            
+            # Log to behavior logger for identity computation
+            if self.behavior_logger:
+                self.behavior_logger.log_action(action)
         
         logger.info(f"✅ Selected {len(selected)} actions: "
                    f"{[a.type.value for a in selected]}")

@@ -162,6 +162,23 @@ class CycleExecutor:
             logger.error(f"Memory consolidation step failed: {e}", exc_info=True)
             subsystem_timings['memory_consolidation'] = 0.0
         
+        # 10. IDENTITY UPDATE: Periodically recompute identity from system state
+        # Update every 100 cycles to avoid overhead
+        if self.state.workspace.cycle_count % 100 == 0:
+            try:
+                step_start = time.time()
+                if hasattr(self.subsystems, 'identity_manager'):
+                    self.subsystems.identity_manager.update(
+                        memory_system=self.subsystems.memory,
+                        goal_system=self.state.workspace,
+                        emotion_system=self.subsystems.affect
+                    )
+                    logger.debug("Identity recomputed from system state")
+                subsystem_timings['identity_update'] = (time.time() - step_start) * 1000
+            except Exception as e:
+                logger.error(f"Identity update failed: {e}", exc_info=True)
+                subsystem_timings['identity_update'] = 0.0
+        
         return subsystem_timings
     
     async def _retrieve_memories(self) -> list:

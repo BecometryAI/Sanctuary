@@ -58,6 +58,14 @@ class SubsystemCoordinator:
         self.identity = IdentityLoader(identity_dir=identity_dir)
         self.identity.load_all()
         
+        # Initialize computed identity manager
+        from ..identity import IdentityManager
+        identity_config_path = config.get("identity_config_path")
+        self.identity_manager = IdentityManager(
+            config_path=identity_config_path,
+            config=config.get("identity", {})
+        )
+        
         # Initialize affect subsystem first (needed by attention and action)
         self.affect = AffectSubsystem(config=config.get("affect", {}))
         
@@ -71,11 +79,12 @@ class SubsystemCoordinator:
         # Initialize perception subsystem
         self.perception = PerceptionSubsystem(config=config.get("perception", {}))
         
-        # Initialize action subsystem
+        # Initialize action subsystem with behavior logger
         self.action = ActionSubsystem(
             config=config.get("action", {}),
             affect=self.affect,
-            identity=self.identity
+            identity=self.identity,
+            behavior_logger=self.identity_manager.behavior_log
         )
         
         # Store references for subsystems to access each other
@@ -87,7 +96,8 @@ class SubsystemCoordinator:
         self.meta_cognition = SelfMonitor(
             workspace=workspace,
             config=config.get("meta_cognition", {}),
-            identity=self.identity
+            identity=self.identity,
+            identity_manager=self.identity_manager
         )
         
         # Create introspective journal

@@ -85,9 +85,14 @@ class ConsolidationScheduler:
         Args:
             engine: ConsolidationEngine instance
             detector: IdleDetector instance
-            check_interval: Seconds between idle checks
-            max_metrics_history: Maximum metrics to keep in history
+            check_interval: Seconds between idle checks (> 0)
+            max_metrics_history: Maximum metrics to keep (> 0)
         """
+        if check_interval <= 0:
+            raise ValueError(f"check_interval must be > 0, got {check_interval}")
+        if max_metrics_history <= 0:
+            raise ValueError(f"max_metrics_history must be > 0, got {max_metrics_history}")
+        
         self.engine = engine
         self.detector = detector
         self.check_interval = check_interval
@@ -98,6 +103,7 @@ class ConsolidationScheduler:
         self.is_running = False
         self._task: Optional[asyncio.Task] = None
         
+        logger.info(f"ConsolidationScheduler initialized (interval: {check_interval}s)")
         logger.info(
             f"ConsolidationScheduler initialized "
             f"(check_interval: {check_interval}s)"

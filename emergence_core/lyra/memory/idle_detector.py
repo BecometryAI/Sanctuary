@@ -36,9 +36,14 @@ class IdleDetector:
         Initialize idle detector.
         
         Args:
-            idle_threshold_seconds: Seconds of inactivity before idle
+            idle_threshold_seconds: Seconds of inactivity before idle (> 0)
             activity_decay: Activity decay rate per check (0.0-1.0)
         """
+        if idle_threshold_seconds <= 0:
+            raise ValueError(f"idle_threshold_seconds must be > 0, got {idle_threshold_seconds}")
+        if not (0.0 <= activity_decay <= 1.0):
+            raise ValueError(f"activity_decay must be in [0.0, 1.0], got {activity_decay}")
+        
         self.idle_threshold = idle_threshold_seconds
         self.activity_decay = activity_decay
         self.last_activity = datetime.now()

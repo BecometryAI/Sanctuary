@@ -67,16 +67,28 @@ class MemoryConsolidator:
         Args:
             storage: MemoryStorage instance
             encoder: MemoryEncoder instance
-            strengthening_factor: Boost per retrieval
-            decay_rate: Daily decay multiplier
-            deletion_threshold: Min activation to keep
-            pattern_threshold: Episodes for semantic transfer
-            association_boost: Co-retrieval association boost
-            emotion_threshold: Emotional intensity threshold
-            max_retrieval_log_size: Maximum entries in retrieval log
-            min_retrieval_count_for_consolidation: Minimum retrievals before consolidating working memory
-            min_age_hours_for_consolidation: Minimum age (hours) before consolidating working memory
+            strengthening_factor: Boost per retrieval (0.0-1.0)
+            decay_rate: Daily decay multiplier (0.0-1.0)
+            deletion_threshold: Min activation to keep (0.0-1.0)
+            pattern_threshold: Episodes for semantic transfer (>= 2)
+            association_boost: Co-retrieval association boost (0.0-1.0)
+            emotion_threshold: Emotional intensity threshold (0.0-1.0)
+            max_retrieval_log_size: Maximum entries in retrieval log (> 0)
+            min_retrieval_count_for_consolidation: Minimum retrievals before consolidating (>= 1)
+            min_age_hours_for_consolidation: Minimum age in hours before consolidating (> 0)
         """
+        # Input validation
+        if not (0.0 <= strengthening_factor <= 1.0):
+            raise ValueError(f"strengthening_factor must be in [0.0, 1.0], got {strengthening_factor}")
+        if not (0.0 <= decay_rate <= 1.0):
+            raise ValueError(f"decay_rate must be in [0.0, 1.0], got {decay_rate}")
+        if not (0.0 <= deletion_threshold <= 1.0):
+            raise ValueError(f"deletion_threshold must be in [0.0, 1.0], got {deletion_threshold}")
+        if pattern_threshold < 2:
+            raise ValueError(f"pattern_threshold must be >= 2, got {pattern_threshold}")
+        if max_retrieval_log_size <= 0:
+            raise ValueError(f"max_retrieval_log_size must be > 0, got {max_retrieval_log_size}")
+        
         self.storage = storage
         self.encoder = encoder
         self.strengthening_factor = strengthening_factor
@@ -129,8 +141,8 @@ class MemoryConsolidator:
         """
         Strengthen memories based on recent retrieval history.
         
-        Implements logarithmic strengthening with diminishing returns
-        for frequently retrieved memories.
+        Uses logarithmic strengthening with diminishing returns.
+        Batches updates for efficiency.
         
         Args:
             hours: Look back window in hours (default: 24)
@@ -153,26 +165,64 @@ class MemoryConsolidator:
         # Count retrievals per memory
         retrieval_counts = Counter(r["memory_id"] for r in recent)
         
+        # Batch fetch memories to update
+        memory_ids = list(retrieval_counts.keys())
+        try:
+            result = self.storage.episodic_memory.get(ids=memory_ids)
+            if not result or not result.get("ids"):
+                logger.warning("No memories found for strengthening")
+                return 0
+        except Exception as e:
+            logger.error(f"Failed to fetch memories for strengthening: {e}")
+            return 0
+        
+        # Prepare batch updates
         strengthened = 0
-        for memory_id, count in retrieval_counts.items():
+        documents_to_update = []
+        metadatas_to_update = []
+        ids_to_update = []
+        
+        for idx, (mem_id, document, metadata) in enumerate(zip(
+            result["ids"], result["documents"], result["metadatas"]
+        )):
+            count = retrieval_counts.get(mem_id, 0)
+            if count == 0:
+                continue
+            
             try:
                 # Logarithmic strengthening (diminishing returns)
                 strength_boost = math.log(1 + count) * self.strengthening_factor
                 
-                # Update memory metadata
-                self._update_memory_activation(memory_id, strength_boost)
+                # Update metadata
+                current_activation = float(metadata.get("base_activation", 1.0))
+                metadata["base_activation"] = min(1.0, current_activation + strength_boost)
+                metadata["last_accessed"] = datetime.now().isoformat()
+                metadata["consolidation_count"] = metadata.get("consolidation_count", 0) + 1
+                
+                # Add to batch
+                documents_to_update.append(document)
+                metadatas_to_update.append(metadata)
+                ids_to_update.append(mem_id)
                 strengthened += 1
                 
-                logger.debug(
-                    f"Strengthened {memory_id}: "
-                    f"retrieved {count}x, boost={strength_boost:.3f}"
-                )
+                logger.debug(f"Strengthened {mem_id}: {count}x retrievals, boost={strength_boost:.3f}")
                 
             except Exception as e:
-                logger.error(f"Failed to strengthen {memory_id}: {e}")
-                continue
+                logger.error(f"Failed to prepare update for {mem_id}: {e}")
         
-        logger.info(f"Strengthened {strengthened} memories from {len(retrieval_counts)} retrieved")
+        # Batch update storage
+        if ids_to_update:
+            try:
+                self.storage.episodic_memory.upsert(
+                    documents=documents_to_update,
+                    metadatas=metadatas_to_update,
+                    ids=ids_to_update
+                )
+                logger.info(f"Batch strengthened {strengthened} memories")
+            except Exception as e:
+                logger.error(f"Failed to batch update memories: {e}")
+                return 0
+        
         return strengthened
     
     def apply_decay(self, threshold_days: int = 7) -> Tuple[int, int]:

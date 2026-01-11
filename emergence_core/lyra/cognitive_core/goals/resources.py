@@ -67,7 +67,10 @@ class ResourcePool:
         )
         self.allocations: Dict[str, CognitiveResources] = {}
         
-        logger.info(f"ResourcePool initialized with {self.resources.total():.2f} total resources")
+        # Store initial total for utilization calculation
+        self._initial_total = self.resources.total()
+        
+        logger.info(f"ResourcePool initialized with {self._initial_total:.2f} total resources")
     
     def allocate(self, goal_id: str, request: CognitiveResources) -> CognitiveResources:
         """
@@ -164,10 +167,10 @@ class ResourcePool:
         Returns:
             Fraction of total resources currently allocated
         """
-        # Calculate based on initial capacity (assume each started at 1.0)
-        initial_total = 4.0  # attention + processing + action + time
+        if self._initial_total == 0:
+            return 0.0
         current_allocated = self.total_allocated()
-        return min(1.0, current_allocated / initial_total)
+        return min(1.0, current_allocated / self._initial_total)
     
     def can_allocate(self, request: CognitiveResources) -> bool:
         """
@@ -193,5 +196,6 @@ class ResourcePool:
         # Reset to default
         self.resources = CognitiveResources()
         self.allocations.clear()
+        self._initial_total = self.resources.total()
         
         logger.info("ResourcePool reset to initial state")

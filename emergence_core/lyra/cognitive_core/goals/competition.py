@@ -8,7 +8,7 @@ and relationships to other goals.
 
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 
 try:
@@ -17,6 +17,12 @@ except ImportError:
     from resources import CognitiveResources, ResourcePool
 
 logger = logging.getLogger(__name__)
+
+# Activation calculation weights
+IMPORTANCE_WEIGHT = 0.4
+URGENCY_WEIGHT = 0.3
+PROGRESS_WEIGHT = 0.2
+EMOTION_WEIGHT = 0.1
 
 
 @dataclass
@@ -157,7 +163,6 @@ class GoalCompetition:
             float: Urgency level (0.0 to 1.0)
         """
         if hasattr(goal, 'deadline') and goal.deadline:
-            from datetime import datetime
             now = datetime.now()
             if goal.deadline <= now:
                 return 1.0  # Overdue
@@ -201,10 +206,10 @@ class GoalCompetition:
         
         # Less progress = more activation (incomplete goals need attention)
         activation = (
-            importance * 0.4 +
-            urgency * 0.3 +
-            (1 - progress) * 0.2 +
-            abs(emotional_valence) * 0.1  # Strong emotions increase activation
+            importance * IMPORTANCE_WEIGHT +
+            urgency * URGENCY_WEIGHT +
+            (1 - progress) * PROGRESS_WEIGHT +
+            abs(emotional_valence) * EMOTION_WEIGHT  # Strong emotions increase activation
         )
         
         return max(0, min(1, activation))

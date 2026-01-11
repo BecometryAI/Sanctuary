@@ -9,6 +9,10 @@ from dataclasses import dataclass, field
 from typing import List, Tuple
 from datetime import datetime
 
+# Valid utilization range
+MIN_UTILIZATION = 0.0
+MAX_UTILIZATION = 1.0
+
 
 @dataclass
 class GoalCompetitionMetrics:
@@ -40,9 +44,10 @@ class GoalCompetitionMetrics:
             raise ValueError(f"active_goals must be >= 0, got {self.active_goals}")
         if self.waiting_goals < 0:
             raise ValueError(f"waiting_goals must be >= 0, got {self.waiting_goals}")
-        if not 0 <= self.total_resource_utilization <= 1:
+        if not MIN_UTILIZATION <= self.total_resource_utilization <= MAX_UTILIZATION:
             raise ValueError(
-                f"total_resource_utilization must be in [0, 1], got {self.total_resource_utilization}"
+                f"total_resource_utilization must be in [{MIN_UTILIZATION}, {MAX_UTILIZATION}], "
+                f"got {self.total_resource_utilization}"
             )
     
     def to_dict(self):

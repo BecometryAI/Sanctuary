@@ -118,8 +118,16 @@ class SubsystemCoordinator:
         )
         
         # Initialize continuous consciousness components
+        # Keep legacy TemporalAwareness for backward compatibility
         self.temporal_awareness = TemporalAwareness(
             config=config.get("temporal_awareness", {})
+        )
+        
+        # Initialize new TemporalGrounding system
+        from ..temporal import TemporalGrounding
+        self.temporal_grounding = TemporalGrounding(
+            config=config.get("temporal_grounding", {}),
+            memory=self.memory
         )
         
         self.memory_review = AutonomousMemoryReview(

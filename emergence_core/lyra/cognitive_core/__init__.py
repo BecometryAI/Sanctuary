@@ -52,6 +52,16 @@ from .fallback_handlers import (
 from .conversation import ConversationManager, ConversationTurn
 from .autonomous_initiation import AutonomousInitiationController
 from .temporal_awareness import TemporalAwareness
+from .temporal import (
+    TemporalGrounding,
+    TemporalContext,
+    Session,
+    SessionManager,
+    TimePassageEffects,
+    TemporalExpectations,
+    TemporalExpectation,
+    RelativeTime
+)
 from .autonomous_memory_review import AutonomousMemoryReview
 from .existential_reflection import ExistentialReflection
 from .interaction_patterns import InteractionPatternAnalysis
@@ -118,6 +128,14 @@ __all__ = [
     "ConversationTurn",
     "AutonomousInitiationController",
     "TemporalAwareness",
+    "TemporalGrounding",
+    "TemporalContext",
+    "Session",
+    "SessionManager",
+    "TimePassageEffects",
+    "TemporalExpectations",
+    "TemporalExpectation",
+    "RelativeTime",
     "AutonomousMemoryReview",
     "ExistentialReflection",
     "InteractionPatternAnalysis",

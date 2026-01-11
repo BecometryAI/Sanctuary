@@ -95,6 +95,31 @@ class CycleExecutor:
         # 4. AFFECT: Update emotional state and get processing parameters
         try:
             step_start = time.time()
+            
+            # Apply time passage effects if temporal grounding is available
+            if hasattr(self.subsystems, 'temporal_grounding'):
+                # Get current cognitive state
+                cognitive_state = {
+                    "emotions": {
+                        "valence": self.subsystems.affect.valence,
+                        "arousal": self.subsystems.affect.arousal,
+                        "dominance": self.subsystems.affect.dominance
+                    },
+                    "goals": list(self.state.workspace.goals.values()),
+                    "working_memory": list(self.state.workspace.percepts.values())
+                }
+                
+                # Apply temporal effects
+                updated_state = self.subsystems.temporal_grounding.apply_time_passage_effects(
+                    cognitive_state
+                )
+                
+                # Update affect subsystem with decayed emotions
+                if "emotions" in updated_state:
+                    self.subsystems.affect.valence = updated_state["emotions"]["valence"]
+                    self.subsystems.affect.arousal = updated_state["emotions"]["arousal"]
+                    self.subsystems.affect.dominance = updated_state["emotions"]["dominance"]
+            
             affect_update = self.subsystems.affect.compute_update(self.state.workspace.broadcast())
             
             # Log emotional modulation parameters for tracking

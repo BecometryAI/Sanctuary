@@ -144,6 +144,15 @@ class CognitiveLoop:
         # Update temporal awareness - record that interaction occurred
         self.subsystems.temporal_awareness.update_last_interaction_time()
         
+        # Update new temporal grounding system
+        if hasattr(self.subsystems, 'temporal_grounding'):
+            temporal_context = self.subsystems.temporal_grounding.on_interaction()
+            
+            # If it's a new session, handle session start
+            if temporal_context.is_new_session:
+                logger.info(f"🔔 New session detected: #{temporal_context.session_number}")
+                # Could add session start percept here if needed
+        
         # Parse input into structured components
         parse_result = await self.subsystems.language_input.parse(text, context)
         

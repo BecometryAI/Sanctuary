@@ -51,6 +51,11 @@ class PatternDetector:
     - Efficiency factors: What makes processes faster/better
     """
     
+    # Pattern detection thresholds
+    MODERATE_COMPLEXITY_LOW = 0.3
+    MODERATE_COMPLEXITY_HIGH = 0.7
+    HIGH_COMPLEXITY_FAILURE_RATIO = 1.3
+    
     def __init__(self, min_observations: int = 3):
         """
         Initialize pattern detector.
@@ -134,7 +139,8 @@ class PatternDetector:
             avg_failure_complexity = sum(f.input_complexity for f in failures) / len(failures)
             
             # Success on moderate complexity inputs
-            if 0.3 <= avg_success_complexity <= 0.7 and avg_failure_complexity > 0.7:
+            if (self.MODERATE_COMPLEXITY_LOW <= avg_success_complexity <= self.MODERATE_COMPLEXITY_HIGH 
+                and avg_failure_complexity > self.MODERATE_COMPLEXITY_HIGH):
                 patterns.append(CognitivePattern(
                     pattern_type='success_condition',
                     description=f"{process_type} succeeds best with moderate complexity inputs",
@@ -193,7 +199,7 @@ class PatternDetector:
                 s.input_complexity for s in successes
             ) / len(successes) if successes else 0.5
             
-            if avg_failure_complexity > avg_success_complexity * 1.3:
+            if avg_failure_complexity > avg_success_complexity * self.HIGH_COMPLEXITY_FAILURE_RATIO:
                 patterns.append(CognitivePattern(
                     pattern_type='failure_mode',
                     description=f"{process_type} tends to fail on high-complexity inputs",

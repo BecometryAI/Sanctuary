@@ -158,6 +158,10 @@ class ActionOutcomeLearner:
     reliability assessments for different action types.
     """
     
+    # Class constants
+    MAX_OUTCOMES = 5000
+    SIMILARITY_THRESHOLD = 0.6
+    
     def __init__(self, min_outcomes_for_model: int = 5):
         """
         Initialize action-outcome learner.
@@ -214,9 +218,8 @@ class ActionOutcomeLearner:
         )
         
         # Keep only recent outcomes to prevent unbounded growth
-        max_outcomes = 5000
-        if len(self.outcomes) > max_outcomes:
-            self.outcomes = self.outcomes[-max_outcomes:]
+        if len(self.outcomes) > self.MAX_OUTCOMES:
+            self.outcomes = self.outcomes[-self.MAX_OUTCOMES:]
     
     def _compare_outcomes(self, intended: str, actual: str) -> bool:
         """
@@ -246,7 +249,7 @@ class ActionOutcomeLearner:
             return False
         
         similarity = overlap / union
-        return similarity > 0.6
+        return similarity > self.SIMILARITY_THRESHOLD
     
     def _compute_partial_success(self, intended: str, actual: str) -> float:
         """

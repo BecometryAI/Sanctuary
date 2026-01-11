@@ -11,8 +11,11 @@ import uuid
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from collections import defaultdict
+
+if TYPE_CHECKING:
+    from ..workspace import WorkspaceState, Goal
 
 logger = logging.getLogger(__name__)
 
@@ -190,8 +193,8 @@ class AttentionPatternLearner:
     
     def recommend(
         self,
-        context: 'WorkspaceState',
-        goals: List['Goal']
+        context: Any,  # WorkspaceState when TYPE_CHECKING
+        goals: List[Any]  # List[Goal] when TYPE_CHECKING
     ) -> Dict[str, float]:
         """
         Recommend attention allocation based on learned patterns.
@@ -239,6 +242,9 @@ class AttentionHistory:
     learned effectiveness patterns.
     """
     
+    # Class constant for memory management
+    MAX_ALLOCATIONS = 1000
+    
     def __init__(self):
         """Initialize attention history tracker."""
         self.allocations: List[AttentionAllocation] = []
@@ -281,13 +287,12 @@ class AttentionHistory:
         )
         
         # Keep only recent allocations
-        max_allocations = 1000
-        if len(self.allocations) > max_allocations:
+        if len(self.allocations) > self.MAX_ALLOCATIONS:
             # Remove old allocations and their outcomes
-            old_ids = {a.id for a in self.allocations[:-max_allocations]}
+            old_ids = {a.id for a in self.allocations[:-self.MAX_ALLOCATIONS]}
             for old_id in old_ids:
                 self.outcomes.pop(old_id, None)
-            self.allocations = self.allocations[-max_allocations:]
+            self.allocations = self.allocations[-self.MAX_ALLOCATIONS:]
         
         return record.id
     

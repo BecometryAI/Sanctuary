@@ -249,11 +249,14 @@ class TestSelfAssessment:
         
         # Create failure pattern in processing
         for i in range(10):
-            with system.monitor.observe("difficult_process") as ctx:
-                ctx.input_complexity = 0.9
-                ctx.output_quality = 0.2
-                if i % 2 == 0:
-                    raise ValueError("Test failure")
+            try:
+                with system.monitor.observe("difficult_process") as ctx:
+                    ctx.input_complexity = 0.9
+                    ctx.output_quality = 0.2
+                    if i % 2 == 0:
+                        raise ValueError("Test failure")
+            except ValueError:
+                pass  # Expected for test
         
         # Create unreliable action pattern
         for i in range(10):
@@ -276,11 +279,14 @@ class TestSelfAssessment:
         
         # Create pattern that suggests adaptation
         for i in range(10):
-            with system.monitor.observe("test_process") as ctx:
-                ctx.input_complexity = 0.9 if i < 5 else 0.3
-                ctx.output_quality = 0.2 if i < 5 else 0.9
-                if i < 5:
-                    raise ValueError("Failed on complexity")
+            try:
+                with system.monitor.observe("test_process") as ctx:
+                    ctx.input_complexity = 0.9 if i < 5 else 0.3
+                    ctx.output_quality = 0.2 if i < 5 else 0.9
+                    if i < 5:
+                        raise ValueError("Failed on complexity")
+            except ValueError:
+                pass  # Expected for test
         
         assessment = system.get_self_assessment()
         
@@ -297,11 +303,14 @@ class TestIntrospection:
         
         # Create failure patterns
         for i in range(10):
-            with system.monitor.observe("reasoning") as ctx:
-                ctx.input_complexity = 0.9
-                ctx.output_quality = 0.1
-                if i % 2 == 0:
-                    raise ValueError("Test failure")
+            try:
+                with system.monitor.observe("reasoning") as ctx:
+                    ctx.input_complexity = 0.9
+                    ctx.output_quality = 0.1
+                    if i % 2 == 0:
+                        raise ValueError("Test failure")
+            except ValueError:
+                pass  # Expected for test
         
         response = system.introspect("What do I tend to fail at?")
         

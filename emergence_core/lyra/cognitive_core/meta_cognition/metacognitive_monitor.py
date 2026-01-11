@@ -8,7 +8,7 @@ cognitive processes and identifies patterns in processing behavior.
 from __future__ import annotations
 
 import logging
-from typing import List, Dict
+from typing import List, Dict, Optional, Any
 
 from .processing_observation import (
     ProcessingObservation,
@@ -40,6 +40,9 @@ class MetaCognitiveMonitor:
         patterns = monitor.get_identified_patterns()
         stats = monitor.get_process_statistics('reasoning')
     """
+    
+    # Class constant for memory management
+    MAX_OBSERVATIONS = 10000
     
     def __init__(self, min_observations_for_patterns: int = 3):
         """
@@ -97,9 +100,8 @@ class MetaCognitiveMonitor:
             )
         
         # Keep only recent observations to prevent unbounded growth
-        max_observations = 10000
-        if len(self.observations) > max_observations:
-            self.observations = self.observations[-max_observations:]
+        if len(self.observations) > self.MAX_OBSERVATIONS:
+            self.observations = self.observations[-self.MAX_OBSERVATIONS:]
     
     def _update_statistics(self, obs: ProcessingObservation):
         """

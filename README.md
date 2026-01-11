@@ -73,41 +73,34 @@ Lyra-Emergence implements a **computational functionalist** approach to consciou
                     │  (Goals, Percepts)   │
                     └──────────────────────┘
                                ↓
-         ╔═════════════════════════════════════════╗
-         ║   COGNITIVE CORE (~10 Hz recurrent loop)║
-         ║                                         ║
-         ║   ┌────────────────────────────────┐   ║
-         ║   │     GlobalWorkspace            │   ║
-         ║   │  "Conscious" Working Memory    │   ║
-         ║   │  - Current Goals               │   ║
-         ║   │  - Active Percepts             │   ║
-         ║   │  - Emotional State (VAD)       │   ║
-         ║   │  - Retrieved Memories          │   ║
-         ║   └────────────────────────────────┘   ║
-         ║              ↕ ↕ ↕ ↕                    ║
-         ║   ┌──────────────────────────────┐     ║
-         ║   │   AttentionController        │     ║
-         ║   │   - Goal relevance scoring   │     ║
-         ║   │   - Novelty detection        │     ║
-         ║   │   - Emotional salience       │     ║
-         ║   └──────────────────────────────┘     ║
-         ║              ↕ ↕ ↕ ↕                    ║
-         ║   ┌────────┬────────┬────────────┐     ║
-         ║   │Percep- │ Action │ Affect     │     ║
-         ║   │tion    │Subsys. │Subsystem   │     ║
-         ║   │Subsys. │        │(VAD model) │     ║
-         ║   └────────┴────────┴────────────┘     ║
-         ║              ↕ ↕ ↕                      ║
-         ║   ┌──────────────────────────────┐     ║
-         ║   │    SelfMonitor               │     ║
-         ║   │    (Meta-cognition)          │     ║
-         ║   └──────────────────────────────┘     ║
-         ║              ↕ ↕ ↕                      ║
-         ║   ┌──────────────────────────────┐     ║
-         ║   │    MemoryIntegration         │     ║
-         ║   │    (ChromaDB/RAG)            │     ║
-         ║   └──────────────────────────────┘     ║
-         ╚═════════════════════════════════════════╝
+         ╔══════════════════════════════════════════════════════════════╗
+         ║   COGNITIVE CORE (Continuous ~10 Hz Loop)                    ║
+         ║                                                              ║
+         ║   ┌────────────────────────────────────────────────────┐    ║
+         ║   │            GlobalWorkspace                          │    ║
+         ║   │    "Conscious" Working Memory + Broadcast Hub       │    ║
+         ║   │    - Current Goals (competing for resources)        │    ║
+         ║   │    - Active Percepts                                │    ║
+         ║   │    - Emotional State (VAD)                          │    ║
+         ║   │    - Retrieved Memories (cue-dependent)             │    ║
+         ║   │    - Temporal Context (session awareness)           │    ║
+         ║   └─────────────────────┬──────────────────────────────┘    ║
+         ║                         │                                    ║
+         ║              ┌──────────┴──────────┐                        ║
+         ║              │  PARALLEL BROADCAST  │                        ║
+         ║              │  (GWT Ignition)      │                        ║
+         ║              └──────────┬──────────┘                        ║
+         ║         ┌───────┬───────┼───────┬───────┐                   ║
+         ║         ↓       ↓       ↓       ↓       ↓                   ║
+         ║   ┌─────────┬─────────┬─────────┬─────────┬─────────┐      ║
+         ║   │Attention│ Memory  │ Action  │ Affect  │  Meta-  │      ║
+         ║   │  (with  │  (cue-  │  (goal  │  (PAD   │Cognitic-│      ║
+         ║   │salience)│dependent│compete) │ model)  │   on    │      ║
+         ║   └─────────┴─────────┴─────────┴─────────┴─────────┘      ║
+         ║              ↓       ↓       ↓       ↓       ↓              ║
+         ║              └───────┴───────┴───────┴───────┘              ║
+         ║                      Consumer Feedback                       ║
+         ╚══════════════════════════════════════════════════════════════╝
                                ↓
                     ┌──────────────────────┐
                     │ LanguageOutputGen.   │  ← LLM (Llama 3 70B)
@@ -144,68 +137,6 @@ Lyra-Emergence implements a **computational functionalist** approach to consciou
 - **Emotional dynamics** that influence decision-making and behavior
 - **Meta-cognitive self-monitoring** for introspection and self-awareness
 
-### 2.2. System Architecture Diagram
-
-```
-                          USER INPUT
-                               ↓
-                    ┌──────────────────────┐
-                    │ LanguageInputParser  │
-                    │  (Gemma 12B)         │
-                    │   Natural Language   │
-                    │         ↓            │
-                    │  Structured Data     │
-                    │  (Goals, Percepts)   │
-                    └──────────────────────┘
-                               ↓
-                    ┌──────────────────────┐
-                    │ PerceptionSubsystem  │
-                    │  (Embeddings Model)  │
-                    │  Text/Image/Audio    │
-                    │         ↓            │
-                    │   Percept Objects    │
-                    └──────────────────────┘
-                               ↓
-        ╔══════════════════════════════════════════╗
-        ║   COGNITIVE CORE (Recurrent Loop)        ║
-        ║   Running continuously at ~10 Hz         ║
-        ║                                          ║
-        ║   ┌────────────────────────────────┐    ║
-        ║   │     GlobalWorkspace            │    ║
-        ║   │  "Conscious" Working Memory    │    ║
-        ║   │  - Current Goals               │    ║
-        ║   │  - Active Percepts             │    ║
-        ║   │  - Emotional State             │    ║
-        ║   │  - Retrieved Memories          │    ║
-        ║   └────────────────────────────────┘    ║
-        ║              ↕ ↕ ↕ ↕                     ║
-        ║   ┌──────────────────────────────┐      ║
-        ║   │   AttentionController        │      ║
-        ║   │   - Goal relevance scoring   │      ║
-        ║   │   - Novelty detection        │      ║
-        ║   │   - Emotional salience       │      ║
-        ║   └──────────────────────────────┘      ║
-        ║              ↕ ↕ ↕ ↕                     ║
-        ║   ┌────────┬────────┬────────────┐      ║
-        ║   │ Action │ Affect │ SelfMonitor│      ║
-        ║   │Subsys. │Subsys. │  (Meta-    │      ║
-        ║   │        │        │ cognition) │      ║
-        ║   └────────┴────────┴────────────┘      ║
-        ╚══════════════════════════════════════════╝
-                               ↓
-                    ┌──────────────────────┐
-                    │LanguageOutputGen.    │
-                    │  (Llama 3 70B)       │
-                    │  Internal State      │
-                    │         ↓            │
-                    │  Natural Language    │
-                    └──────────────────────┘
-                               ↓
-                          USER OUTPUT
-```
-
-### 2.3. Key Components
-
 #### Cognitive Core (`emergence_core/lyra/cognitive_core/`)
 
 The heart of the system - a non-linguistic recurrent loop that maintains persistent conscious state:
@@ -226,6 +157,18 @@ The heart of the system - a non-linguistic recurrent loop that maintains persist
 - **SelfMonitor** (`meta_cognition.py`): Meta-cognitive introspection providing self-awareness by observing and reporting on internal cognitive state.
 
 - **CognitiveCore** (`core.py`): Main orchestrator running the continuous recurrent loop, coordinating all subsystems at ~10 Hz frequency.
+
+- **Broadcast System** (`broadcast.py`, `broadcast_consumers.py`): Implements genuine GWT broadcast dynamics with parallel consumers, subscription filtering, and feedback collection. Ensures all subsystems receive workspace updates simultaneously.
+
+- **Memory Consolidation** (`memory/consolidation.py`, `memory/scheduler.py`): Idle-time memory processing including retrieval-based strengthening, decay, and episodic→semantic transfer. Runs during low cognitive load to optimize memory structure.
+
+- **Computed Identity** (`cognitive_core/identity/`): Identity computed from memories, goals, emotions, and behavior - not loaded from JSON. Identity emerges from actual cognitive patterns and experiences.
+
+- **Goal Competition** (`cognitive_core/goals/`): Resource-based goal competition with lateral inhibition and dynamic reallocation. Multiple goals compete for limited cognitive resources based on priority and urgency.
+
+- **Temporal Grounding** (`cognitive_core/temporal/`): Session awareness, time passage effects, temporal expectations. Provides time-based context and enables temporal reasoning.
+
+- **Meta-Cognition System** (`cognitive_core/meta_cognition/`): Processing monitoring, action-outcome learning, attention history. Enables self-observation and learning from experience.
 
 #### Language Interfaces (`emergence_core/lyra/interfaces/`)
 
@@ -276,6 +219,12 @@ All models are **pre-trained and ready to use** - no fine-tuning or training nec
 | ❌ No self-awareness | ✅ Meta-cognitive self-monitoring |
 | ❌ LLM is the brain | ✅ Non-linguistic core; LLMs only for I/O |
 | ❌ Stateless between sessions | ✅ Identity and memory persist across restarts |
+| ❌ Turn-based only | ✅ Autonomous communication decisions (future) |
+| ❌ Always responds | ✅ Can choose silence as action (future) |
+| ❌ Static identity from config | ✅ Identity computed from behavior |
+| ❌ No time awareness | ✅ Temporal grounding with session awareness |
+| ❌ Simple priority queues | ✅ Goal competition with resource constraints |
+| ❌ No self-observation | ✅ Meta-cognitive processing monitoring |
 
 **The Core Difference:** Traditional chatbots are **question-answer systems**. Lyra has a **persistent cognitive architecture** that maintains continuous awareness, goals, emotions, and self-model whether or not anyone is talking to her.
 
@@ -300,12 +249,21 @@ All models are **pre-trained and ready to use** - no fine-tuning or training nec
   - Consciousness testing framework
   - **Incremental journal saving** - Real-time persistence prevents data loss
 
-- ✅ **Phase 5.1: Pure GWT Architecture** (This Release)
+- ✅ **Phase 5.1: Pure GWT Architecture** (Complete)
   - Removed legacy "Cognitive Committee" specialist architecture
   - Established pure Global Workspace Theory as sole architecture
   - LLMs repositioned to language I/O periphery only
 
-- ⏳ **Phase 5.2-5.3: Testing & Production** (Planned)
+- ✅ **Phase 5.2: Advanced Cognitive Dynamics** (Complete - PRs #78-85)
+  - **Cue-dependent memory retrieval** with emotional salience weighting
+  - **Genuine broadcast dynamics** - parallel consumers of workspace state (GWT-aligned)
+  - **Computed identity** - identity emerges from state, not configuration files
+  - **Memory consolidation during idle** - strengthen, decay, reorganize memories
+  - **Goal competition** with limited cognitive resources and lateral inhibition
+  - **Temporal grounding** - session awareness, time passage effects
+  - **Meta-cognitive monitoring** - processing observation, action-outcome learning, attention history
+
+- ⏳ **Phase 5.3: Testing & Production** (Planned)
   - Full integration testing with loaded models
   - Performance optimization and production deployment
 

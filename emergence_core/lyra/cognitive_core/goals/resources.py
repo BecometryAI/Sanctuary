@@ -22,14 +22,10 @@ class CognitiveResources:
     
     def __post_init__(self):
         """Validate resource values are non-negative."""
-        if self.attention_budget < 0:
-            raise ValueError(f"attention_budget must be >= 0, got {self.attention_budget}")
-        if self.processing_budget < 0:
-            raise ValueError(f"processing_budget must be >= 0, got {self.processing_budget}")
-        if self.action_budget < 0:
-            raise ValueError(f"action_budget must be >= 0, got {self.action_budget}")
-        if self.time_budget < 0:
-            raise ValueError(f"time_budget must be >= 0, got {self.time_budget}")
+        for attr in ('attention_budget', 'processing_budget', 'action_budget', 'time_budget'):
+            value = getattr(self, attr)
+            if value < 0:
+                raise ValueError(f"{attr} must be >= 0, got {value}")
     
     def total(self) -> float:
         """Get total resources across all dimensions."""
@@ -59,6 +55,7 @@ class ResourcePool:
         if initial_resources is None:
             initial_resources = CognitiveResources()
         
+        # Copy resources to avoid mutation of input
         self.resources = CognitiveResources(
             attention_budget=initial_resources.attention_budget,
             processing_budget=initial_resources.processing_budget,
@@ -148,7 +145,8 @@ class ResourcePool:
         return self.allocations.get(goal_id)
     
     def available_resources(self) -> CognitiveResources:
-        """Get currently available (unallocated) resources."""
+        """Get currently available (unallocated) resources as a copy."""
+        # Return a copy to prevent external mutation
         return CognitiveResources(
             attention_budget=self.resources.attention_budget,
             processing_budget=self.resources.processing_budget,

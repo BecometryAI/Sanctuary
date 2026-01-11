@@ -7,7 +7,7 @@ and relationships to other goals.
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 import logging
 
@@ -77,11 +77,6 @@ class GoalCompetition:
         """
         Run goal competition to determine activation levels.
         
-        Goals compete through iterative activation dynamics where:
-        - Each goal excites itself based on importance and progress
-        - Goals inhibit each other based on conflict level
-        - System converges to stable activation pattern
-        
         Args:
             goals: List of Goal objects to compete
             iterations: Number of competition iterations (default: 10)
@@ -101,32 +96,41 @@ class GoalCompetition:
         # Initialize activations
         activations = {self._get_goal_id(g): self._initial_activation(g) for g in goals}
         
+        # Precompute goal IDs and conflicts for efficiency
+        goal_data = [(g, self._get_goal_id(g), self._get_goal_importance(g)) for g in goals]
+        
         # Run competition dynamics
-        for iteration in range(iterations):
-            new_activations = {}
-            
-            for goal in goals:
-                goal_id = self._get_goal_id(goal)
-                
-                # Self-excitation from goal importance and progress
-                importance = self._get_goal_importance(goal)
-                excitation = activations[goal_id] * (1 + importance * 0.1)
-                
-                # Lateral inhibition from competing goals
-                inhibition = 0
-                for other_goal in goals:
-                    other_id = self._get_goal_id(other_goal)
-                    if other_id != goal_id:
-                        conflict = self._goal_conflict(goal, other_goal)
-                        inhibition += activations[other_id] * conflict * self.inhibition_strength
-                
-                # Update activation (clamp to [0, 1])
-                new_activations[goal_id] = max(0, min(1, excitation - inhibition))
-            
+        for _ in range(iterations):
+            new_activations = self._update_activations(goal_data, activations, goals)
             activations = new_activations
         
         logger.debug(f"Competition complete after {iterations} iterations")
         return activations
+    
+    def _update_activations(
+        self,
+        goal_data: List[Tuple[Any, str, float]],
+        activations: Dict[str, float],
+        goals: List[Any]
+    ) -> Dict[str, float]:
+        """Update activations for one iteration of competition."""
+        new_activations = {}
+        
+        for goal, goal_id, importance in goal_data:
+            # Self-excitation
+            excitation = activations[goal_id] * (1 + importance * 0.1)
+            
+            # Lateral inhibition from competing goals
+            inhibition = sum(
+                activations[other_id] * self._goal_conflict(goal, other_goal) * self.inhibition_strength
+                for other_goal, other_id, _ in goal_data
+                if other_id != goal_id
+            )
+            
+            # Update activation (clamp to [0, 1])
+            new_activations[goal_id] = max(0.0, min(1.0, excitation - inhibition))
+        
+        return new_activations
     
     def _get_goal_id(self, goal: Any) -> str:
         """Extract goal ID from various goal types."""
@@ -156,27 +160,23 @@ class GoalCompetition:
         return 0.0
     
     def _get_goal_urgency(self, goal: Any) -> float:
-        """
-        Calculate urgency based on deadline proximity.
+        """Calculate urgency based on deadline proximity (0.0 to 1.0)."""
+        if not (hasattr(goal, 'deadline') and goal.deadline):
+            return 0.5  # Default moderate urgency
         
-        Returns:
-            float: Urgency level (0.0 to 1.0)
-        """
-        if hasattr(goal, 'deadline') and goal.deadline:
-            now = datetime.now()
-            if goal.deadline <= now:
-                return 1.0  # Overdue
-            time_remaining = (goal.deadline - now).total_seconds()
-            # More urgent as deadline approaches
-            if time_remaining < 3600:  # < 1 hour
-                return 0.9
-            elif time_remaining < 86400:  # < 1 day
-                return 0.7
-            elif time_remaining < 604800:  # < 1 week
-                return 0.5
-            else:
-                return 0.3
-        return 0.5  # Default moderate urgency
+        now = datetime.now()
+        if goal.deadline <= now:
+            return 1.0  # Overdue
+        
+        # Calculate urgency based on time remaining
+        time_remaining = (goal.deadline - now).total_seconds()
+        if time_remaining < 3600:  # < 1 hour
+            return 0.9
+        elif time_remaining < 86400:  # < 1 day
+            return 0.7
+        elif time_remaining < 604800:  # < 1 week
+            return 0.5
+        return 0.3
     
     def _get_emotional_valence(self, goal: Any) -> float:
         """Extract emotional valence from goal metadata."""
@@ -188,80 +188,40 @@ class GoalCompetition:
         return 0.0
     
     def _initial_activation(self, goal: Any) -> float:
-        """
-        Calculate initial activation based on goal properties.
-        
-        Combines importance, urgency, progress, and emotional valence.
-        
-        Args:
-            goal: Goal object to evaluate
-            
-        Returns:
-            Initial activation level (0.0 to 1.0)
-        """
-        importance = self._get_goal_importance(goal)
-        urgency = self._get_goal_urgency(goal)
-        progress = self._get_goal_progress(goal)
-        emotional_valence = self._get_emotional_valence(goal)
-        
-        # Less progress = more activation (incomplete goals need attention)
+        """Calculate initial activation from goal properties (0.0 to 1.0)."""
         activation = (
-            importance * IMPORTANCE_WEIGHT +
-            urgency * URGENCY_WEIGHT +
-            (1 - progress) * PROGRESS_WEIGHT +
-            abs(emotional_valence) * EMOTION_WEIGHT  # Strong emotions increase activation
+            self._get_goal_importance(goal) * IMPORTANCE_WEIGHT +
+            self._get_goal_urgency(goal) * URGENCY_WEIGHT +
+            (1 - self._get_goal_progress(goal)) * PROGRESS_WEIGHT +
+            abs(self._get_emotional_valence(goal)) * EMOTION_WEIGHT
         )
-        
-        return max(0, min(1, activation))
+        return max(0.0, min(1.0, activation))
     
     def _goal_conflict(self, g1: Any, g2: Any) -> float:
-        """
-        Calculate how much two goals conflict.
-        
-        Args:
-            g1: First goal
-            g2: Second goal
-            
-        Returns:
-            Conflict level (0.0 = compatible, 1.0 = mutually exclusive)
-        """
-        # Check if goals have resource needs specified
-        resource_conflict = self._resource_overlap(g1, g2)
-        
-        # Check for logical conflicts (if specified in metadata)
-        logical_conflict = self._outcome_conflict(g1, g2)
-        
-        return max(resource_conflict, logical_conflict)
+        """Calculate conflict level between two goals (0.0 to 1.0)."""
+        return max(
+            self._resource_overlap(g1, g2),
+            self._outcome_conflict(g1, g2)
+        )
     
     def _resource_overlap(self, g1: Any, g2: Any) -> float:
-        """
-        Calculate resource overlap between two goals.
-        
-        Returns:
-            Overlap level (0.0 to 1.0)
-        """
-        # Get resource needs if available
+        """Calculate resource overlap between goals (0.0 to 1.0)."""
         needs1 = self._get_resource_needs(g1)
         needs2 = self._get_resource_needs(g2)
         
         if needs1 is None or needs2 is None:
-            # No resource information, assume moderate conflict
-            return 0.3
+            return 0.3  # Default moderate conflict if no resource info
         
-        # Calculate overlap in each resource dimension
-        attention_overlap = min(needs1.attention_budget, needs2.attention_budget)
-        processing_overlap = min(needs1.processing_budget, needs2.processing_budget)
-        action_overlap = min(needs1.action_budget, needs2.action_budget)
-        time_overlap = min(needs1.time_budget, needs2.time_budget)
+        # Sum overlaps across all dimensions
+        total_overlap = sum([
+            min(needs1.attention_budget, needs2.attention_budget),
+            min(needs1.processing_budget, needs2.processing_budget),
+            min(needs1.action_budget, needs2.action_budget),
+            min(needs1.time_budget, needs2.time_budget)
+        ])
         
-        total_overlap = (attention_overlap + processing_overlap + 
-                        action_overlap + time_overlap)
         max_possible = min(needs1.total(), needs2.total())
-        
-        if max_possible == 0:
-            return 0.0
-        
-        return min(1.0, total_overlap / max_possible)
+        return 0.0 if max_possible == 0 else min(1.0, total_overlap / max_possible)
     
     def _get_resource_needs(self, goal: Any) -> Optional[CognitiveResources]:
         """Extract resource needs from goal."""

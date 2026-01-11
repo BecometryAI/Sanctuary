@@ -732,3 +732,160 @@ class TestGoalCompetitionIntegration:
         # Verify tracking
         assert len(tracker.history) == 2
         assert tracker.get_goal_switches() >= 1  # Priority changed
+
+
+# ============================================================================
+# Edge Case Tests
+# ============================================================================
+
+class TestEdgeCases:
+    """Test edge cases and unusual inputs."""
+    
+    def test_empty_resource_allocation(self):
+        """Test allocating zero resources."""
+        pool = ResourcePool()
+        empty = CognitiveResources(0, 0, 0, 0)
+        granted = pool.allocate("g1", empty)
+        
+        assert granted.total() == 0.0
+        assert pool.utilization() == 0.0
+    
+    def test_over_allocation_request(self):
+        """Test requesting more resources than available."""
+        pool = ResourcePool()
+        huge_request = CognitiveResources(10.0, 10.0, 10.0, 10.0)
+        granted = pool.allocate("g1", huge_request)
+        
+        # Should only grant what's available
+        assert granted.attention_budget == 1.0
+        assert granted.processing_budget == 1.0
+        assert pool.utilization() == 1.0
+    
+    def test_competition_with_zero_iterations(self):
+        """Test competition with invalid iteration count."""
+        comp = GoalCompetition()
+        goals = [MockGoal("g1")]
+        
+        with pytest.raises(ValueError, match="iterations must be >= 1"):
+            comp.compete(goals, iterations=0)
+    
+    def test_competition_with_identical_goals(self):
+        """Test competition when all goals have same priority."""
+        comp = GoalCompetition()
+        goals = [MockGoal(f"g{i}", importance=0.5) for i in range(5)]
+        
+        activations = comp.compete(goals)
+        
+        # All should have similar activation (no clear winner)
+        values = list(activations.values())
+        assert max(values) - min(values) < 0.3  # Small variance
+    
+    def test_resource_pool_with_zero_initial(self):
+        """Test pool initialized with zero resources."""
+        empty_resources = CognitiveResources(0, 0, 0, 0)
+        pool = ResourcePool(empty_resources)
+        
+        assert pool.utilization() == 0.0
+        assert not pool.can_allocate(CognitiveResources(0.1, 0, 0, 0))
+    
+    def test_negative_resource_validation(self):
+        """Test that negative resources are rejected."""
+        with pytest.raises(ValueError, match="must be >= 0"):
+            CognitiveResources(-0.1, 0, 0, 0)
+    
+    def test_interaction_with_single_goal(self):
+        """Test interaction computation with only one goal."""
+        tracker = GoalInteraction()
+        goal = MockGoal("g1")
+        
+        interactions = tracker.compute_interactions([goal])
+        
+        # Single goal has no interactions
+        assert len(interactions) == 0
+    
+    def test_metrics_with_invalid_utilization(self):
+        """Test metrics validation with out-of-range utilization."""
+        with pytest.raises(ValueError, match="total_resource_utilization must be in"):
+            GoalCompetitionMetrics(total_resource_utilization=1.5)
+        
+        with pytest.raises(ValueError, match="total_resource_utilization must be in"):
+            GoalCompetitionMetrics(total_resource_utilization=-0.1)
+    
+    def test_release_nonexistent_goal(self):
+        """Test releasing resources for goal that was never allocated."""
+        pool = ResourcePool()
+        result = pool.release("nonexistent_goal")
+        
+        assert result is False
+        assert pool.utilization() == 0.0
+    
+    def test_double_allocation_prevention(self):
+        """Test that allocating to same goal twice raises error."""
+        pool = ResourcePool()
+        pool.allocate("g1", CognitiveResources(0.2, 0.2, 0.2, 0.2))
+        
+        with pytest.raises(ValueError, match="already has allocated resources"):
+            pool.allocate("g1", CognitiveResources(0.1, 0.1, 0.1, 0.1))
+    
+    def test_goal_without_id_attribute(self):
+        """Test handling goals without proper ID attribute."""
+        comp = GoalCompetition()
+        bad_goal = object()  # No 'id' attribute
+        
+        with pytest.raises(ValueError, match="Cannot extract ID"):
+            comp._get_goal_id(bad_goal)
+    
+    def test_inhibition_strength_validation(self):
+        """Test inhibition strength must be in valid range."""
+        with pytest.raises(ValueError, match="inhibition_strength must be in"):
+            GoalCompetition(inhibition_strength=1.5)
+        
+        with pytest.raises(ValueError, match="inhibition_strength must be in"):
+            GoalCompetition(inhibition_strength=-0.1)
+    
+    def test_activation_clamping(self):
+        """Test that activation values are properly clamped to [0,1]."""
+        comp = GoalCompetition(inhibition_strength=0.0)  # No inhibition
+        
+        # Create goal with extreme importance
+        goal = MockGoal("extreme", importance=1.0)
+        
+        activations = comp.compete([goal])
+        
+        # Should be clamped to <= 1.0
+        assert 0.0 <= activations["extreme"] <= 1.0
+    
+    def test_pool_reset_with_allocations(self):
+        """Test resetting pool releases all allocations."""
+        pool = ResourcePool()
+        pool.allocate("g1", CognitiveResources(0.3, 0.3, 0.3, 0.3))
+        pool.allocate("g2", CognitiveResources(0.2, 0.2, 0.2, 0.2))
+        
+        assert pool.utilization() > 0
+        
+        pool.reset()
+        
+        assert pool.utilization() == 0.0
+        assert len(pool.allocations) == 0
+    
+    def test_metrics_tracker_history_limit(self):
+        """Test that metrics history respects max_history limit."""
+        tracker = MetricsTracker(max_history=3)
+        
+        for i in range(10):
+            tracker.record(GoalCompetitionMetrics(active_goals=i))
+        
+        # Should only keep last 3
+        assert len(tracker.history) == 3
+        assert tracker.history[-1].active_goals == 9
+    
+    def test_empty_goals_list(self):
+        """Test handling empty goals list."""
+        comp = GoalCompetition()
+        pool = ResourcePool()
+        
+        activations = comp.compete([])
+        assert activations == {}
+        
+        active = comp.select_active_goals([], pool)
+        assert active == []

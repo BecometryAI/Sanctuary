@@ -67,6 +67,8 @@ from .existential_reflection import ExistentialReflection
 from .interaction_patterns import InteractionPatternAnalysis
 from .continuous_consciousness import ContinuousConsciousnessController
 from .introspective_loop import IntrospectiveLoop, ActiveReflection, ReflectionTrigger
+from .input_queue import InputQueue, InputEvent, InputSource
+from .idle_cognition import IdleCognition
 from .consciousness_tests import (
     ConsciousnessTest,
     TestResult,
@@ -143,6 +145,10 @@ __all__ = [
     "IntrospectiveLoop",
     "ActiveReflection",
     "ReflectionTrigger",
+    "InputQueue",
+    "InputEvent",
+    "InputSource",
+    "IdleCognition",
     "ConsciousnessTest",
     "TestResult",
     "MirrorTest",

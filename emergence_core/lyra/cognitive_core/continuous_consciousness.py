@@ -90,6 +90,11 @@ class ContinuousConsciousnessController:
         self.running = False
         self.idle_cycles_count = 0
         
+        # Initialize idle cognition system (Task #1: Communication Agency)
+        from .idle_cognition import IdleCognition
+        idle_config = self.config.get("idle_cognition", {})
+        self.idle_cognition = IdleCognition(config=idle_config)
+        
         logger.info(f"✅ ContinuousConsciousnessController initialized "
                    f"(cycle interval: {self.idle_cycle_interval}s)")
     
@@ -132,17 +137,31 @@ class ContinuousConsciousnessController:
         
         This is the main idle processing routine that:
         1. Always generates temporal percepts
-        2. Occasionally reviews memories (probabilistic)
-        3. Occasionally generates existential reflections (probabilistic)
-        4. Rarely performs pattern analysis (probabilistic)
-        5. Runs introspective loop for proactive self-reflection (Phase 4.2)
-        6. Processes all generated percepts through attention and affect
-        7. Checks for autonomous speech triggers
+        2. Generates idle cognition activities (Task #1: Communication Agency)
+        3. Occasionally reviews memories (probabilistic)
+        4. Occasionally generates existential reflections (probabilistic)
+        5. Rarely performs pattern analysis (probabilistic)
+        6. Runs introspective loop for proactive self-reflection (Phase 4.2)
+        7. Processes all generated percepts through attention and affect
+        8. Checks for autonomous speech triggers
         """
         # ALWAYS: Generate temporal percepts
         temporal_percepts = self.core.temporal_awareness.generate_temporal_percepts()
         for percept in temporal_percepts:
             self.core.workspace.add_percept(percept)
+        
+        # NEW: Generate idle cognition activities (Task #1)
+        try:
+            idle_percepts = await self.idle_cognition.generate_idle_activity(
+                self.core.workspace
+            )
+            for percept in idle_percepts:
+                self.core.workspace.add_percept(percept)
+            
+            if idle_percepts:
+                logger.debug(f"💭 Generated {len(idle_percepts)} idle cognition percepts")
+        except Exception as e:
+            logger.error(f"Error in idle cognition: {e}")
         
         # SOMETIMES: Review memories (probabilistic)
         if self._should_perform_activity("memory_review"):

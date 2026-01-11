@@ -11,6 +11,7 @@ Key Features:
 - Generates temporal percepts about time passage
 - Contextualizes memories with temporal metadata
 - Understands duration categories (short gap, long gap, very long gap)
+- ENHANCED: Now integrates with temporal grounding module for session awareness
 
 Author: Lyra Emergence Team
 """

@@ -27,7 +27,14 @@ from emergence_core.lyra.cognitive_core.temporal import (
 
 
 class TestTemporalContext:
-    """Tests for TemporalContext dataclass."""
+    """
+    Tests for TemporalContext dataclass.
+    
+    Validates:
+    - Context creation with all required fields
+    - Time description generation for various durations
+    - Session description formatting
+    """
     
     def test_temporal_context_creation(self):
         """Test creating a temporal context."""
@@ -214,8 +221,9 @@ class TestSessionManager:
         context = ta.update()
         sm.on_session_start(ta.current_session)
         
-        # Should not raise any errors
-        assert True
+        # Verify session started without errors and has expected state
+        assert ta.current_session is not None
+        assert ta.current_session.interaction_count >= 1
     
     def test_greeting_context_first_meeting(self):
         """Test greeting context for first meeting."""
@@ -240,12 +248,12 @@ class TestSessionManager:
         time2 = time1 + timedelta(hours=2)
         ta.update(time2)
         
-        # Get greeting context (simulating very recent resumption)
-        ta._last_interaction_time = datetime.now() - timedelta(minutes=5)
+        # Get greeting context
         greeting = sm.get_session_greeting_context()
         
-        # Should recognize it's a resumption
+        # Should recognize it's a resumption (not first meeting)
         assert greeting["type"] in ["continuation", "same_day", "recent"]
+        assert greeting["type"] != "first_meeting"
     
     def test_record_topic(self):
         """Test recording topics in session."""

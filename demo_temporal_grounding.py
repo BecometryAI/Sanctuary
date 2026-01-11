@@ -10,7 +10,11 @@ This demonstrates the key features of temporal awareness with session tracking:
 """
 
 import sys
-sys.path.insert(0, '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/cognitive_core')
+from pathlib import Path
+
+# Add the project root to the path dynamically
+project_root = Path(__file__).parent / "emergence_core" / "lyra" / "cognitive_core"
+sys.path.insert(0, str(project_root))
 
 from datetime import datetime, timedelta
 from temporal.grounding import TemporalGrounding

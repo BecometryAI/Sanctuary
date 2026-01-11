@@ -52,7 +52,7 @@ class TemporalGrounding:
         self.expectations = TemporalExpectations(
             min_observations=self.config.get("min_observations", 3)
         )
-        self.relative = RelativeTime()
+        # RelativeTime is a utility class with static methods only
         
         # Track last interaction time for effects
         self._last_effect_time: Optional[datetime] = None
@@ -179,7 +179,7 @@ class TemporalGrounding:
         Returns:
             Relative time description
         """
-        return self.relative.describe(timestamp)
+        return RelativeTime.describe(timestamp)
     
     def end_session(self) -> None:
         """End the current session and archive it."""

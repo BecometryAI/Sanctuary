@@ -39,62 +39,45 @@ class TemporalContext:
     
     @property
     def time_description(self) -> str:
-        """
-        Human-readable description of time since last interaction.
+        """Human-readable time since last interaction."""
+        return self._format_elapsed(self.elapsed_since_last)
+    
+    @staticmethod
+    def _format_elapsed(elapsed: timedelta) -> str:
+        """Format elapsed time into natural language."""
+        seconds = elapsed.total_seconds()
         
-        Returns:
-            Natural language temporal description
-        """
-        elapsed = self.elapsed_since_last
-        
-        if elapsed < timedelta(minutes=5):
+        if seconds < 300:  # 5 minutes
             return "moments ago"
-        elif elapsed < timedelta(hours=1):
-            minutes = int(elapsed.total_seconds() / 60)
-            return f"{minutes} minutes ago"
-        elif elapsed < timedelta(days=1):
-            hours = int(elapsed.total_seconds() / 3600)
+        elif seconds < 3600:  # 1 hour
+            return f"{int(seconds / 60)} minutes ago"
+        elif seconds < 86400:  # 1 day
+            hours = int(seconds / 3600)
             return f"{hours} hour{'s' if hours != 1 else ''} ago"
-        elif elapsed < timedelta(days=7):
-            return f"{elapsed.days} day{'s' if elapsed.days != 1 else ''} ago"
+        elif seconds < 604800:  # 7 days
+            days = elapsed.days
+            return f"{days} day{'s' if days != 1 else ''} ago"
         else:
             weeks = int(elapsed.days / 7)
             return f"{weeks} week{'s' if weeks != 1 else ''} ago"
     
     @property
     def session_description(self) -> str:
-        """
-        Human-readable description of current session duration.
+        """Human-readable session duration."""
+        seconds = self.session_duration.total_seconds()
         
-        Returns:
-            Natural language session duration description
-        """
-        duration = self.session_duration
-        
-        if duration < timedelta(minutes=1):
+        if seconds < 60:
             return "just started"
-        elif duration < timedelta(hours=1):
-            minutes = int(duration.total_seconds() / 60)
-            return f"{minutes} minute{'s' if minutes != 1 else ''}"
+        elif seconds < 3600:  # 1 hour
+            return f"{int(seconds / 60)} minute{'s' if int(seconds / 60) != 1 else ''}"
         else:
-            hours = int(duration.total_seconds() / 3600)
+            hours = int(seconds / 3600)
             return f"{hours} hour{'s' if hours != 1 else ''}"
 
 
 @dataclass
 class Session:
-    """
-    Represents a conversation session with temporal and contextual metadata.
-    
-    Attributes:
-        id: Unique session identifier
-        start_time: When the session began
-        last_interaction: Most recent interaction time
-        interaction_count: Number of interactions in this session
-        emotional_arc: Emotional states during the session
-        topics: Topics discussed in the session
-        summary: Optional session summary
-    """
+    """Conversation session with temporal and contextual metadata."""
     id: str
     start_time: datetime
     last_interaction: datetime
@@ -136,45 +119,38 @@ class TemporalAwareness:
         Returns:
             TemporalContext with current temporal state
         """
-        if interaction_time is None:
-            interaction_time = datetime.now()
+        interaction_time = interaction_time or datetime.now()
         
-        # Determine if we need to start a new session
-        if self.current_session is None:
-            self._start_new_session(interaction_time)
-            is_new = True
-        else:
-            time_gap = interaction_time - self.current_session.last_interaction
-            if time_gap > self.session_gap_threshold:
+        # Determine session status
+        is_new = self._should_start_new_session(interaction_time)
+        
+        if is_new:
+            if self.current_session:
                 self._end_session()
-                self._start_new_session(interaction_time)
-                is_new = True
-            else:
-                is_new = False
+            self._start_new_session(interaction_time)
         
-        # Calculate elapsed time since last interaction
+        # Calculate elapsed and update session
         elapsed = interaction_time - self.current_session.last_interaction
-        
-        # Update session
         self.current_session.last_interaction = interaction_time
         self.current_session.interaction_count += 1
         
-        # Create temporal context
-        context = TemporalContext(
+        # Create and return context
+        return TemporalContext(
             current_time=interaction_time,
             session_start=self.current_session.start_time,
-            last_interaction=self.current_session.last_interaction,
+            last_interaction=interaction_time,
             elapsed_since_last=elapsed,
             session_duration=interaction_time - self.current_session.start_time,
             is_new_session=is_new,
             session_number=self._session_counter
         )
-        
-        logger.debug(f"⏰ Temporal context updated: {context.time_description}, "
-                    f"session #{context.session_number}, "
-                    f"{'NEW SESSION' if is_new else 'continuing'}")
-        
-        return context
+    
+    def _should_start_new_session(self, interaction_time: datetime) -> bool:
+        """Check if a new session should be started."""
+        if self.current_session is None:
+            return True
+        time_gap = interaction_time - self.current_session.last_interaction
+        return time_gap > self.session_gap_threshold
     
     def _start_new_session(self, start_time: datetime) -> None:
         """

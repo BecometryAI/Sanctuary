@@ -91,157 +91,91 @@ class TimePassageEffects:
     def _decay_emotions(
         self, emotions: Dict[str, float], elapsed: timedelta
     ) -> Dict[str, float]:
-        """
-        Emotions decay toward baseline over time.
-        
-        Uses exponential decay: value(t) = baseline + (current - baseline) * decay^t
-        
-        Args:
-            emotions: Current emotional state (valence, arousal, dominance)
-            elapsed: Time elapsed
-            
-        Returns:
-            Updated emotional state
-        """
+        """Apply exponential decay to emotions toward baseline."""
         hours = elapsed.total_seconds() / 3600
         decay_factor = self.emotion_decay_rate ** hours
         
-        # Get baseline values
-        baseline_valence = self.emotion_baseline.get("valence", 0.0)
-        baseline_arousal = self.emotion_baseline.get("arousal", 0.0)
-        baseline_dominance = self.emotion_baseline.get("dominance", 0.5)
-        
-        # Apply decay toward baseline
         decayed = {}
-        
-        if "valence" in emotions:
-            decayed["valence"] = baseline_valence + (
-                emotions["valence"] - baseline_valence
-            ) * decay_factor
-        
-        if "arousal" in emotions:
-            decayed["arousal"] = baseline_arousal + (
-                emotions["arousal"] - baseline_arousal
-            ) * decay_factor
-        
-        if "dominance" in emotions:
-            decayed["dominance"] = baseline_dominance + (
-                emotions["dominance"] - baseline_dominance
-            ) * decay_factor
+        for key in ["valence", "arousal", "dominance"]:
+            if key in emotions:
+                baseline = self.emotion_baseline.get(key, 0.5 if key == "dominance" else 0.0)
+                decayed[key] = baseline + (emotions[key] - baseline) * decay_factor
         
         # Preserve other emotional attributes
-        for key, value in emotions.items():
-            if key not in decayed:
-                decayed[key] = value
-        
-        logger.debug(f"😌 Emotions decayed toward baseline (factor: {decay_factor:.3f})")
+        decayed.update({k: v for k, v in emotions.items() if k not in decayed})
         
         return decayed
     
     def _fade_context(
         self, working_memory: List[Any], elapsed: timedelta
     ) -> List[Any]:
-        """
-        Context in working memory fades over time.
-        
-        Items become less salient as time passes. Very old items may be removed.
-        
-        Args:
-            working_memory: List of items in working memory
-            elapsed: Time elapsed
-            
-        Returns:
-            Updated working memory with faded context
-        """
+        """Fade context in working memory based on time passage."""
         hours = elapsed.total_seconds() / 3600
         fade_factor = self.context_fade_rate ** hours
         
         faded_memory = []
-        
         for item in working_memory:
-            # If item has salience/strength, reduce it
-            if isinstance(item, dict):
+            if isinstance(item, dict) and "salience" in item:
                 faded_item = item.copy()
-                if "salience" in faded_item:
-                    faded_item["salience"] *= fade_factor
-                    # Only keep items above threshold
-                    if faded_item["salience"] > 0.1:
-                        faded_memory.append(faded_item)
-                else:
+                faded_item["salience"] *= fade_factor
+                if faded_item["salience"] > 0.1:  # Threshold
                     faded_memory.append(faded_item)
             else:
                 faded_memory.append(item)
         
-        removed = len(working_memory) - len(faded_memory)
-        if removed > 0:
-            logger.debug(f"🌫️  Context faded: {removed} items removed from working memory")
-        
         return faded_memory
     
     def _update_urgencies(self, goals: List[Any], elapsed: timedelta) -> List[Any]:
-        """
-        Goal urgency changes with time passage.
-        
-        Goals approaching deadlines become more urgent.
-        Goals past deadlines are marked as expired.
-        
-        Args:
-            goals: List of current goals
-            elapsed: Time elapsed
-            
-        Returns:
-            Updated goals with modified urgencies
-        """
-        updated_goals = []
+        """Update goal urgency based on approaching deadlines."""
+        now = datetime.now()
         
         for goal in goals:
-            # Handle both dict and object representations
-            if isinstance(goal, dict):
-                updated_goal = goal.copy()
-                deadline = updated_goal.get("deadline")
-                urgency = updated_goal.get("urgency", 0.5)
-                status = updated_goal.get("status", "active")
-            else:
-                # Assume it's a Goal object
-                updated_goal = goal
-                deadline = getattr(goal, "deadline", None)
-                urgency = getattr(goal, "urgency", 0.5)
-                status = getattr(goal, "status", "active")
+            deadline = self._get_goal_deadline(goal)
+            if not deadline:
+                continue
             
-            if deadline:
-                # Convert deadline to datetime if it's a string
-                if isinstance(deadline, str):
-                    try:
-                        deadline = datetime.fromisoformat(deadline)
-                    except (ValueError, AttributeError):
-                        deadline = None
-                
-                if deadline:
-                    now = datetime.now()
-                    remaining = deadline - now
-                    
-                    # Update urgency based on time remaining
-                    if remaining < timedelta(hours=24):
-                        # Less than 24 hours - increase urgency
-                        new_urgency = min(1.0, urgency + 0.2)
-                        if isinstance(updated_goal, dict):
-                            updated_goal["urgency"] = new_urgency
-                        else:
-                            updated_goal.urgency = new_urgency
-                    elif remaining < timedelta(0):
-                        # Past deadline - mark as expired
-                        if isinstance(updated_goal, dict):
-                            updated_goal["urgency"] = 0.0
-                            updated_goal["status"] = "expired"
-                        else:
-                            updated_goal.urgency = 0.0
-                            updated_goal.status = "expired"
-                        
-                        logger.debug(f"⏰ Goal expired: {updated_goal.get('description', 'unknown') if isinstance(updated_goal, dict) else getattr(updated_goal, 'description', 'unknown')}")
-            
-            updated_goals.append(updated_goal)
+            remaining = deadline - now
+            if remaining < timedelta(hours=24):
+                # Less than 24 hours - increase urgency
+                self._set_goal_urgency(goal, min(1.0, self._get_goal_urgency(goal) + 0.2))
+            elif remaining < timedelta(0):
+                # Past deadline - mark as expired
+                self._set_goal_urgency(goal, 0.0)
+                self._set_goal_status(goal, "expired")
         
-        return updated_goals
+        return goals
+    
+    @staticmethod
+    def _get_goal_deadline(goal: Any) -> Optional[datetime]:
+        """Extract deadline from goal (dict or object)."""
+        deadline = goal.get("deadline") if isinstance(goal, dict) else getattr(goal, "deadline", None)
+        if isinstance(deadline, str):
+            try:
+                return datetime.fromisoformat(deadline)
+            except (ValueError, AttributeError):
+                return None
+        return deadline
+    
+    @staticmethod
+    def _get_goal_urgency(goal: Any) -> float:
+        """Get urgency from goal."""
+        return goal.get("urgency", 0.5) if isinstance(goal, dict) else getattr(goal, "urgency", 0.5)
+    
+    @staticmethod
+    def _set_goal_urgency(goal: Any, urgency: float) -> None:
+        """Set urgency on goal."""
+        if isinstance(goal, dict):
+            goal["urgency"] = urgency
+        else:
+            goal.urgency = urgency
+    
+    @staticmethod
+    def _set_goal_status(goal: Any, status: str) -> None:
+        """Set status on goal."""
+        if isinstance(goal, dict):
+            goal["status"] = status
+        else:
+            goal.status = status
     
     def trigger_consolidation(self, elapsed: timedelta) -> bool:
         """

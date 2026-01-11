@@ -61,7 +61,7 @@ class TemporalGrounding:
     
     def on_interaction(self, time: Optional[datetime] = None) -> TemporalContext:
         """
-        Called on each interaction to update temporal state.
+        Update temporal state on interaction.
         
         Args:
             time: Interaction time (default: now)
@@ -69,31 +69,27 @@ class TemporalGrounding:
         Returns:
             TemporalContext with current temporal state
         """
-        if time is None:
-            time = datetime.now()
+        time = time or datetime.now()
         
         # Update temporal awareness
         context = self.awareness.update(time)
         
-        # Handle session boundaries
-        if context.is_new_session:
-            if self.awareness.current_session:
-                self.sessions.on_session_start(self.awareness.current_session)
+        # Handle new session
+        if context.is_new_session and self.awareness.current_session:
+            self.sessions.on_session_start(self.awareness.current_session)
         
-        # Record interaction event for pattern learning
+        # Record pattern
         self.expectations.record_event("user_interaction", time)
         
-        # Initialize last effect time if not set
+        # Initialize effect time
         if self._last_effect_time is None:
             self._last_effect_time = time
-        
-        logger.debug(f"⏰ Interaction processed: {context.time_description}")
         
         return context
     
     def apply_time_passage_effects(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Apply effects of time passage to cognitive state.
+        Apply time passage effects to cognitive state.
         
         Args:
             state: Current cognitive state
@@ -107,14 +103,9 @@ class TemporalGrounding:
         
         now = datetime.now()
         elapsed = now - self._last_effect_time
-        
-        # Apply effects
-        updated_state = self.effects.apply(elapsed, state)
-        
-        # Update last effect time
         self._last_effect_time = now
         
-        return updated_state
+        return self.effects.apply(elapsed, state)
     
     def get_temporal_state(self) -> Dict[str, Any]:
         """

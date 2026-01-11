@@ -501,10 +501,64 @@ It reflects what I actually DO, not what I was TOLD to be.
             return None
 
 
+# Import new meta-cognitive components
+from .processing_observation import (
+    ProcessingObservation,
+    ProcessStats,
+    ProcessingContext,
+    generate_id
+)
+from .pattern_detection import (
+    CognitivePattern,
+    PatternDetector
+)
+from .metacognitive_monitor import MetaCognitiveMonitor
+from .action_learning import (
+    ActionOutcome,
+    ActionReliability,
+    OutcomePrediction,
+    ActionModel,
+    ActionOutcomeLearner
+)
+from .attention_history import (
+    AttentionAllocation,
+    AttentionOutcome,
+    AttentionPattern,
+    AttentionHistory,
+    AttentionPatternLearner
+)
+from .system import (
+    MetaCognitiveSystem,
+    SelfAssessment
+)
+
+
 # Export main classes for backward compatibility
 __all__ = [
+    # Legacy exports
     "SelfMonitor",
     "IntrospectiveJournal",
     "PredictionRecord",
     "AccuracySnapshot",
+    
+    # New meta-cognitive exports
+    "ProcessingObservation",
+    "ProcessStats",
+    "ProcessingContext",
+    "CognitivePattern",
+    "PatternDetector",
+    "MetaCognitiveMonitor",
+    "ActionOutcome",
+    "ActionReliability",
+    "OutcomePrediction",
+    "ActionModel",
+    "ActionOutcomeLearner",
+    "AttentionAllocation",
+    "AttentionOutcome",
+    "AttentionPattern",
+    "AttentionHistory",
+    "AttentionPatternLearner",
+    "MetaCognitiveSystem",
+    "SelfAssessment",
+    "generate_id",
 ]

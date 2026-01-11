@@ -167,8 +167,11 @@ class ActionOutcomeLearner:
         Initialize action-outcome learner.
         
         Args:
-            min_outcomes_for_model: Minimum outcomes needed to build a model
+            min_outcomes_for_model: Min outcomes for model building
         """
+        if min_outcomes_for_model < 3:
+            raise ValueError("min_outcomes_for_model must be >= 3")
+        
         self.outcomes: List[ActionOutcome] = []
         self.action_models: Dict[str, ActionModel] = {}
         self.min_outcomes = min_outcomes_for_model
@@ -183,16 +186,12 @@ class ActionOutcomeLearner:
         actual: str,
         context: Dict[str, Any]
     ):
-        """
-        Record the outcome of an action.
+        """Record action outcome with validation."""
+        if not action_id or not action_type:
+            raise ValueError("action_id and action_type required")
+        if not intended or not actual:
+            raise ValueError("intended and actual outcomes required")
         
-        Args:
-            action_id: Unique identifier for the action
-            action_type: Type of action
-            intended: Intended outcome description
-            actual: Actual outcome description
-            context: Contextual information
-        """
         success = self._compare_outcomes(intended, actual)
         partial = self._compute_partial_success(intended, actual)
         side_effects = self._identify_side_effects(intended, actual, context)
@@ -203,21 +202,18 @@ class ActionOutcomeLearner:
             intended_outcome=intended,
             actual_outcome=actual,
             success=success,
-            partial_success=partial,
+            partial_success=max(0.0, min(1.0, partial)),  # Clamp to [0,1]
             side_effects=side_effects,
             timestamp=datetime.now(),
-            context=context
+            context=context or {}
         )
         
         self.outcomes.append(outcome)
         self._update_action_model(action_type, outcome)
         
-        logger.debug(
-            f"Recorded outcome for {action_type}: "
-            f"success={success}, partial={partial:.2f}"
-        )
+        logger.debug(f"Recorded {action_type}: success={success}, partial={partial:.2f}")
         
-        # Keep only recent outcomes to prevent unbounded growth
+        # Prune old outcomes
         if len(self.outcomes) > self.MAX_OUTCOMES:
             self.outcomes = self.outcomes[-self.MAX_OUTCOMES:]
     

@@ -22,16 +22,13 @@ class CognitivePattern:
     """
     A pattern identified in cognitive processing.
     
-    Represents a discovered relationship between context/conditions and
-    outcomes that can inform future processing strategies.
-    
     Attributes:
         pattern_type: Category ('success_condition', 'failure_mode', 'efficiency_factor')
-        description: Human-readable description of the pattern
-        confidence: How confident we are in this pattern (0.0-1.0)
-        supporting_observations: IDs of observations that support this pattern
-        actionable: Whether we can do something about this pattern
-        suggested_adaptation: Optional recommendation for adapting behavior
+        description: Pattern description
+        confidence: Confidence level (0.0-1.0)
+        supporting_observations: Supporting observation IDs
+        actionable: Whether actionable
+        suggested_adaptation: Recommended adaptation
     """
     pattern_type: str
     description: str
@@ -39,65 +36,64 @@ class CognitivePattern:
     supporting_observations: List[str]
     actionable: bool
     suggested_adaptation: Optional[str] = None
+    
+    def __post_init__(self):
+        """Validate pattern data."""
+        if not 0 <= self.confidence <= 1:
+            raise ValueError(f"confidence must be 0-1, got {self.confidence}")
 
 
 class PatternDetector:
-    """
-    Detects patterns in cognitive processing observations.
-    
-    Analyzes processing history to identify:
-    - Success conditions: What makes processes succeed
-    - Failure modes: Common failure patterns
-    - Efficiency factors: What makes processes faster/better
-    """
+    """Detects patterns in cognitive processing observations."""
     
     # Pattern detection thresholds
     MODERATE_COMPLEXITY_LOW = 0.3
     MODERATE_COMPLEXITY_HIGH = 0.7
     HIGH_COMPLEXITY_FAILURE_RATIO = 1.3
+    MAX_OBS_PER_TYPE = 1000  # Memory management
     
     def __init__(self, min_observations: int = 3):
         """
         Initialize pattern detector.
         
         Args:
-            min_observations: Minimum observations needed to detect a pattern
+            min_observations: Min observations for pattern detection
         """
+        if min_observations < 2:
+            raise ValueError("min_observations must be >= 2")
+        
         self.observations_by_type: Dict[str, List[ProcessingObservation]] = defaultdict(list)
         self.min_observations = min_observations
         self._cached_patterns: Optional[List[CognitivePattern]] = None
         self._cache_dirty = False
     
     def update(self, obs: ProcessingObservation):
-        """
-        Add a new observation to analyze.
-        
-        Args:
-            obs: Processing observation to add
-        """
+        """Add observation and mark cache dirty."""
         self.observations_by_type[obs.process_type].append(obs)
         self._cache_dirty = True
         
-        # Keep only recent observations to prevent unbounded growth
-        max_per_type = 1000
-        if len(self.observations_by_type[obs.process_type]) > max_per_type:
+        # Prune old observations
+        if len(self.observations_by_type[obs.process_type]) > self.MAX_OBS_PER_TYPE:
             self.observations_by_type[obs.process_type] = \
-                self.observations_by_type[obs.process_type][-max_per_type:]
+                self.observations_by_type[obs.process_type][-self.MAX_OBS_PER_TYPE:]
     
     def get_patterns(self) -> List[CognitivePattern]:
-        """
-        Get all detected patterns.
-        
-        Returns:
-            List of cognitive patterns found across all process types
-        """
-        # Use cached patterns if available
+        """Get all detected patterns (cached when possible)."""
         if not self._cache_dirty and self._cached_patterns is not None:
             return self._cached_patterns
         
         patterns = []
-        
         for process_type, observations in self.observations_by_type.items():
+            if len(observations) < self.min_observations:
+                continue
+            
+            patterns.extend(self._detect_success_conditions(process_type, observations))
+            patterns.extend(self._detect_failure_modes(process_type, observations))
+            patterns.extend(self._detect_efficiency_factors(process_type, observations))
+        
+        self._cached_patterns = patterns
+        self._cache_dirty = False
+        return patterns
             if len(observations) < self.min_observations:
                 continue
             

@@ -121,9 +121,20 @@ class ProcessingContext:
 class PatternDetector:
     """Detects patterns in cognitive processing."""
     
+    # Pattern detection thresholds
+    MIN_SAMPLES_FOR_PATTERN = 3
+    SUCCESS_COMPLEXITY_THRESHOLD = 0.7  # Successes must be this much simpler
+    FAILURE_COMPLEXITY_THRESHOLD = 1.3  # Failures must be this much more complex
+    HIGH_QUALITY_THRESHOLD = 0.7
+    HIGH_QUALITY_FREQUENCY = 0.6
+    SLOW_PROCESS_MS = 500
+    HIGH_RESOURCE_ATTENTION = 10
+    HIGH_RESOURCE_MEMORY = 20
+    HIGH_RESOURCE_FREQUENCY = 0.5
+    
     def __init__(self):
         self.observations_by_type: Dict[str, List[ProcessingObservation]] = defaultdict(list)
-        self.min_samples_for_pattern = 3
+        self.min_samples_for_pattern = self.MIN_SAMPLES_FOR_PATTERN
     
     def update(self, obs: ProcessingObservation):
         """Update with a new observation."""
@@ -161,7 +172,7 @@ class PatternDetector:
         avg_success_complexity = sum(s.input_complexity for s in successes) / len(successes)
         avg_failure_complexity = sum(o.input_complexity for o in observations if not o.success) / max(1, len([o for o in observations if not o.success]))
         
-        if avg_success_complexity < avg_failure_complexity * 0.7:
+        if avg_success_complexity < avg_failure_complexity * self.SUCCESS_COMPLEXITY_THRESHOLD:
             patterns.append(CognitivePattern(
                 pattern_type='success_condition',
                 description=f"{process_type} succeeds more often on simpler inputs",
@@ -172,8 +183,8 @@ class PatternDetector:
             ))
         
         # Check if high quality output indicates good processing
-        high_quality_successes = [s for s in successes if s.output_quality > 0.7]
-        if len(high_quality_successes) > len(successes) * 0.6:
+        high_quality_successes = [s for s in successes if s.output_quality > self.HIGH_QUALITY_THRESHOLD]
+        if len(high_quality_successes) > len(successes) * self.HIGH_QUALITY_FREQUENCY:
             patterns.append(CognitivePattern(
                 pattern_type='success_condition',
                 description=f"{process_type} consistently produces high-quality output when successful",
@@ -199,7 +210,7 @@ class PatternDetector:
         successes = [o for o in observations if o.success]
         avg_success_complexity = sum(o.input_complexity for o in successes) / max(1, len(successes))
         
-        if avg_failure_complexity > avg_success_complexity * 1.3:
+        if avg_failure_complexity > avg_success_complexity * self.FAILURE_COMPLEXITY_THRESHOLD:
             patterns.append(CognitivePattern(
                 pattern_type='failure_mode',
                 description=f"{process_type} tends to fail on high-complexity inputs",
@@ -233,7 +244,7 @@ class PatternDetector:
         
         # Check average duration
         avg_duration = sum(o.duration_ms for o in observations) / len(observations)
-        if avg_duration > 500:  # More than 500ms
+        if avg_duration > self.SLOW_PROCESS_MS:
             patterns.append(CognitivePattern(
                 pattern_type='efficiency_factor',
                 description=f"{process_type} is relatively slow (avg {avg_duration:.0f}ms)",
@@ -245,9 +256,9 @@ class PatternDetector:
         
         # Check for resource usage patterns
         high_resource_obs = [o for o in observations 
-                            if o.resources_used.attention_units > 10 
-                            or o.resources_used.memory_accesses > 20]
-        if len(high_resource_obs) > len(observations) * 0.5:
+                            if o.resources_used.attention_units > self.HIGH_RESOURCE_ATTENTION 
+                            or o.resources_used.memory_accesses > self.HIGH_RESOURCE_MEMORY]
+        if len(high_resource_obs) > len(observations) * self.HIGH_RESOURCE_FREQUENCY:
             patterns.append(CognitivePattern(
                 pattern_type='efficiency_factor',
                 description=f"{process_type} uses significant resources",

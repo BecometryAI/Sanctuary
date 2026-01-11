@@ -47,6 +47,15 @@ class SelfAssessment:
 class MetaCognitiveSystem:
     """Unified meta-cognitive capabilities."""
     
+    # Thresholds for identifying strengths and weaknesses
+    HIGH_RELIABILITY_THRESHOLD = 0.8
+    LOW_RELIABILITY_THRESHOLD = 0.5
+    MIN_EXECUTIONS_FOR_RELIABILITY = 5
+    HIGH_EFFICIENCY_THRESHOLD = 0.7
+    LOW_EFFICIENCY_THRESHOLD = 0.4
+    FAST_PROCESS_MS = 200
+    SLOW_PROCESS_MS = 1000
+    
     def __init__(self, config: Optional[Dict] = None):
         """Initialize the meta-cognitive system."""
         self.config = config or {}
@@ -112,13 +121,14 @@ class MetaCognitiveSystem:
         # Reliable actions
         reliable_actions = [
             action_type for action_type, rel in reliability.items()
-            if rel.success_rate > 0.8 and rel.total_executions >= 5
+            if rel.success_rate > self.HIGH_RELIABILITY_THRESHOLD 
+            and rel.total_executions >= self.MIN_EXECUTIONS_FOR_RELIABILITY
         ]
         if reliable_actions:
             strengths.append(f"High reliability in actions: {', '.join(reliable_actions[:3])}")
         
         # Effective attention patterns
-        effective_attention = [p for p in attention if p.avg_efficiency > 0.7]
+        effective_attention = [p for p in attention if p.avg_efficiency > self.HIGH_EFFICIENCY_THRESHOLD]
         if effective_attention:
             strengths.append(f"Effective attention allocation in {len(effective_attention)} patterns")
         
@@ -126,7 +136,8 @@ class MetaCognitiveSystem:
         all_stats = self.monitor.get_all_statistics()
         fast_processes = [
             pt for pt, stats in all_stats.items()
-            if stats.avg_duration_ms < 200 and stats.total_executions >= 5
+            if stats.avg_duration_ms < self.FAST_PROCESS_MS 
+            and stats.total_executions >= self.MIN_EXECUTIONS_FOR_RELIABILITY
         ]
         if fast_processes:
             strengths.append(f"Fast processing in: {', '.join(fast_processes[:3])}")
@@ -148,13 +159,14 @@ class MetaCognitiveSystem:
         # Unreliable actions
         unreliable_actions = [
             action_type for action_type, rel in reliability.items()
-            if rel.success_rate < 0.5 and rel.total_executions >= 5
+            if rel.success_rate < self.LOW_RELIABILITY_THRESHOLD 
+            and rel.total_executions >= self.MIN_EXECUTIONS_FOR_RELIABILITY
         ]
         if unreliable_actions:
             weaknesses.append(f"Low reliability in actions: {', '.join(unreliable_actions[:3])}")
         
         # Inefficient attention patterns
-        inefficient_attention = [p for p in attention if p.avg_efficiency < 0.4]
+        inefficient_attention = [p for p in attention if p.avg_efficiency < self.LOW_EFFICIENCY_THRESHOLD]
         if inefficient_attention:
             weaknesses.append(f"Inefficient attention allocation in {len(inefficient_attention)} patterns")
         
@@ -162,7 +174,8 @@ class MetaCognitiveSystem:
         all_stats = self.monitor.get_all_statistics()
         slow_processes = [
             pt for pt, stats in all_stats.items()
-            if stats.avg_duration_ms > 1000 and stats.total_executions >= 5
+            if stats.avg_duration_ms > self.SLOW_PROCESS_MS 
+            and stats.total_executions >= self.MIN_EXECUTIONS_FOR_RELIABILITY
         ]
         if slow_processes:
             weaknesses.append(f"Slow processing in: {', '.join(slow_processes[:3])}")
@@ -182,7 +195,7 @@ class MetaCognitiveSystem:
         
         # From action reliability
         for action_type, rel in reliability.items():
-            if rel.success_rate < 0.5 and rel.total_executions >= 5:
+            if rel.success_rate < self.LOW_RELIABILITY_THRESHOLD and rel.total_executions >= self.MIN_EXECUTIONS_FOR_RELIABILITY:
                 if rel.best_contexts:
                     adaptations.append(f"For {action_type}: prefer contexts similar to successful cases")
         

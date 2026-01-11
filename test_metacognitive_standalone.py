@@ -172,14 +172,19 @@ except Exception as e:
 
 # Test 7: Pattern detection
 print("\nTest 7: Testing pattern detection...")
+
+# Pattern detection constants
+PATTERN_TEST_SUCCESS_COUNT = 5
+PATTERN_TEST_FAILURE_COUNT = 5
+
 try:
     # Create patterns by recording multiple observations
-    for i in range(10):
+    for i in range(PATTERN_TEST_SUCCESS_COUNT + PATTERN_TEST_FAILURE_COUNT):
         with monitor.observe("pattern_test") as ctx:
             # Vary complexity and quality
-            ctx.set_complexity(0.3 if i < 5 else 0.9)
+            ctx.set_complexity(0.3 if i < PATTERN_TEST_SUCCESS_COUNT else 0.9)
             ctx.set_quality(0.8)
-            if i >= 5:
+            if i >= PATTERN_TEST_SUCCESS_COUNT:
                 # Simulate failures on high complexity
                 raise Exception("High complexity failure")
 except Exception:

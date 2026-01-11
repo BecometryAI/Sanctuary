@@ -181,6 +181,12 @@ class AttentionPatternLearner:
 class AttentionHistory:
     """Tracks attention allocation and learns from patterns."""
     
+    # Efficiency calculation constants
+    MAX_DISCOVERY_BONUS = 0.2
+    DISCOVERY_BONUS_RATE = 0.05
+    MAX_MISSED_PENALTY = 0.3
+    MISSED_PENALTY_RATE = 0.1
+    
     def __init__(self, config: Optional[Dict] = None):
         self.allocations: List[AttentionAllocation] = []
         self.outcomes: Dict[str, AttentionOutcome] = {}
@@ -245,10 +251,10 @@ class AttentionHistory:
         progress_score = sum(goal_progress.values()) / max(1, len(goal_progress)) if goal_progress else 0.0
         
         # Bonus for discoveries
-        discovery_bonus = min(0.2, len(discoveries) * 0.05)
+        discovery_bonus = min(self.MAX_DISCOVERY_BONUS, len(discoveries) * self.DISCOVERY_BONUS_RATE)
         
         # Penalty for missed items
-        missed_penalty = min(0.3, len(missed) * 0.1)
+        missed_penalty = min(self.MAX_MISSED_PENALTY, len(missed) * self.MISSED_PENALTY_RATE)
         
         efficiency = max(0.0, min(1.0, progress_score + discovery_bonus - missed_penalty))
         

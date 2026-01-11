@@ -102,6 +102,10 @@ class ActionModel:
 class ActionOutcomeLearner:
     """Learns what actions actually achieve."""
     
+    # Thresholds for outcome comparison
+    SUCCESS_OVERLAP_THRESHOLD = 0.5  # At least 50% of intended terms should be in actual
+    SIDE_EFFECT_FREQUENCY_THRESHOLD = 0.2  # 20% frequency to be considered "common"
+    
     def __init__(self, config: Optional[Dict] = None):
         self.outcomes: List[ActionOutcome] = []
         self.action_models: Dict[str, ActionModel] = {}
@@ -156,7 +160,7 @@ class ActionOutcomeLearner:
             return True
             
         overlap = len(intended_terms & actual_terms)
-        return overlap >= len(intended_terms) * 0.5
+        return overlap >= len(intended_terms) * self.SUCCESS_OVERLAP_THRESHOLD
     
     def _compute_partial_success(self, intended: str, actual: str) -> float:
         """Compute partial success score (0.0-1.0)."""
@@ -287,7 +291,7 @@ class ActionOutcomeLearner:
         common_side_effects = [
             (effect, count / len(relevant))
             for effect, count in side_effect_counts.items()
-            if count > len(relevant) * 0.2  # At least 20% frequency
+            if count > len(relevant) * self.SIDE_EFFECT_FREQUENCY_THRESHOLD
         ]
         common_side_effects.sort(key=lambda x: -x[1])
         

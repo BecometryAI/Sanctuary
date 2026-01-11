@@ -126,7 +126,7 @@ class TimePassageEffects:
         return faded_memory
     
     def _update_urgencies(self, goals: List[Any], elapsed: timedelta) -> List[Any]:
-        """Update goal urgency based on approaching deadlines."""
+        """Update goal urgency based on approaching deadlines. Modifies goals in-place."""
         now = datetime.now()
         
         for goal in goals:
@@ -135,15 +135,17 @@ class TimePassageEffects:
                 continue
             
             remaining = deadline - now
-            if remaining < timedelta(hours=24):
-                # Less than 24 hours - increase urgency
-                self._set_goal_urgency(goal, min(1.0, self._get_goal_urgency(goal) + 0.2))
-            elif remaining < timedelta(0):
+            
+            # Check in order: expired first, then approaching
+            if remaining < timedelta(0):
                 # Past deadline - mark as expired
                 self._set_goal_urgency(goal, 0.0)
                 self._set_goal_status(goal, "expired")
+            elif remaining < timedelta(hours=24):
+                # Less than 24 hours - increase urgency
+                self._set_goal_urgency(goal, min(1.0, self._get_goal_urgency(goal) + 0.2))
         
-        return goals
+        return goals  # Return modified goals for clarity
     
     @staticmethod
     def _get_goal_deadline(goal: Any) -> Optional[datetime]:

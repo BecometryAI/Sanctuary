@@ -200,6 +200,7 @@ class TestTemporalAwareness:
         assert "session_number" in context_dict
         assert "interaction_count" in context_dict
         assert context_dict["session_number"] == 1
+        assert ta.session_count == 1  # Use public property instead of private attribute
 
 
 class TestSessionManager:

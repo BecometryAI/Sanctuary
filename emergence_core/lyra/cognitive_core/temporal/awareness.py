@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List, Any
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -99,8 +99,8 @@ class Session:
     start_time: datetime
     last_interaction: datetime
     interaction_count: int
-    emotional_arc: list
-    topics: list
+    emotional_arc: List[Any]
+    topics: List[str]
     summary: Optional[str] = None
 
 
@@ -121,7 +121,7 @@ class TemporalAwareness:
         """
         self.session_gap_threshold = session_gap_threshold or timedelta(hours=1)
         self.current_session: Optional[Session] = None
-        self.session_history: list[Session] = []
+        self.session_history: List[Session] = []
         self._session_counter = 0
         
         logger.info(f"✅ Enhanced TemporalAwareness initialized (gap threshold: {self.session_gap_threshold})")
@@ -200,6 +200,7 @@ class TemporalAwareness:
             self.session_history.append(self.current_session)
             logger.info(f"📝 Session ended: #{self._session_counter}, "
                        f"{self.current_session.interaction_count} interactions")
+            self.current_session = None
     
     def get_last_session(self) -> Optional[Session]:
         """
@@ -209,6 +210,16 @@ class TemporalAwareness:
             Last session or None if no history
         """
         return self.session_history[-1] if self.session_history else None
+    
+    @property
+    def session_count(self) -> int:
+        """
+        Get the total number of sessions.
+        
+        Returns:
+            Total session count
+        """
+        return self._session_counter
     
     def get_context(self) -> dict:
         """

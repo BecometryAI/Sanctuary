@@ -80,6 +80,11 @@ from .consciousness_tests import (
     ConsciousnessTestFramework,
     ConsciousnessReportGenerator
 )
+from .communication import (
+    CommunicationDriveSystem,
+    CommunicationUrge,
+    DriveType
+)
 
 __all__ = [
     "CognitiveCore",
@@ -158,4 +163,7 @@ __all__ = [
     "MetaCognitiveAccuracyTest",
     "ConsciousnessTestFramework",
     "ConsciousnessReportGenerator",
+    "CommunicationDriveSystem",
+    "CommunicationUrge",
+    "DriveType",
 ]

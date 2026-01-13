@@ -4,7 +4,7 @@ Communication module - Autonomous communication agency.
 This module provides the systems for autonomous communication decisions:
 - Drive System: Internal urges to communicate
 - Inhibition System: Reasons not to communicate
-- Decision Loop: SPEAK/SILENCE/DEFER decisions (future)
+- Decision Loop: SPEAK/SILENCE/DEFER decisions
 """
 
 from .drive import (
@@ -19,11 +19,22 @@ from .inhibition import (
     InhibitionType
 )
 
+from .decision import (
+    CommunicationDecisionLoop,
+    CommunicationDecision,
+    DecisionResult,
+    DeferredCommunication
+)
+
 __all__ = [
     'CommunicationDriveSystem',
     'CommunicationUrge',
     'DriveType',
     'CommunicationInhibitionSystem',
     'InhibitionFactor',
-    'InhibitionType'
+    'InhibitionType',
+    'CommunicationDecisionLoop',
+    'CommunicationDecision',
+    'DecisionResult',
+    'DeferredCommunication'
 ]

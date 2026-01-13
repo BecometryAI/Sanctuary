@@ -5,6 +5,7 @@ This module provides the systems for autonomous communication decisions:
 - Drive System: Internal urges to communicate
 - Inhibition System: Reasons not to communicate
 - Decision Loop: SPEAK/SILENCE/DEFER decisions
+- Deferred Queue: Queue communications for better timing
 """
 
 from .drive import (
@@ -19,11 +20,16 @@ from .inhibition import (
     InhibitionType
 )
 
+from .deferred import (
+    DeferredQueue,
+    DeferredCommunication,
+    DeferralReason
+)
+
 from .decision import (
     CommunicationDecisionLoop,
     CommunicationDecision,
-    DecisionResult,
-    DeferredCommunication
+    DecisionResult
 )
 
 from .silence import (
@@ -39,10 +45,12 @@ __all__ = [
     'CommunicationInhibitionSystem',
     'InhibitionFactor',
     'InhibitionType',
+    'DeferredQueue',
+    'DeferredCommunication',
+    'DeferralReason',
     'CommunicationDecisionLoop',
     'CommunicationDecision',
     'DecisionResult',
-    'DeferredCommunication',
     'SilenceTracker',
     'SilenceAction',
     'SilenceType'

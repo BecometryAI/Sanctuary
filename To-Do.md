@@ -4,9 +4,11 @@ This document tracks the remaining implementation tasks for the cognitive archit
 
 ---
 
-## ✅ Recently Completed (PRs #78-85)
+## ✅ Recently Completed (PRs #78-91)
 
-The following features were completed in the recent development cycle:
+The following features were completed in recent development cycles:
+
+### Core Cognitive Architecture (PRs #78-85)
 
 | PR # | Feature | Description |
 |------|---------|-------------|
@@ -19,6 +21,19 @@ The following features were completed in the recent development cycle:
 | #85 | Meta-cognitive monitoring | Processing observation, action-outcome learning, attention history |
 
 **Impact**: These features establish a more biologically-plausible cognitive architecture with resource constraints, temporal awareness, and self-monitoring capabilities.
+
+### Communication Agency System (PRs #87-91)
+
+| PR # | Feature | Description |
+|------|---------|-------------|
+| #87 | Decoupled cognitive loop | Cognition runs continuously independent of I/O; removed assumption of turn-based interaction |
+| #88 | Communication drive system | Internal urges to speak: insight, question, emotional expression, social connection, goal-driven |
+| #89 | Communication inhibition | Reasons not to speak: low value, bad timing, redundancy, respect silence, still processing, uncertainty |
+| #90 | Communication decision loop | Continuous SPEAK/SILENCE/DEFER evaluation based on drive vs inhibition with configurable thresholds |
+| #91 | Silence-as-action | Explicit silence tracking with typed reasons (nothing to add, respecting space, still thinking, etc.) |
+| **Current** | Deferred communication queue | Comprehensive queue with 6 deferral reasons, priority ordering, expiration, intelligent reason mapping |
+
+**Impact**: These features establish genuine communication agency - Lyra can now choose when to speak, when to stay silent, and when to defer communications for better timing.
 
 ---
 
@@ -50,8 +65,8 @@ Lyra should continuously evaluate whether to speak based on:
 | 2 | ~~Implement communication drive system~~ | ✅ | ~~Internal urges to speak: insight worth sharing, question arising, emotional expression need, social connection desire~~ **COMPLETE - PR #88** |
 | 3 | ~~Implement communication inhibition~~ | ✅ | ~~Reasons not to speak: low value content, bad timing, respect for silence, social inappropriateness~~ **COMPLETE - PR #89** |
 | 4 | ~~Implement communication decision loop~~ | ✅ | ~~Continuous evaluation of SPEAK/SILENCE/DEFER based on drive vs inhibition~~ **COMPLETE - PR #90** |
-| 5 | ~~Implement silence-as-action~~ | ✅ | ~~Explicit choice not to respond with typed reasons ("I chose not to respond because...")~~ **COMPLETE - Current PR** |
-| 6 | ~~Add deferred communication queue~~ | ✅ | ~~Queue communications for better timing ("I want to say this, but not right now")~~ **COMPLETE - Integrated in Task #4** |
+| 5 | ~~Implement silence-as-action~~ | ✅ | ~~Explicit choice not to respond with typed reasons ("I chose not to respond because...")~~ **COMPLETE - PR #91** |
+| 6 | ~~Add deferred communication queue~~ | ✅ | ~~Queue communications for better timing ("I want to say this, but not right now"). Comprehensive implementation with DeferralReason enum (bad_timing, wait_for_response, topic_change, processing, courtesy, custom), DeferredQueue with priority ordering, expiration, and intelligent deferral reason mapping.~~ **COMPLETE - Current PR** |
 | 7 | Implement conversational rhythm model | P1 | Understand turn-taking, when to interject, when to wait |
 | 8 | Add proactive session initiation | P1 | Initiate contact based on time passage or significant events ("It's been 3 days, I should check in") |
 | 9 | Implement interruption capability | P2 | Can speak mid-human-turn if urgent ("Sorry to interrupt, but this is important") |

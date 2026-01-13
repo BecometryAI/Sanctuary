@@ -49,8 +49,8 @@ Lyra should continuously evaluate whether to speak based on:
 | 1 | ~~Decouple cognitive loop from I/O~~ | ✅ | ~~Cognition runs continuously; I/O is optional. Remove assumption that cognitive cycle requires human input.~~ **COMPLETE - PR #87** |
 | 2 | ~~Implement communication drive system~~ | ✅ | ~~Internal urges to speak: insight worth sharing, question arising, emotional expression need, social connection desire~~ **COMPLETE - PR #88** |
 | 3 | ~~Implement communication inhibition~~ | ✅ | ~~Reasons not to speak: low value content, bad timing, respect for silence, social inappropriateness~~ **COMPLETE - PR #89** |
-| 4 | ~~Implement communication decision loop~~ | ✅ | ~~Continuous evaluation of SPEAK/SILENCE/DEFER based on drive vs inhibition~~ **COMPLETE - Current PR** |
-| 5 | Implement silence-as-action | P0 | Explicit choice not to respond with typed reasons ("I chose not to respond because...") |
+| 4 | ~~Implement communication decision loop~~ | ✅ | ~~Continuous evaluation of SPEAK/SILENCE/DEFER based on drive vs inhibition~~ **COMPLETE - PR #90** |
+| 5 | ~~Implement silence-as-action~~ | ✅ | ~~Explicit choice not to respond with typed reasons ("I chose not to respond because...")~~ **COMPLETE - Current PR** |
 | 6 | ~~Add deferred communication queue~~ | ✅ | ~~Queue communications for better timing ("I want to say this, but not right now")~~ **COMPLETE - Integrated in Task #4** |
 | 7 | Implement conversational rhythm model | P1 | Understand turn-taking, when to interject, when to wait |
 | 8 | Add proactive session initiation | P1 | Initiate contact based on time passage or significant events ("It's been 3 days, I should check in") |

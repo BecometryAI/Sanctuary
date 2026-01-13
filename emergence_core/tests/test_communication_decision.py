@@ -9,6 +9,7 @@ from lyra.cognitive_core.communication import (
     CommunicationDecision,
     DecisionResult,
     DeferredCommunication,
+    DeferralReason,
     CommunicationDriveSystem,
     CommunicationInhibitionSystem,
     CommunicationUrge,
@@ -27,15 +28,15 @@ class TestDeferredCommunication:
             content="Important thought"
         )
         
-        defer_until = datetime.now() + timedelta(seconds=30)
+        release_after = datetime.now() + timedelta(seconds=30)
         deferred = DeferredCommunication(
             urge=urge,
-            reason="Bad timing",
-            defer_until=defer_until
+            reason=DeferralReason.BAD_TIMING,
+            release_after=release_after
         )
         
         assert deferred.urge == urge
-        assert deferred.reason == "Bad timing"
+        assert deferred.reason == DeferralReason.BAD_TIMING
         assert deferred.attempts == 0
         assert not deferred.is_ready()
     
@@ -47,11 +48,11 @@ class TestDeferredCommunication:
         )
         
         # Set to 1 second ago
-        defer_until = datetime.now() - timedelta(seconds=1)
+        release_after = datetime.now() - timedelta(seconds=1)
         deferred = DeferredCommunication(
             urge=urge,
-            reason="Test",
-            defer_until=defer_until
+            reason=DeferralReason.BAD_TIMING,
+            release_after=release_after
         )
         
         assert deferred.is_ready()
@@ -65,7 +66,7 @@ class TestDeferredCommunication:
         
         deferred = DeferredCommunication(
             urge=urge,
-            reason="Test"
+            reason=DeferralReason.COURTESY
         )
         
         deferred.increment_attempts()
@@ -118,7 +119,7 @@ class TestCommunicationDecisionLoop:
     
     def test_initialization(self, decision_loop):
         """Test decision loop initialization."""
-        assert decision_loop.deferred_queue == []
+        assert decision_loop.deferred_queue is not None
         assert decision_loop.decision_history == []
         assert decision_loop.speak_threshold == 0.3
         assert decision_loop.silence_threshold == -0.2

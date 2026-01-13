@@ -16,6 +16,15 @@ from typing import List, Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
 
+# Classification thresholds for silence type determination
+_CLASSIFICATION_HIGH_INHIBITION = 0.7  # Threshold for choosing discretion
+_CLASSIFICATION_LOW_DRIVE = 0.3  # Threshold for nothing to add
+
+# Pressure calculation constants
+_PRESSURE_MAX_DURATION_MULTIPLIER = 3.0  # Duration reaches max at 3x threshold
+_PRESSURE_DURATION_WEIGHT = 0.6  # 60% weight on duration
+_PRESSURE_STREAK_WEIGHT = 0.4  # 40% weight on streak
+
 
 class SilenceType(Enum):
     """Types of silence decisions."""
@@ -26,6 +35,7 @@ class SilenceType(Enum):
     UNCERTAINTY = "uncertainty"                 # Too unsure to commit
     TIMING = "timing"                           # Waiting for better moment
     REDUNDANCY = "redundancy"                   # Already addressed
+
 
 
 @dataclass
@@ -168,16 +178,16 @@ class SilenceTracker:
         if 'discretion' in reason_lower or 'restraint' in reason_lower:
             return SilenceType.CHOOSING_DISCRETION
         
-        # Check inhibition levels
+        # Check inhibition and drive levels against classification thresholds
         inhibition_level = getattr(decision_result, 'inhibition_level', 0.0)
         drive_level = getattr(decision_result, 'drive_level', 0.0)
         
         # Strong inhibition suggests discretion
-        if inhibition_level > 0.7:
+        if inhibition_level > _CLASSIFICATION_HIGH_INHIBITION:
             return SilenceType.CHOOSING_DISCRETION
         
         # Weak drive suggests nothing to add
-        if drive_level < 0.3:
+        if drive_level < _CLASSIFICATION_LOW_DRIVE:
             return SilenceType.NOTHING_TO_ADD
         
         # Default: nothing valuable to add
@@ -210,8 +220,11 @@ class SilenceTracker:
         Get pressure to break silence based on duration and streak.
         
         Pressure increases with:
-        - Duration of current silence
-        - Number of consecutive silence decisions
+        - Duration of current silence (60% weight)
+        - Number of consecutive silence decisions (40% weight)
+        
+        Duration pressure reaches 1.0 at 3x the threshold.
+        Streak pressure reaches 1.0 at max_silence_streak.
         
         Returns:
             Pressure value in range [0.0, 1.0]
@@ -219,15 +232,17 @@ class SilenceTracker:
         if self.current_silence is None:
             return 0.0
         
-        # Duration pressure: 0 at threshold, 1.0 at 3x threshold
+        # Duration pressure: 0 at threshold, 1.0 at max_duration_multiplier * threshold
         elapsed = (datetime.now() - self.current_silence.timestamp).total_seconds()
-        duration_pressure = min(1.0, elapsed / (self.pressure_threshold_seconds * 3.0))
+        max_duration = self.pressure_threshold_seconds * _PRESSURE_MAX_DURATION_MULTIPLIER
+        duration_pressure = min(1.0, elapsed / max_duration)
         
         # Streak pressure: 0 at 1, 1.0 at max_silence_streak
         streak_pressure = min(1.0, self.silence_streak / self.max_silence_streak)
         
-        # Combined pressure (weighted average)
-        total_pressure = (duration_pressure * 0.6) + (streak_pressure * 0.4)
+        # Combined pressure using configured weights
+        total_pressure = (duration_pressure * _PRESSURE_DURATION_WEIGHT) + \
+                        (streak_pressure * _PRESSURE_STREAK_WEIGHT)
         
         return min(1.0, total_pressure)
     

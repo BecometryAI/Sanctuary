@@ -37,7 +37,6 @@ class SilenceType(Enum):
     REDUNDANCY = "redundancy"                   # Already addressed
 
 
-
 @dataclass
 class SilenceAction:
     """
@@ -123,16 +122,17 @@ class SilenceTracker:
         if silence_type is None:
             silence_type = self._classify_silence_type(decision_result)
         
-        # Get inhibitions and urges from decision result
+        # Extract data from decision result with defaults
         inhibitions = getattr(decision_result, 'inhibitions', [])
         urges = getattr(decision_result, 'urges', [])
+        reason = getattr(decision_result, 'reason', 'Silence decision')
         
         # Create silence action
         silence_action = SilenceAction(
             silence_type=silence_type,
-            reason=getattr(decision_result, 'reason', 'Silence decision'),
-            inhibitions=inhibitions if isinstance(inhibitions, list) else [],
-            suppressed_urges=urges if isinstance(urges, list) else []
+            reason=reason,
+            inhibitions=inhibitions,
+            suppressed_urges=urges
         )
         
         # Update tracking state
@@ -144,7 +144,7 @@ class SilenceTracker:
         if len(self.silence_history) > self.max_history:
             self.silence_history = self.silence_history[-self.max_history:]
         
-        logger.debug(f"Recorded silence: {silence_type.value} - {silence_action.reason} "
+        logger.debug(f"Recorded silence: {silence_type.value} - {reason} "
                     f"(streak: {self.silence_streak})")
         
         return silence_action
@@ -153,44 +153,34 @@ class SilenceTracker:
         """
         Classify silence type based on decision result.
         
-        Uses inhibition types and decision context to determine the most
-        appropriate silence category.
+        Uses keyword matching on reason and fallback to drive/inhibition levels.
         """
-        # Extract reason from decision result
         reason_lower = getattr(decision_result, 'reason', '').lower()
         
-        # Check for specific keywords in reason
-        if 'uncertainty' in reason_lower or 'confidence' in reason_lower:
-            return SilenceType.UNCERTAINTY
+        # Keyword-based classification (most specific first)
+        keyword_map = {
+            ('uncertainty', 'confidence'): SilenceType.UNCERTAINTY,
+            ('redundant', 'already'): SilenceType.REDUNDANCY,
+            ('timing', 'spacing'): SilenceType.TIMING,
+            ('processing', 'thinking'): SilenceType.STILL_THINKING,
+            ('respect', 'silence appropriate'): SilenceType.RESPECTING_SPACE,
+            ('discretion', 'restraint'): SilenceType.CHOOSING_DISCRETION,
+        }
         
-        if 'redundant' in reason_lower or 'already' in reason_lower:
-            return SilenceType.REDUNDANCY
+        for keywords, silence_type in keyword_map.items():
+            if any(kw in reason_lower for kw in keywords):
+                return silence_type
         
-        if 'timing' in reason_lower or 'spacing' in reason_lower:
-            return SilenceType.TIMING
-        
-        if 'processing' in reason_lower or 'thinking' in reason_lower:
-            return SilenceType.STILL_THINKING
-        
-        if 'respect' in reason_lower or 'silence appropriate' in reason_lower:
-            return SilenceType.RESPECTING_SPACE
-        
-        if 'discretion' in reason_lower or 'restraint' in reason_lower:
-            return SilenceType.CHOOSING_DISCRETION
-        
-        # Check inhibition and drive levels against classification thresholds
+        # Fallback to drive/inhibition level classification
         inhibition_level = getattr(decision_result, 'inhibition_level', 0.0)
         drive_level = getattr(decision_result, 'drive_level', 0.0)
         
-        # Strong inhibition suggests discretion
         if inhibition_level > _CLASSIFICATION_HIGH_INHIBITION:
             return SilenceType.CHOOSING_DISCRETION
         
-        # Weak drive suggests nothing to add
         if drive_level < _CLASSIFICATION_LOW_DRIVE:
             return SilenceType.NOTHING_TO_ADD
         
-        # Default: nothing valuable to add
         return SilenceType.NOTHING_TO_ADD
     
     def end_silence(self) -> Optional[SilenceAction]:
@@ -251,12 +241,12 @@ class SilenceTracker:
         Get recent silence actions for introspection.
         
         Args:
-            minutes: How many minutes back to look
+            minutes: How many minutes back to look (must be positive)
             
         Returns:
             List of SilenceAction instances from the specified time window
         """
-        if not self.silence_history:
+        if not self.silence_history or minutes <= 0:
             return []
         
         cutoff_time = datetime.now() - timedelta(minutes=minutes)
@@ -287,18 +277,23 @@ class SilenceTracker:
         Returns:
             Dictionary with statistics about silence decisions
         """
-        recent_silences = self.get_recent_silences(minutes=5)
+        # Single pass through history for efficiency
+        cutoff_time = datetime.now() - timedelta(minutes=5)
+        recent_count = 0
+        type_counts = {st: 0 for st in SilenceType}
+        
+        for silence in self.silence_history:
+            if silence.timestamp > cutoff_time:
+                recent_count += 1
+            type_counts[silence.silence_type] += 1
         
         return {
             "total_silences": len(self.silence_history),
-            "recent_silences": len(recent_silences),
+            "recent_silences": recent_count,
             "current_silence": self.current_silence is not None,
             "silence_streak": self.silence_streak,
             "silence_pressure": self.get_silence_pressure(),
-            "silence_by_type": {
-                st.value: len(self.get_silence_by_type(st))
-                for st in SilenceType
-            },
+            "silence_by_type": {st.value: count for st, count in type_counts.items()},
             "current_silence_duration": (
                 (datetime.now() - self.current_silence.timestamp).total_seconds()
                 if self.current_silence else None

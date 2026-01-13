@@ -136,9 +136,9 @@ class CommunicationDecisionLoop:
         net_pressure = drive - inhibition
         strongest_urge = self.drives.get_strongest_urge()
         
-        # Get all active urges and inhibitions for silence tracking
-        active_urges = list(self.drives.active_urges)
-        active_inhibitions = list(self.inhibitions.active_inhibitions)
+        # Pass active urges and inhibitions for silence tracking (no copy needed)
+        active_urges = self.drives.active_urges
+        active_inhibitions = self.inhibitions.active_inhibitions
         
         # Make decision
         result = self._make_decision(drive, inhibition, net_pressure, strongest_urge, 

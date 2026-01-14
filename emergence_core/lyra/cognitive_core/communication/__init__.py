@@ -44,6 +44,12 @@ from .rhythm import (
     ConversationTurn
 )
 
+from .proactive import (
+    ProactiveInitiationSystem,
+    OutreachOpportunity,
+    OutreachTrigger
+)
+
 __all__ = [
     'CommunicationDriveSystem',
     'CommunicationUrge',
@@ -62,5 +68,8 @@ __all__ = [
     'SilenceType',
     'ConversationalRhythmModel',
     'ConversationPhase',
-    'ConversationTurn'
+    'ConversationTurn',
+    'ProactiveInitiationSystem',
+    'OutreachOpportunity',
+    'OutreachTrigger'
 ]

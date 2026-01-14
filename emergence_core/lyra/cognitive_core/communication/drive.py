@@ -12,7 +12,10 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .proactive import ProactiveInitiationSystem
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +93,7 @@ class CommunicationDriveSystem:
                 - emotional_threshold: Min arousal/valence for emotional drives (default: 0.6)
                 - social_silence_minutes: Silence duration before social drive (default: 30)
                 - max_urges: Maximum active urges to track (default: 10)
+                - enable_proactive: Enable proactive initiation system (default: True)
         """
         self.config = config or {}
         self.active_urges: List[CommunicationUrge] = []
@@ -102,11 +106,22 @@ class CommunicationDriveSystem:
         self.social_silence_minutes = max(1, self.config.get("social_silence_minutes", 30))
         self.max_urges = max(1, self.config.get("max_urges", 10))
         
+        # Initialize proactive system if enabled
+        self.proactive_system: Optional[ProactiveInitiationSystem] = None
+        if self.config.get("enable_proactive", True):
+            try:
+                from .proactive import ProactiveInitiationSystem
+            except ImportError:
+                from proactive import ProactiveInitiationSystem
+            self.proactive_system = ProactiveInitiationSystem(self.config.get("proactive_config", {}))
+        
+        
         logger.debug(f"CommunicationDriveSystem initialized: "
                     f"insight_threshold={self.insight_threshold:.2f}, "
                     f"emotional_threshold={self.emotional_threshold:.2f}, "
                     f"social_silence_minutes={self.social_silence_minutes}, "
-                    f"max_urges={self.max_urges}")
+                    f"max_urges={self.max_urges}, "
+                    f"proactive_enabled={self.proactive_system is not None}")
     
     def compute_drives(
         self,
@@ -118,7 +133,8 @@ class CommunicationDriveSystem:
         """
         Compute all communication drives from current state.
         
-        Evaluates 6 drive types and manages active urge list with decay cleanup.
+        Evaluates 6 drive types, checks proactive opportunities, and manages 
+        active urge list with decay cleanup.
         
         Args:
             workspace_state: Current workspace snapshot with percepts
@@ -137,6 +153,10 @@ class CommunicationDriveSystem:
         new_urges.extend(self._compute_insight_drive(workspace_state, memories))
         new_urges.extend(self._compute_question_drive(workspace_state, goals))
         new_urges.extend(self._compute_social_drive())
+        
+        # Check proactive opportunities if system is enabled
+        if self.proactive_system:
+            new_urges.extend(self._compute_proactive_drive(workspace_state, memories, goals))
         
         # Add to active urges and maintain size limit
         self.active_urges.extend(new_urges)
@@ -427,24 +447,91 @@ class CommunicationDriveSystem:
         )
     
     def record_input(self) -> None:
-        """Record timestamp of received input for social drive tracking."""
+        """Record timestamp of received input for social drive and proactive tracking."""
         self.last_input_time = datetime.now()
+        if self.proactive_system:
+            self.proactive_system.record_interaction()
     
     def record_output(self) -> None:
         """
         Record timestamp of produced output and clear acknowledgment urges.
         
         Acknowledgment urges are cleared since output implies acknowledgment.
+        Also updates proactive system interaction tracking.
         """
         self.last_output_time = datetime.now()
         self.active_urges = [
             u for u in self.active_urges
             if u.drive_type != DriveType.ACKNOWLEDGMENT
         ]
+        if self.proactive_system:
+            self.proactive_system.record_interaction()
+    
+    def _compute_proactive_drive(
+        self,
+        workspace_state: Any,
+        memories: List[Any],
+        goals: List[Any]
+    ) -> List[CommunicationUrge]:
+        """
+        Compute urges from proactive outreach opportunities.
+        
+        Checks for proactive opportunities (time-based, event-based, etc.)
+        and generates urges for high-urgency opportunities.
+        
+        Args:
+            workspace_state: Current workspace snapshot
+            memories: Recently retrieved memories
+            goals: Active goals
+            
+        Returns:
+            List of communication urges from proactive opportunities
+        """
+        urges = []
+        
+        # Check for new opportunities
+        opportunities = self.proactive_system.check_for_opportunities(
+            workspace_state, memories, goals
+        )
+        
+        # Generate urges for high-urgency opportunities
+        for opp in opportunities:
+            if opp.urgency > 0.3:
+                # Map trigger type to drive type
+                drive_type = self._map_trigger_to_drive(opp.trigger)
+                
+                urges.append(CommunicationUrge(
+                    drive_type=drive_type,
+                    intensity=opp.urgency,
+                    content=opp.suggested_content,
+                    reason=f"Proactive: {opp.reason}",
+                    priority=0.5 + (opp.urgency * 0.3),  # Priority scales with urgency
+                    decay_rate=0.05  # Proactive urges decay slower
+                ))
+        
+        return urges
+    
+    def _map_trigger_to_drive(self, trigger) -> DriveType:
+        """Map OutreachTrigger to DriveType."""
+        try:
+            from .proactive import OutreachTrigger
+        except ImportError:
+            from proactive import OutreachTrigger
+        
+        mapping = {
+            OutreachTrigger.TIME_ELAPSED: DriveType.SOCIAL,
+            OutreachTrigger.SIGNIFICANT_INSIGHT: DriveType.INSIGHT,
+            OutreachTrigger.EMOTIONAL_CONNECTION: DriveType.EMOTIONAL,
+            OutreachTrigger.SCHEDULED_CHECKIN: DriveType.SOCIAL,
+            OutreachTrigger.RELEVANT_EVENT: DriveType.INSIGHT,
+            OutreachTrigger.GOAL_COMPLETION: DriveType.GOAL
+        }
+        
+        return mapping.get(trigger, DriveType.SOCIAL)
     
     def get_drive_summary(self) -> Dict[str, Any]:
         """Get summary of current drive state."""
-        return {
+        summary = {
             "total_drive": self.get_total_drive(),
             "active_urges": len(self.active_urges),
             "strongest_urge": self.get_strongest_urge(),
@@ -461,3 +548,9 @@ class CommunicationDriveSystem:
                 if self.last_output_time else None
             )
         }
+        
+        # Add proactive system summary if enabled
+        if self.proactive_system:
+            summary["proactive"] = self.proactive_system.get_outreach_summary()
+        
+        return summary

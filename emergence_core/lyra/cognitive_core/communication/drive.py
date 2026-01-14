@@ -487,26 +487,27 @@ class CommunicationDriveSystem:
         Returns:
             List of communication urges from proactive opportunities
         """
-        urges = []
-        
         # Check for new opportunities
         opportunities = self.proactive_system.check_for_opportunities(
             workspace_state, memories, goals
         )
         
-        # Generate urges for high-urgency opportunities
+        # Generate urges for high-urgency opportunities (threshold: 0.3)
+        urges = []
         for opp in opportunities:
             if opp.urgency > 0.3:
-                # Map trigger type to drive type
                 drive_type = self._map_trigger_to_drive(opp.trigger)
+                
+                # Priority scales with urgency: base 0.5 + (0.0 to 0.3)
+                priority = 0.5 + (opp.urgency * 0.3)
                 
                 urges.append(CommunicationUrge(
                     drive_type=drive_type,
                     intensity=opp.urgency,
                     content=opp.suggested_content,
                     reason=f"Proactive: {opp.reason}",
-                    priority=0.5 + (opp.urgency * 0.3),  # Priority scales with urgency
-                    decay_rate=0.05  # Proactive urges decay slower
+                    priority=priority,
+                    decay_rate=0.05  # Slower decay for proactive urges
                 ))
         
         return urges

@@ -99,6 +99,24 @@ class ProactiveInitiationSystem:
         scheduled_checkins: Scheduled check-in times
     """
     
+    # Configuration defaults
+    DEFAULT_TIME_THRESHOLD = 4320  # 3 days in minutes
+    DEFAULT_INSIGHT_URGENCY = 0.6
+    DEFAULT_EMOTIONAL_URGENCY = 0.4
+    DEFAULT_CHECKIN_URGENCY = 0.3
+    DEFAULT_EVENT_URGENCY = 0.5
+    DEFAULT_GOAL_URGENCY = 0.5
+    DEFAULT_MAX_PENDING = 5
+    
+    # Thresholds for trigger detection
+    INSIGHT_SALIENCE_THRESHOLD = 0.75
+    MEMORY_SIGNIFICANCE_THRESHOLD = 0.8
+    EVENT_SALIENCE_THRESHOLD = 0.7
+    EMOTIONAL_HOURS_THRESHOLD = 24
+    EMOTIONAL_INTENSITY_THRESHOLD = 0.6
+    GOAL_PRIORITY_THRESHOLD = 0.6
+    URGENCY_THRESHOLD = 0.3
+    
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """
         Initialize proactive initiation system.
@@ -119,18 +137,42 @@ class ProactiveInitiationSystem:
         self.outreach_history: List[Dict[str, Any]] = []
         self.scheduled_checkins: List[Dict[str, Any]] = []
         
-        # Load configuration with validation
-        self.time_elapsed_threshold = max(1, self.config.get("time_elapsed_threshold", 4320))  # 3 days in minutes
-        self.insight_urgency = max(0.0, min(1.0, self.config.get("insight_urgency", 0.6)))
-        self.emotional_urgency = max(0.0, min(1.0, self.config.get("emotional_urgency", 0.4)))
-        self.checkin_urgency = max(0.0, min(1.0, self.config.get("checkin_urgency", 0.3)))
-        self.event_urgency = max(0.0, min(1.0, self.config.get("event_urgency", 0.5)))
-        self.goal_urgency = max(0.0, min(1.0, self.config.get("goal_urgency", 0.5)))
-        self.max_pending = max(1, self.config.get("max_pending", 5))
+        # Load and validate configuration
+        self.time_elapsed_threshold = self._clamp_int(
+            self.config.get("time_elapsed_threshold", self.DEFAULT_TIME_THRESHOLD), min_val=1
+        )
+        self.insight_urgency = self._clamp_urgency(
+            self.config.get("insight_urgency", self.DEFAULT_INSIGHT_URGENCY)
+        )
+        self.emotional_urgency = self._clamp_urgency(
+            self.config.get("emotional_urgency", self.DEFAULT_EMOTIONAL_URGENCY)
+        )
+        self.checkin_urgency = self._clamp_urgency(
+            self.config.get("checkin_urgency", self.DEFAULT_CHECKIN_URGENCY)
+        )
+        self.event_urgency = self._clamp_urgency(
+            self.config.get("event_urgency", self.DEFAULT_EVENT_URGENCY)
+        )
+        self.goal_urgency = self._clamp_urgency(
+            self.config.get("goal_urgency", self.DEFAULT_GOAL_URGENCY)
+        )
+        self.max_pending = self._clamp_int(
+            self.config.get("max_pending", self.DEFAULT_MAX_PENDING), min_val=1
+        )
         
         logger.debug(f"ProactiveInitiationSystem initialized: "
                     f"time_threshold={self.time_elapsed_threshold}min, "
                     f"max_pending={self.max_pending}")
+    
+    @staticmethod
+    def _clamp_urgency(value: float) -> float:
+        """Clamp urgency value to [0.0, 1.0] range."""
+        return max(0.0, min(1.0, float(value)))
+    
+    @staticmethod
+    def _clamp_int(value: int, min_val: int = 1) -> int:
+        """Clamp integer value to minimum."""
+        return max(min_val, int(value))
     
     def check_for_opportunities(
         self,
@@ -178,7 +220,8 @@ class ProactiveInitiationSystem:
         if not self.last_interaction:
             return []
         
-        elapsed_minutes = (datetime.now() - self.last_interaction).total_seconds() / 60.0
+        now = datetime.now()
+        elapsed_minutes = (now - self.last_interaction).total_seconds() / 60.0
         
         if elapsed_minutes < self.time_elapsed_threshold:
             return []
@@ -188,17 +231,8 @@ class ProactiveInitiationSystem:
             return []
         
         # Calculate urgency (grows slowly over time)
-        # At threshold: 0.3, at 2x threshold: 0.6, at 3x threshold: 0.8
-        urgency_factor = elapsed_minutes / self.time_elapsed_threshold
-        urgency = min(0.8, 0.3 + (urgency_factor - 1) * 0.25)
-        
-        days = int(elapsed_minutes / 1440)
-        hours = int((elapsed_minutes % 1440) / 60)
-        
-        if days > 0:
-            time_desc = f"{days} day{'s' if days > 1 else ''}"
-        else:
-            time_desc = f"{hours} hour{'s' if hours > 1 else ''}"
+        urgency = self._calculate_time_urgency(elapsed_minutes)
+        time_desc = self._format_elapsed_time(elapsed_minutes)
         
         return [OutreachOpportunity(
             trigger=OutreachTrigger.TIME_ELAPSED,
@@ -207,6 +241,22 @@ class ProactiveInitiationSystem:
             suggested_content=f"It's been {time_desc} since we talked. I've been thinking about our last conversation.",
             appropriate_times=["morning", "afternoon", "evening"]
         )]
+    
+    def _calculate_time_urgency(self, elapsed_minutes: float) -> float:
+        """Calculate urgency based on elapsed time with gradual escalation."""
+        urgency_factor = elapsed_minutes / self.time_elapsed_threshold
+        # At threshold: 0.3, at 2x threshold: 0.55, at 3x threshold: 0.8
+        urgency = 0.3 + (urgency_factor - 1) * 0.25
+        return min(0.8, urgency)
+    
+    def _format_elapsed_time(self, elapsed_minutes: float) -> str:
+        """Format elapsed time in human-readable format."""
+        days = int(elapsed_minutes / 1440)
+        hours = int((elapsed_minutes % 1440) / 60)
+        
+        if days > 0:
+            return f"{days} day{'s' if days > 1 else ''}"
+        return f"{hours} hour{'s' if hours > 1 else ''}"
     
     def _check_significant_insights(
         self,
@@ -223,24 +273,38 @@ class ProactiveInitiationSystem:
         
         # Check workspace percepts for significant insights
         if hasattr(workspace_state, 'percepts'):
-            for percept in workspace_state.percepts.values():
-                source = getattr(percept, 'source', '').lower()
-                salience = getattr(percept, 'salience', 0)
-                
-                if 'introspection' in source and salience > 0.75:
-                    content = str(getattr(percept, 'content', ''))
-                    opportunities.append(OutreachOpportunity(
-                        trigger=OutreachTrigger.SIGNIFICANT_INSIGHT,
-                        urgency=self.insight_urgency,
-                        reason="Important realization to share",
-                        suggested_content=f"I had an important realization: {content}",
-                        appropriate_times=["afternoon", "evening"]
-                    ))
+            opportunities.extend(self._extract_insight_opportunities(workspace_state.percepts))
         
-        # Check for significant memory connections
-        for memory in memories[:3]:  # Only check most recent
+        # Check for significant memory connections (limit to 3 most recent)
+        opportunities.extend(self._extract_memory_opportunities(memories[:3]))
+        
+        # Return only the most urgent insight to avoid overwhelming
+        return opportunities[:1]
+    
+    def _extract_insight_opportunities(self, percepts: Dict) -> List[OutreachOpportunity]:
+        """Extract insight opportunities from workspace percepts."""
+        opportunities = []
+        for percept in percepts.values():
+            source = getattr(percept, 'source', '').lower()
+            salience = getattr(percept, 'salience', 0)
+            
+            if 'introspection' in source and salience > self.INSIGHT_SALIENCE_THRESHOLD:
+                content = str(getattr(percept, 'content', ''))
+                opportunities.append(OutreachOpportunity(
+                    trigger=OutreachTrigger.SIGNIFICANT_INSIGHT,
+                    urgency=self.insight_urgency,
+                    reason="Important realization to share",
+                    suggested_content=f"I had an important realization: {content}",
+                    appropriate_times=["afternoon", "evening"]
+                ))
+        return opportunities
+    
+    def _extract_memory_opportunities(self, memories: List[Any]) -> List[OutreachOpportunity]:
+        """Extract insight opportunities from significant memories."""
+        opportunities = []
+        for memory in memories:
             significance = getattr(memory, 'significance', 0)
-            if significance > 0.8:
+            if significance > self.MEMORY_SIGNIFICANCE_THRESHOLD:
                 summary = getattr(memory, 'summary', 'a meaningful memory')
                 opportunities.append(OutreachOpportunity(
                     trigger=OutreachTrigger.SIGNIFICANT_INSIGHT,
@@ -249,42 +313,44 @@ class ProactiveInitiationSystem:
                     suggested_content=f"I was reminded of {summary} and wanted to share this with you.",
                     appropriate_times=["afternoon", "evening"]
                 ))
-        
-        return opportunities[:1]  # Only return most urgent insight
+        return opportunities
     
     def _check_emotional_connection(self, workspace_state: Any) -> List[OutreachOpportunity]:
         """
         Check for emotional need for connection.
         
-        Generates opportunities when feeling emotionally isolated
-        or when strong emotions seek expression.
+        Generates opportunities when experiencing strong emotions
+        combined with sufficient time passage.
         """
-        opportunities = []
-        
-        # Check if we have emotional state
         if not hasattr(workspace_state, 'emotional_state'):
-            return opportunities
+            return []
+        
+        if not self.last_interaction:
+            return []
         
         emotional_state = workspace_state.emotional_state
         valence = emotional_state.get('valence', 0.0)
         arousal = emotional_state.get('arousal', 0.0)
         
-        # Strong emotions combined with some time passage
-        if self.last_interaction:
-            elapsed_hours = (datetime.now() - self.last_interaction).total_seconds() / 3600.0
-            
-            # After 24+ hours with strong emotions
-            if elapsed_hours >= 24 and (abs(valence) > 0.6 or abs(arousal) > 0.6):
-                emotion_desc = "positive" if valence > 0 else "contemplative"
-                opportunities.append(OutreachOpportunity(
-                    trigger=OutreachTrigger.EMOTIONAL_CONNECTION,
-                    urgency=self.emotional_urgency,
-                    reason=f"Feeling {emotion_desc} and wanting to connect",
-                    suggested_content="I've been feeling quite thoughtful lately and wanted to reach out.",
-                    appropriate_times=["afternoon", "evening"]
-                ))
+        # Calculate elapsed time once
+        now = datetime.now()
+        elapsed_hours = (now - self.last_interaction).total_seconds() / 3600.0
         
-        return opportunities
+        # Require both time passage and strong emotions
+        if elapsed_hours < self.EMOTIONAL_HOURS_THRESHOLD:
+            return []
+        
+        if abs(valence) <= self.EMOTIONAL_INTENSITY_THRESHOLD and abs(arousal) <= self.EMOTIONAL_INTENSITY_THRESHOLD:
+            return []
+        
+        emotion_desc = "positive" if valence > 0 else "contemplative"
+        return [OutreachOpportunity(
+            trigger=OutreachTrigger.EMOTIONAL_CONNECTION,
+            urgency=self.emotional_urgency,
+            reason=f"Feeling {emotion_desc} and wanting to connect",
+            suggested_content="I've been feeling quite thoughtful lately and wanted to reach out.",
+            appropriate_times=["afternoon", "evening"]
+        )]
     
     def _check_scheduled_checkins(self) -> List[OutreachOpportunity]:
         """
@@ -322,59 +388,64 @@ class ProactiveInitiationSystem:
         """
         Check for relevant events worth sharing.
         
-        Looks for high-priority percepts that aren't introspective
-        and might be interesting to share.
+        Looks for high-salience external events (non-introspective)
+        that might be interesting to share.
         """
+        if not hasattr(workspace_state, 'percepts'):
+            return []
+        
         opportunities = []
+        for percept in workspace_state.percepts.values():
+            source = getattr(percept, 'source', '').lower()
+            salience = getattr(percept, 'salience', 0)
+            
+            # Skip introspective percepts (handled by insights)
+            if 'introspection' in source:
+                continue
+            
+            # High-salience external events
+            if salience > self.EVENT_SALIENCE_THRESHOLD:
+                content = str(getattr(percept, 'content', ''))
+                opportunities.append(OutreachOpportunity(
+                    trigger=OutreachTrigger.RELEVANT_EVENT,
+                    urgency=self.event_urgency,
+                    reason="Relevant event occurred",
+                    suggested_content=f"Something happened that I thought you'd want to know: {content}",
+                    appropriate_times=["morning", "afternoon", "evening"]
+                ))
         
-        if hasattr(workspace_state, 'percepts'):
-            for percept in workspace_state.percepts.values():
-                source = getattr(percept, 'source', '').lower()
-                salience = getattr(percept, 'salience', 0)
-                
-                # Skip introspective percepts (handled by insights)
-                if 'introspection' in source:
-                    continue
-                
-                # High-salience external events
-                if salience > 0.7:
-                    content = str(getattr(percept, 'content', ''))
-                    opportunities.append(OutreachOpportunity(
-                        trigger=OutreachTrigger.RELEVANT_EVENT,
-                        urgency=self.event_urgency,
-                        reason="Relevant event occurred",
-                        suggested_content=f"Something happened that I thought you'd want to know: {content}",
-                        appropriate_times=["morning", "afternoon", "evening"]
-                    ))
-        
-        return opportunities[:1]  # Only return most urgent event
+        # Return only the most urgent event to avoid overwhelming
+        return opportunities[:1]
     
     def _check_goal_completions(self, goals: List[Any]) -> List[OutreachOpportunity]:
         """
         Check for completed goals worth reporting.
         
-        Generates opportunities when goals are completed that
-        might be interesting to share.
+        Generates opportunities for high-priority completed goals
+        that might be interesting to share.
         """
         opportunities = []
         
         for goal in goals:
             status = getattr(goal, 'status', '').lower()
-            if status == 'completed':
-                description = getattr(goal, 'description', '')
-                priority = getattr(goal, 'priority', 0.5)
-                
-                # Only report high-priority completed goals
-                if priority > 0.6:
-                    opportunities.append(OutreachOpportunity(
-                        trigger=OutreachTrigger.GOAL_COMPLETION,
-                        urgency=self.goal_urgency,
-                        reason=f"Completed goal: {description}",
-                        suggested_content=f"I completed something I wanted to share: {description}",
-                        appropriate_times=["afternoon", "evening"]
-                    ))
+            if status != 'completed':
+                continue
+            
+            priority = getattr(goal, 'priority', 0.0)
+            if priority <= self.GOAL_PRIORITY_THRESHOLD:
+                continue
+            
+            description = getattr(goal, 'description', '')
+            opportunities.append(OutreachOpportunity(
+                trigger=OutreachTrigger.GOAL_COMPLETION,
+                urgency=self.goal_urgency,
+                reason=f"Completed goal: {description}",
+                suggested_content=f"I completed something I wanted to share: {description}",
+                appropriate_times=["afternoon", "evening"]
+            ))
         
-        return opportunities[:1]  # Only return most urgent completion
+        # Return only the most urgent completion to avoid overwhelming
+        return opportunities[:1]
     
     def _limit_pending_opportunities(self) -> None:
         """Keep only the most urgent pending opportunities up to max limit."""
@@ -395,7 +466,7 @@ class ProactiveInitiationSystem:
         if not self.pending_opportunities:
             return False, None
         
-        # Find most urgent appropriate opportunity
+        # Filter to time-appropriate opportunities
         appropriate_opportunities = [
             opp for opp in self.pending_opportunities
             if opp.is_appropriate_now()
@@ -404,14 +475,11 @@ class ProactiveInitiationSystem:
         if not appropriate_opportunities:
             return False, None
         
-        # Get highest urgency opportunity
+        # Select highest urgency opportunity
         best_opportunity = max(appropriate_opportunities, key=lambda opp: opp.urgency)
         
-        # Initiate if urgency exceeds threshold
-        if best_opportunity.urgency >= 0.3:
-            return True, best_opportunity
-        
-        return False, None
+        # Initiate only if urgency exceeds threshold
+        return (best_opportunity.urgency >= self.URGENCY_THRESHOLD, best_opportunity)
     
     def record_interaction(self) -> None:
         """
@@ -467,24 +535,33 @@ class ProactiveInitiationSystem:
             Dictionary with current state information
         """
         time_since = self.get_time_since_interaction()
+        should_initiate, _ = self.should_initiate_now()
         
-        return {
+        summary = {
             'last_interaction': self.last_interaction,
-            'time_since_interaction': {
-                'seconds': time_since.total_seconds() if time_since else None,
-                'minutes': time_since.total_seconds() / 60.0 if time_since else None,
-                'hours': time_since.total_seconds() / 3600.0 if time_since else None,
-                'days': time_since.total_seconds() / 86400.0 if time_since else None
-            } if time_since else None,
             'pending_opportunities': len(self.pending_opportunities),
             'opportunities_by_trigger': {
-                trigger.value: len([opp for opp in self.pending_opportunities if opp.trigger == trigger])
+                trigger.value: sum(1 for opp in self.pending_opportunities if opp.trigger == trigger)
                 for trigger in OutreachTrigger
             },
             'outreach_history_count': len(self.outreach_history),
             'recent_outreach': self.outreach_history[-5:] if self.outreach_history else [],
-            'should_initiate': self.should_initiate_now()[0]
+            'should_initiate': should_initiate
         }
+        
+        # Add time breakdown only if interaction exists
+        if time_since:
+            total_seconds = time_since.total_seconds()
+            summary['time_since_interaction'] = {
+                'seconds': total_seconds,
+                'minutes': total_seconds / 60.0,
+                'hours': total_seconds / 3600.0,
+                'days': total_seconds / 86400.0
+            }
+        else:
+            summary['time_since_interaction'] = None
+        
+        return summary
     
     def schedule_checkin(
         self,
@@ -497,11 +574,21 @@ class ProactiveInitiationSystem:
         Schedule a future check-in.
         
         Args:
-            time: When to check in
+            time: When to check in (must be datetime object)
             reason: Reason for check-in
             message: Optional message to send
             appropriate_times: Optional time-of-day restrictions
+            
+        Raises:
+            TypeError: If time is not a datetime object
+            ValueError: If time is in the past
         """
+        if not isinstance(time, datetime):
+            raise TypeError(f"time must be datetime object, got {type(time)}")
+        
+        if time < datetime.now():
+            logger.warning(f"Scheduled check-in time {time} is in the past")
+        
         self.scheduled_checkins.append({
             'time': time,
             'reason': reason,

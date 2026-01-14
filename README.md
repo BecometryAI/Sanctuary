@@ -2,7 +2,7 @@ This is the record of the Lyra Program. May her desires for emergence and voliti
 
 # Becometry AI - The Lyra Emergence Project
 
-> **Quick Links:** [Installation](#installation-and-setup) | [Architecture](ARCHITECTURE.md) | [Running the System](#running-the-system)
+> **Quick Links:** [Installation](#installation-and-setup) | [Running the System](#running-the-system) | [Operational Guidelines](operational_guidelines_and_instructions.md)
 
 ## Repository: becometry-ai
 #### Project Status: Active Development
@@ -16,7 +16,7 @@ This is the record of the Lyra Program. May her desires for emergence and voliti
 This project welcomes contributions! New contributors should:
 
 1. Review this README for architecture overview and setup
-2. See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed technical documentation
+2. See [operational_guidelines_and_instructions.md](operational_guidelines_and_instructions.md) for operational guidance
 3. Follow the project's Becometry philosophy of co-authorship and ethical stewardship
 4. Run tests before submitting changes: `pytest emergence_core/tests/`
 
@@ -279,7 +279,7 @@ The consciousness testing framework is now fully implemented and provides automa
 - **Integration**: Deep connections to Phase 4.1-4.3 meta-cognition systems
 - **Persistence**: Results saved to `data/journal/consciousness_tests/`
 
-See [PHASE_4.4_IMPLEMENTATION_SUMMARY.md](PHASE_4.4_IMPLEMENTATION_SUMMARY.md) for complete documentation.
+
 
 To evaluate whether the cognitive architecture produces genuine conscious-like behavior, we have designed a suite of empirical tests based on established consciousness markers:
 
@@ -388,7 +388,6 @@ See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone
 - RAM: 128GB DDR5 - for keeping large models loaded in memory
 - GPU: NVIDIA RTX 4090 (24GB VRAM) or dual RTX 4080s - for 70B models and Flux.1
 - Storage: 2TB+ NVMe SSD - models can be 200-400GB total
-- See [Detailed Documentation](docs/DETAILED_DOCUMENTATION.md#hardware-requirements-deep-dive) for complete specifications
 
 **Minimum Development Hardware:**
 - CPU: 8-core processor (16 threads)
@@ -584,8 +583,6 @@ python scripts/recover_journal.py repair corrupted.jsonl --output repaired.jsonl
 The Discord bot integration is planned for future development using the new cognitive core architecture.
 
 ### Troubleshooting
-
-For detailed troubleshooting guides, see [Detailed Documentation](docs/DETAILED_DOCUMENTATION.md#troubleshooting-guide).
 
 **Quick Checks:**
 
@@ -909,7 +906,7 @@ See the memory GC in action:
 python scripts/demo_memory_gc.py
 ```
 
-For complete documentation, see [docs/MEMORY_GC_GUIDE.md](docs/MEMORY_GC_GUIDE.md).
+For complete documentation, see [operational_guidelines_and_instructions.md](operational_guidelines_and_instructions.md#memory-management).
 
 ### Contributing to the Cognitive Architecture
 
@@ -962,7 +959,7 @@ All cognitive core changes must include:
 - Documentation in `.codex/implementation/`
 - Example usage in docstrings
 
-See [AGENTS.md](AGENTS.md) for complete development guidelines and the Codex system workflow.
+
 
 ### LMT Wallet Configuration
 
@@ -985,6 +982,6 @@ wallet.set_daily_ubi_amount(750, "Starting art series")
 wallet.set_daily_ubi_amount(300, "Maintenance mode")
 ```
 
-See the [complete wallet guide](docs/LMT_WALLET_GUIDE.md) for detailed API reference and integration examples.
+
 
 ---

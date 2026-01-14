@@ -10,7 +10,7 @@ Tests cover:
 
 import pytest
 
-from lyra.cognitive_core.attention.precision import (
+from lyra.cognitive_core.precision_weighting import (
     PrecisionWeighting,
     PrecisionWeights
 )

@@ -17,7 +17,7 @@ from datetime import datetime
 
 from .world_model import WorldModel
 from .active_inference import FreeEnergyMinimizer, ActiveInferenceActionSelector
-from .attention.precision import PrecisionWeighting
+from .precision_weighting import PrecisionWeighting
 from .metta import AtomspaceBridge
 
 logger = logging.getLogger(__name__)

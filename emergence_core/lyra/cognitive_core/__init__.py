@@ -100,7 +100,7 @@ from .active_inference import (
     ActiveInferenceActionSelector,
     ActionEvaluation
 )
-from .attention.precision import PrecisionWeighting
+from .precision_weighting import PrecisionWeighting
 from .metta import (
     AtomspaceBridge,
     COMMUNICATION_DECISION_RULES,

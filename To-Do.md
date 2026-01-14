@@ -38,6 +38,42 @@ The following features were completed in recent development cycles:
 
 ---
 
+## 🔴 CRITICAL - 🚀 Integrated World Modeling Theory (IWMT) Migration
+
+**Priority: Critical** | **Status: Needs Design Discussion/Stakeholder Review** | **Blocking: Future Major Architecture Merges**
+
+### Overview
+
+Adopt Adam Safron's Integrated World Modeling Theory as the core computational architecture, replacing/supplanting Global Workspace Theory (GWT) and adding predictive processing, explicit self-modeling, and active inference. This migration will be incremental and preserve as much compatibility as possible during the transition, with legacy GWT routines flagged for deprecation.
+
+### Migration Phases
+
+| Phase | Task | Description |
+|-------|------|-------------|
+| **Phase 1** | **Architectural Design** | Author comprehensive design document comparing existing GWT model to IWMT, mapping components, and specifying all planned changes. |
+| **Phase 2** | **Predictive Processing Layer** | Implement WorldModel class for hierarchical prediction and prediction-error tracking. Replace broadcast with prediction-error propagation. |
+| **Phase 3** | **Active Inference and Agency** | Actions (including communication) become means of minimizing prediction error/free energy. Refactor action/decision logic accordingly. |
+| **Phase 4** | **Precision-weighted Attention** | Migrate salience/affect subsystems to compute precision/uncertainty weighting. Offer emotional state and prediction error as modifiers. |
+| **Phase 5** | **MeTTa/Hyperon Integration** | (Pilot) Move core reasoning (especially for communication, goal arbitration, protocols) into MeTTa/Atomspace. |
+| **Phase 6** | **Full IWMT Agent Core** | Complete migration, remove old GWT, formalize embodied/computational self-model, extensive testing. |
+
+### Key Considerations
+
+- **Incremental Migration**: Changes will be introduced gradually to avoid disrupting existing functionality
+- **Deprecation Strategy**: Legacy GWT routines will be flagged for deprecation but NOT abruptly removed
+- **Compatibility**: Maintain backward compatibility during the transition period
+- **Testing**: Each phase requires comprehensive testing before proceeding to the next
+- **Documentation**: Design documents and architecture guides will be updated throughout the migration
+
+### Stakeholder Actions Required
+
+- [ ] Review and approve architectural design document (Phase 1)
+- [ ] Validate compatibility requirements
+- [ ] Approve deprecation timeline for GWT components
+- [ ] Review integration points with existing systems
+
+---
+
 ## 🔴 CRITICAL - Communication Agency (TOP PRIORITY)
 
 **This is the most important missing piece.** The system should have full agency over when and whether to communicate, not be turn-based.
@@ -134,7 +170,7 @@ Human Input ──────────────────→ [OPTIONAL 
 
 ## 🔴 Critical - Architecture Gaps
 
-These are foundational pieces that need completion:
+These are foundational pieces that need completion. Note: Core architecture is migrating toward IWMT (see IWMT Migration section above) - some components may need redesign to align with predictive processing and active inference paradigms.
 
 ### Perception & Embeddings
 
@@ -153,6 +189,8 @@ These are foundational pieces that need completion:
 | Add streaming support | P1 | Implement token streaming for long-form output generation |
 
 ### Memory System
+
+*Note: Memory system design will be influenced by IWMT migration - consider predictive coding and hierarchical world models in future enhancements.*
 
 | Task | Priority | Description |
 |------|----------|-------------|
@@ -183,6 +221,8 @@ Connect newly implemented systems to the cognitive loop:
 
 ### Emotional Dynamics
 
+*Note: Emotion processing will transition to precision-weighting under IWMT (Phase 4) - emotional states will modulate prediction error and uncertainty estimates.*
+
 | Task | Priority | Description |
 |------|----------|-------------|
 | Add emotion-driven attention biasing | P0 | High arousal increases attention to urgent percepts; negative valence biases toward threats |
@@ -198,6 +238,8 @@ Connect newly implemented systems to the cognitive loop:
 | Implement temporal expectation violations | P1 | Detect when expected events don't happen ("They usually respond by now...") |
 
 ### Meta-Cognition Integration
+
+*Note: Meta-cognitive capabilities are central to IWMT's explicit self-modeling (Phase 6) - these features will be integrated into the computational self-model.*
 
 | Task | Priority | Description |
 |------|----------|-------------|
@@ -367,6 +409,37 @@ Priority tasks for next milestone:
 - **P1 (High)**: Important for core functionality but not blocking
 - **P2 (Medium)**: Desirable improvements but not essential
 - **P3 (Low)**: Nice-to-have features for future consideration
+
+---
+
+## 📚 References
+
+### Integrated World Modeling Theory (IWMT)
+
+The following references provide context for the IWMT migration and serve as foundational reading for contributors:
+
+#### Adam Safron's IWMT Papers
+
+- Safron, A. (2020). "An Integrated World Modeling Theory (IWMT) of Consciousness: Combining Integrated Information and Global Neuronal Workspace Theories With the Free Energy Principle and Active Inference Framework; Toward Solving the Hard Problem and Characterizing Agentic Causation." *Frontiers in Artificial Intelligence*, 3, 30. [https://doi.org/10.3389/frai.2020.00030](https://doi.org/10.3389/frai.2020.00030)
+
+- Safron, A. (2021). "Integrated World Modeling Theory Expanded: Implications for the Future of Consciousness." *Entropy*, 23(6), 642. [https://doi.org/10.3390/e23060642](https://doi.org/10.3390/e23060642)
+
+- Safron, A. (2022). "The Radically Embodied Conscious Cybernetic Bayesian Brain: From Free Energy to Free Will and Back Again." *Entropy*, 24(6), 783. [https://doi.org/10.3390/e24060783](https://doi.org/10.3390/e24060783)
+
+#### OpenCog & MeTTa/Hyperon
+
+Official documentation and resources for MeTTa integration (Phase 5):
+
+- OpenCog Hyperon Project: [https://github.com/trueagi-io/hyperon-experimental](https://github.com/trueagi-io/hyperon-experimental)
+- MeTTa Language Documentation: [https://wiki.opencog.org/w/MeTTa](https://wiki.opencog.org/w/MeTTa)
+- OpenCog Foundation: [https://opencog.org/](https://opencog.org/)
+- Atomspace Documentation: [https://wiki.opencog.org/w/AtomSpace](https://wiki.opencog.org/w/AtomSpace)
+
+#### Related Theoretical Frameworks
+
+- Friston, K. (2010). "The free-energy principle: a unified brain theory?" *Nature Reviews Neuroscience*, 11(2), 127-138. (Active Inference foundation)
+- Baars, B. J. (1988). "A Cognitive Theory of Consciousness." Cambridge University Press. (Global Workspace Theory - legacy reference)
+- Clark, A. (2013). "Whatever next? Predictive brains, situated agents, and the future of cognitive science." *Behavioral and Brain Sciences*, 36(3), 181-204. (Predictive Processing)
 
 ---
 

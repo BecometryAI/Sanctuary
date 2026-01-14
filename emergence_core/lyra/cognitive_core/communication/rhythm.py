@@ -16,6 +16,14 @@ from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
+# Configuration constants
+MIN_PAUSE_THRESHOLD = 0.5  # Minimum natural pause threshold in seconds
+MIN_RAPID_THRESHOLD = 0.1  # Minimum rapid exchange threshold in seconds
+MIN_TURN_HISTORY = 10      # Minimum turn history to maintain
+MIN_RESPONSE_TIME = 0.5    # Minimum average response time in seconds
+MIN_TURN_LENGTH = 10.0     # Minimum average turn length in characters
+PAUSE_NORMALIZATION_FACTOR = 2.0  # Multiplier for pause appropriateness normalization
+
 
 class ConversationPhase(Enum):
     """Current phase of conversation flow."""
@@ -90,11 +98,11 @@ class ConversationalRhythmModel:
         
         # Load configuration
         config = config or {}
-        self.natural_pause_threshold = max(0.5, config.get("natural_pause_threshold", 2.0))
-        self.rapid_exchange_threshold = max(0.1, config.get("rapid_exchange_threshold", 1.0))
-        self.max_turn_history = max(10, config.get("max_turn_history", 50))
-        self.avg_response_time = max(0.5, config.get("default_response_time", 2.0))
-        self.avg_turn_length = max(10.0, config.get("default_turn_length", 50.0))
+        self.natural_pause_threshold = max(MIN_PAUSE_THRESHOLD, config.get("natural_pause_threshold", 2.0))
+        self.rapid_exchange_threshold = max(MIN_RAPID_THRESHOLD, config.get("rapid_exchange_threshold", 1.0))
+        self.max_turn_history = max(MIN_TURN_HISTORY, config.get("max_turn_history", 50))
+        self.avg_response_time = max(MIN_RESPONSE_TIME, config.get("default_response_time", 2.0))
+        self.avg_turn_length = max(MIN_TURN_LENGTH, config.get("default_turn_length", 50.0))
         
         logger.debug(
             f"ConversationalRhythmModel initialized: "
@@ -167,6 +175,22 @@ class ConversationalRhythmModel:
         self.update_phase()
         self._update_averages()
     
+    def _get_silence_duration(self) -> float:
+        """
+        Get silence duration since last completed turn.
+        
+        Returns:
+            Seconds since last turn ended, or 0.0 if current turn is incomplete
+        """
+        if not self.turns:
+            return 0.0
+        
+        last_turn = self.turns[-1]
+        if not last_turn.is_complete:
+            return 0.0
+        
+        return (datetime.now() - last_turn.ended_at).total_seconds()
+    
     def update_phase(self) -> None:
         """Update current conversation phase based on timing and turn state."""
         now = datetime.now()
@@ -177,7 +201,6 @@ class ConversationalRhythmModel:
             return
         
         last_turn = self.turns[-1]
-        time_since_last_turn = (now - last_turn.started_at).total_seconds()
         
         # Check for rapid exchange (multiple turns in quick succession)
         if len(self.turns) >= 3:
@@ -201,8 +224,9 @@ class ConversationalRhythmModel:
             else:
                 self.current_phase = ConversationPhase.SYSTEM_SPEAKING
         elif last_turn.speaker == "human":
-            # Human spoke last, now silent
-            if time_since_last_turn < self.natural_pause_threshold:
+            # Human spoke last, now silent - measure time since turn ended
+            silence_duration = self._get_silence_duration()
+            if silence_duration < self.natural_pause_threshold:
                 self.current_phase = ConversationPhase.HUMAN_PAUSED
             else:
                 self.current_phase = ConversationPhase.MUTUAL_SILENCE
@@ -228,7 +252,12 @@ class ConversationalRhythmModel:
             return 0.8  # No conversation yet, slightly appropriate
         
         last_turn = self.turns[-1]
-        time_since_last = (datetime.now() - last_turn.started_at).total_seconds()
+        
+        # For completed turns, use silence duration; for incomplete, use turn duration
+        if last_turn.is_complete:
+            time_since_last = self._get_silence_duration()
+        else:
+            time_since_last = (datetime.now() - last_turn.started_at).total_seconds()
         
         # Phase-based appropriateness
         if self.current_phase == ConversationPhase.HUMAN_SPEAKING:
@@ -237,8 +266,8 @@ class ConversationalRhythmModel:
         
         elif self.current_phase == ConversationPhase.HUMAN_PAUSED:
             # Human paused - appropriateness increases with pause duration
-            # Full appropriateness at 2x the pause threshold
-            normalized_pause = min(1.0, time_since_last / (self.natural_pause_threshold * 2))
+            # Full appropriateness at PAUSE_NORMALIZATION_FACTOR x the pause threshold
+            normalized_pause = min(1.0, time_since_last / (self.natural_pause_threshold * PAUSE_NORMALIZATION_FACTOR))
             return 0.3 + (0.7 * normalized_pause)
         
         elif self.current_phase == ConversationPhase.SYSTEM_SPEAKING:
@@ -281,7 +310,12 @@ class ConversationalRhythmModel:
             return 0.5  # Brief wait to be polite
         
         last_turn = self.turns[-1]
-        time_since_last = (datetime.now() - last_turn.started_at).total_seconds()
+        
+        # For completed turns, use silence duration; for incomplete, use turn duration
+        if last_turn.is_complete:
+            time_since_last = self._get_silence_duration()
+        else:
+            time_since_last = (datetime.now() - last_turn.started_at).total_seconds()
         
         # Calculate wait time based on phase
         if self.current_phase == ConversationPhase.HUMAN_SPEAKING:
@@ -325,9 +359,8 @@ class ConversationalRhythmModel:
         
         # Natural pause conditions
         if self.current_phase in [ConversationPhase.HUMAN_PAUSED, ConversationPhase.MUTUAL_SILENCE]:
-            last_turn = self.turns[-1]
-            time_since_last = (datetime.now() - last_turn.started_at).total_seconds()
-            return time_since_last >= self.natural_pause_threshold
+            silence_duration = self._get_silence_duration()
+            return silence_duration >= self.natural_pause_threshold
         
         # Rapid exchange with human just spoke
         if self.current_phase == ConversationPhase.RAPID_EXCHANGE:

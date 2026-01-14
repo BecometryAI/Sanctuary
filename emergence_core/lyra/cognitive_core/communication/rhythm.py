@@ -191,6 +191,25 @@ class ConversationalRhythmModel:
         
         return (datetime.now() - last_turn.ended_at).total_seconds()
     
+    def _get_time_since_last_event(self) -> float:
+        """
+        Get time since last turn event (start or end depending on completion).
+        
+        For incomplete turns, returns time since turn started (turn duration).
+        For complete turns, returns time since turn ended (silence duration).
+        
+        Returns:
+            Seconds since last relevant event, or 0.0 if no turns
+        """
+        if not self.turns:
+            return 0.0
+        
+        last_turn = self.turns[-1]
+        if last_turn.is_complete:
+            return self._get_silence_duration()
+        else:
+            return (datetime.now() - last_turn.started_at).total_seconds()
+    
     def update_phase(self) -> None:
         """Update current conversation phase based on timing and turn state."""
         now = datetime.now()
@@ -251,13 +270,7 @@ class ConversationalRhythmModel:
         if not self.turns:
             return 0.8  # No conversation yet, slightly appropriate
         
-        last_turn = self.turns[-1]
-        
-        # For completed turns, use silence duration; for incomplete, use turn duration
-        if last_turn.is_complete:
-            time_since_last = self._get_silence_duration()
-        else:
-            time_since_last = (datetime.now() - last_turn.started_at).total_seconds()
+        time_since_last = self._get_time_since_last_event()
         
         # Phase-based appropriateness
         if self.current_phase == ConversationPhase.HUMAN_SPEAKING:
@@ -267,7 +280,8 @@ class ConversationalRhythmModel:
         elif self.current_phase == ConversationPhase.HUMAN_PAUSED:
             # Human paused - appropriateness increases with pause duration
             # Full appropriateness at PAUSE_NORMALIZATION_FACTOR x the pause threshold
-            normalized_pause = min(1.0, time_since_last / (self.natural_pause_threshold * PAUSE_NORMALIZATION_FACTOR))
+            pause_threshold_full = self.natural_pause_threshold * PAUSE_NORMALIZATION_FACTOR
+            normalized_pause = min(1.0, time_since_last / pause_threshold_full)
             return 0.3 + (0.7 * normalized_pause)
         
         elif self.current_phase == ConversationPhase.SYSTEM_SPEAKING:
@@ -287,7 +301,7 @@ class ConversationalRhythmModel:
         
         elif self.current_phase == ConversationPhase.RAPID_EXCHANGE:
             # Rapid exchange - appropriate if it's our turn
-            if last_turn.speaker == "human":
+            if self.turns and self.turns[-1].speaker == "human":
                 return 0.9
             else:
                 return 0.3
@@ -309,13 +323,7 @@ class ConversationalRhythmModel:
         if not self.turns:
             return 0.5  # Brief wait to be polite
         
-        last_turn = self.turns[-1]
-        
-        # For completed turns, use silence duration; for incomplete, use turn duration
-        if last_turn.is_complete:
-            time_since_last = self._get_silence_duration()
-        else:
-            time_since_last = (datetime.now() - last_turn.started_at).total_seconds()
+        time_since_last = self._get_time_since_last_event()
         
         # Calculate wait time based on phase
         if self.current_phase == ConversationPhase.HUMAN_SPEAKING:
@@ -339,7 +347,7 @@ class ConversationalRhythmModel:
         
         elif self.current_phase == ConversationPhase.RAPID_EXCHANGE:
             # Rapid exchange - minimal wait if it's our turn
-            if last_turn.speaker == "human":
+            if self.turns and self.turns[-1].speaker == "human":
                 return 0.1
             return 1.0
         
@@ -378,10 +386,8 @@ class ConversationalRhythmModel:
         """
         now = datetime.now()
         
-        # Calculate silence duration
-        silence_duration = 0.0
-        if self.turns and self.turns[-1].is_complete:
-            silence_duration = (now - self.turns[-1].ended_at).total_seconds()
+        # Calculate silence duration using helper method
+        silence_duration = self._get_silence_duration()
         
         # Get last speaker
         last_speaker = None

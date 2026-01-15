@@ -85,6 +85,28 @@ from .communication import (
     CommunicationUrge,
     DriveType
 )
+# IWMT components
+from .world_model import (
+    WorldModel,
+    Prediction,
+    PredictionError,
+    SelfModel,
+    EnvironmentModel,
+    EntityModel,
+    Relationship
+)
+from .active_inference import (
+    FreeEnergyMinimizer,
+    ActiveInferenceActionSelector,
+    ActionEvaluation
+)
+from .precision_weighting import PrecisionWeighting
+from .metta import (
+    AtomspaceBridge,
+    COMMUNICATION_DECISION_RULES,
+    PREDICTION_RULES
+)
+from .iwmt_core import IWMTCore
 
 __all__ = [
     "CognitiveCore",
@@ -166,4 +188,20 @@ __all__ = [
     "CommunicationDriveSystem",
     "CommunicationUrge",
     "DriveType",
+    # IWMT exports
+    "WorldModel",
+    "Prediction",
+    "PredictionError",
+    "SelfModel",
+    "EnvironmentModel",
+    "EntityModel",
+    "Relationship",
+    "FreeEnergyMinimizer",
+    "ActiveInferenceActionSelector",
+    "ActionEvaluation",
+    "PrecisionWeighting",
+    "AtomspaceBridge",
+    "COMMUNICATION_DECISION_RULES",
+    "PREDICTION_RULES",
+    "IWMTCore",
 ]

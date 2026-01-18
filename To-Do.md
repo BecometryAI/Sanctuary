@@ -249,9 +249,11 @@ Connect newly implemented systems to the cognitive loop:
 
 | Task | Priority | Description |
 |------|----------|-------------|
-| Add emotion-driven attention biasing | P0 | High arousal increases attention to urgent percepts; negative valence biases toward threats |
+| Add emotion-driven attention biasing | P0 | Implement comprehensive VAD-based attention modulation:<br>• **Valence**: Negative → threat/loss detection, problem-focused; Positive → opportunity/reward detection, novelty-attracted<br>• **Arousal**: High → broad vigilant scanning, low precision, reactive; Low → narrow focused attention, high precision, deliberate<br>• **Dominance**: Low → external threat monitoring, cautious; High → goal/action-oriented focus, confident<br>• **Emotion Patterns**: Fear (V-,A+,D-) → hyper-vigilant threat-scanning; Anger (V-,A+,D+) → obstacle-focused, target-locked; Sadness (V-,A-,D-) → inward rumination, withdrawal; Joy (V+,A+,D+) → expansive opportunity-seeking; Calm (V+,A-,D+) → precise deep processing; Anxiety (V-,A+,D-) → diffuse uncertainty-scanning; Curiosity (V+,A+,D+) → novelty-seeking, exploratory; Boredom (V0,A-,D-) → novelty-seeking to escape<br>• **Interaction Effects**: High arousal + negative valence → emergency threat mode; High arousal + positive valence → excited exploration mode; Low arousal + negative valence → depressive rumination; Low arousal + positive valence → flow state deep focus<br>• **IWMT Integration**: Emotional states modulate precision weighting on predictions per Active Inference framework |
 | Implement mood persistence | P0 | Emotional states should have momentum and gradual decay |
 | Add emotion-triggered memory retrieval | P1 | Strong emotions should trigger relevant memory retrieval |
+
+*Note: This comprehensive emotion-attention model aligns with IWMT Phase 4 (Precision-weighted Attention) - emotional states directly modulate precision/uncertainty estimates in the predictive processing framework.*
 
 ### Temporal Grounding Integration
 

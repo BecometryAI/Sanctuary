@@ -44,6 +44,11 @@ def deprecated(reason: str):
 from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine
 
 from .workspace import GlobalWorkspace, Percept
+from .emotional_attention import (
+    EmotionalAttentionSystem,
+    EmotionalState as EmotionalAttentionState,
+    EmotionalAttentionOutput
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -519,6 +524,7 @@ class AttentionController:
         competition_iterations: int = 10,
         coalition_boost: float = 0.2,
         precision_weighting: Optional[Any] = None,
+        emotional_attention: Optional[EmotionalAttentionSystem] = None,
     ) -> None:
         """
         Initialize the attention controller.
@@ -538,6 +544,7 @@ class AttentionController:
             competition_iterations: Number of competition iterations (1-100)
             coalition_boost: Boost factor for coalition members (0.0-1.0)
             precision_weighting: IWMT PrecisionWeighting instance for precision-weighted attention
+            emotional_attention: EmotionalAttentionSystem for comprehensive emotion-driven modulation
 
         Note: Weights should sum to approximately 1.0 for balanced scoring.
         """
@@ -570,6 +577,11 @@ class AttentionController:
         self.precision_weighting = precision_weighting
         self.use_iwmt_precision = precision_weighting is not None
 
+        # Emotional attention system for comprehensive emotion-driven modulation
+        self.emotional_attention = emotional_attention
+        self.use_emotional_attention = emotional_attention is not None
+        self._last_emotional_modulation: Optional[EmotionalAttentionOutput] = None
+
         # History tracking
         self.recent_percepts: deque = deque(maxlen=50)
         self.attention_history: List[Dict[str, Any]] = []
@@ -581,7 +593,8 @@ class AttentionController:
         
         logger.info(
             f"AttentionController initialized: budget={attention_budget}, "
-            f"mode={initial_mode.value}, GWT_competitive={use_competition}"
+            f"mode={initial_mode.value}, GWT_competitive={use_competition}, "
+            f"emotional_attention={self.use_emotional_attention}"
         )
 
     def select_for_broadcast(
@@ -670,20 +683,35 @@ class AttentionController:
             )
             logger.debug("🎯 Applied IWMT precision weighting to attention scores")
 
+        # Apply emotional attention modulation if enabled
+        emotional_modulation = None
+        if self.use_emotional_attention and emotional_state is not None:
+            emotional_modulation = self._compute_emotional_modulation(emotional_state)
+            if emotional_modulation:
+                # Apply priority modifiers to scores
+                base_scores = self._apply_emotional_priority_modifiers(
+                    base_scores, candidates, emotional_modulation
+                )
+                logger.debug("🎭 Applied emotional priority modifiers to attention scores")
+
         # Select using competitive dynamics (GWT) or legacy mode
         if self.use_competition and self.competitive_attention:
             # Apply emotional modulation to competition parameters BEFORE selection
-            if self.affect and hasattr(self.affect, 'get_processing_params'):
+            # Prefer comprehensive emotional attention system over legacy affect
+            if emotional_modulation:
+                self._apply_emotional_competition_params(emotional_modulation)
+            elif self.affect and hasattr(self.affect, 'get_processing_params'):
+                # Legacy fallback to basic affect modulation
                 processing_params = self.affect.get_processing_params()
                 # Modulate competition iterations and ignition threshold based on arousal
                 self.competitive_attention.iterations = processing_params.attention_iterations
                 self.competitive_attention.ignition_threshold = processing_params.ignition_threshold
                 logger.debug(
-                    f"Emotional modulation: iterations={processing_params.attention_iterations}, "
+                    f"Legacy emotional modulation: iterations={processing_params.attention_iterations}, "
                     f"threshold={processing_params.ignition_threshold:.2f} "
                     f"(arousal={processing_params.arousal_level:.2f})"
                 )
-            
+
             selected, metrics = self._select_with_competition(candidates, base_scores)
             self.competition_metrics_history.append(metrics)
         else:
@@ -758,6 +786,129 @@ class AttentionController:
 
         # Apply precision weighting: attention = salience * precision
         return self.precision_weighting.apply_precision_weighting(base_scores, precisions)
+
+    def _compute_emotional_modulation(
+        self,
+        emotional_state: Optional[Dict[str, float]] = None
+    ) -> Optional[EmotionalAttentionOutput]:
+        """
+        Compute emotional attention modulation from current emotional state.
+
+        Converts the basic VAD emotional state dict to a comprehensive
+        EmotionalAttentionState and computes modulation parameters.
+
+        Args:
+            emotional_state: Dict with 'valence', 'arousal', 'dominance' keys
+
+        Returns:
+            EmotionalAttentionOutput if emotional attention is enabled, None otherwise
+        """
+        if not self.use_emotional_attention or not self.emotional_attention:
+            return None
+
+        if not emotional_state:
+            return None
+
+        # Convert dict to EmotionalAttentionState
+        # First, try to get emotion label if available
+        emotion_label = emotional_state.get("label", "calm")
+        intensity = emotional_state.get("intensity", 0.3)
+
+        # Create EmotionalAttentionState from VAD values
+        state = EmotionalAttentionState(
+            primary_emotion=emotion_label,
+            intensity=intensity,
+            valence=emotional_state.get("valence", 0.1),
+            arousal=emotional_state.get("arousal", 0.3),
+            dominance=emotional_state.get("dominance", 0.5),
+            approach=emotional_state.get("approach", 0.2)
+        )
+
+        # Compute modulation
+        modulation = self.emotional_attention.compute_modulation(state)
+        self._last_emotional_modulation = modulation
+
+        return modulation
+
+    def _apply_emotional_priority_modifiers(
+        self,
+        base_scores: Dict[str, float],
+        percepts: List[Percept],
+        modulation: EmotionalAttentionOutput
+    ) -> Dict[str, float]:
+        """
+        Apply emotional priority modifiers to attention scores.
+
+        Args:
+            base_scores: Base attention scores by percept ID
+            percepts: List of percepts being scored
+            modulation: EmotionalAttentionOutput with priority modifiers
+
+        Returns:
+            Modified attention scores
+        """
+        if not modulation.percept_priority_modifiers:
+            return base_scores
+
+        modified_scores = base_scores.copy()
+
+        for percept in percepts:
+            # Check percept metadata for category tags
+            categories = percept.metadata.get("categories", [])
+            modality = percept.modality
+
+            # Also infer categories from content
+            percept_text = str(percept.raw).lower() if percept.raw else ""
+
+            total_modifier = 0.0
+
+            # Apply modifiers for matching categories
+            for category, modifier in modulation.percept_priority_modifiers.items():
+                if category in categories:
+                    total_modifier += modifier
+                elif category == modality:
+                    total_modifier += modifier * 0.5
+                # Simple keyword matching for common categories
+                elif category == "threat" and any(w in percept_text for w in ["error", "fail", "danger", "warning"]):
+                    total_modifier += modifier
+                elif category == "opportunity" and any(w in percept_text for w in ["success", "complete", "achieve"]):
+                    total_modifier += modifier
+                elif category == "social" and any(w in percept_text for w in ["user", "feedback", "request"]):
+                    total_modifier += modifier
+                elif category == "novel" and percept.metadata.get("novelty", 0) > 0.6:
+                    total_modifier += modifier
+
+            # Apply modifier (additive, clamped to reasonable range)
+            if percept.id in modified_scores:
+                modified_scores[percept.id] = max(0.0, min(2.0, modified_scores[percept.id] + total_modifier))
+
+        return modified_scores
+
+    def _apply_emotional_competition_params(
+        self,
+        modulation: EmotionalAttentionOutput
+    ) -> None:
+        """
+        Apply emotional modulation to competition parameters.
+
+        Modifies the CompetitiveAttention instance parameters based on
+        the emotional state.
+
+        Args:
+            modulation: EmotionalAttentionOutput with competition parameters
+        """
+        if not self.competitive_attention:
+            return
+
+        # Apply modulated parameters
+        self.competitive_attention.ignition_threshold = modulation.ignition_threshold
+        self.competitive_attention.inhibition_strength = modulation.inhibition_strength
+        self.competitive_attention.iterations = modulation.competition_iterations
+
+        logger.debug(
+            f"🎭 Emotional competition params: threshold={modulation.ignition_threshold:.2f}, "
+            f"inhibition={modulation.inhibition_strength:.2f}, iterations={modulation.competition_iterations}"
+        )
 
     def _select_with_competition(
         self,

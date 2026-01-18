@@ -27,6 +27,12 @@ from numpy.typing import NDArray
 from .workspace import WorkspaceSnapshot, Goal
 from .action import Action, ActionType
 from .emotional_modulation import EmotionalModulation, ProcessingParams
+from .emotional_attention import (
+    EmotionalAttentionSystem,
+    EmotionalState as EmotionalAttentionState,
+    EmotionalAttentionOutput,
+    EMOTION_REGISTRY
+)
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -192,7 +198,12 @@ class AffectSubsystem:
         # Initialize emotional modulation system
         enable_modulation = self.config.get("enable_modulation", True)
         self.emotional_modulation = EmotionalModulation(enabled=enable_modulation)
-        
+
+        # Initialize comprehensive emotional attention system
+        emotional_attention_config = self.config.get("emotional_attention", {})
+        emotional_attention_config.setdefault("baseline", self.baseline)
+        self.emotional_attention_system = EmotionalAttentionSystem(emotional_attention_config)
+
         logger.info(f"✅ AffectSubsystem initialized with baseline: {self.baseline}, modulation: {enable_modulation}")
 
     
@@ -767,5 +778,98 @@ class AffectSubsystem:
             "valence": float(avg_valence),
             "arousal": float(avg_arousal),
             "dominance": float(avg_dominance)
+        }
+
+    def get_emotional_attention_state(self) -> EmotionalAttentionState:
+        """
+        Get current emotional state in EmotionalAttentionState format.
+
+        Converts the VAD-based state to the comprehensive EmotionalAttentionState
+        format used by EmotionalAttentionSystem.
+
+        Returns:
+            EmotionalAttentionState with current emotion, intensity, and dimensions
+        """
+        # Get emotion label from VAD mapping
+        emotion_label = self.get_emotion_label()
+
+        # Map VAD-based emotion categories to emotional_attention profile names
+        emotion_map = {
+            "joy": "joy",
+            "sadness": "sadness",
+            "anger": "anger",
+            "fear": "fear",
+            "surprise": "surprise",
+            "disgust": "disgust",
+            "contentment": "contentment",
+            "anticipation": "anticipation",
+            "neutral": "calm"
+        }
+
+        # Get the mapped emotion name (default to calm)
+        mapped_emotion = emotion_map.get(emotion_label, "calm")
+
+        # Ensure the emotion exists in registry
+        if mapped_emotion not in EMOTION_REGISTRY:
+            mapped_emotion = "calm"
+
+        # Compute intensity from VAD distance
+        intensity = float(np.sqrt(self.valence**2 + self.arousal**2 + self.dominance**2) / np.sqrt(3))
+
+        # Compute approach dimension from valence and dominance
+        approach = (self.valence * 0.6 + self.dominance * 0.4)
+
+        return EmotionalAttentionState(
+            primary_emotion=mapped_emotion,
+            intensity=intensity,
+            valence=float(self.valence),
+            arousal=float(self.arousal),
+            dominance=float(self.dominance),
+            approach=float(approach)
+        )
+
+    def get_emotional_attention_output(self) -> EmotionalAttentionOutput:
+        """
+        Get emotional attention modulation output for current state.
+
+        Computes comprehensive attention modulation based on current
+        emotional state using the EmotionalAttentionSystem.
+
+        Returns:
+            EmotionalAttentionOutput with all modulation parameters
+        """
+        state = self.get_emotional_attention_state()
+        return self.emotional_attention_system.compute_modulation(state)
+
+    def get_extended_state(self) -> Dict[str, Any]:
+        """
+        Get extended emotional state including attention modulation.
+
+        Returns:
+            Dict containing full emotional state with modulation parameters
+        """
+        basic_state = self.get_state()
+        attention_state = self.get_emotional_attention_state()
+        modulation = self.get_emotional_attention_output()
+
+        return {
+            **basic_state,
+            "emotional_attention": {
+                "primary_emotion": attention_state.primary_emotion,
+                "intensity": attention_state.intensity,
+                "intensity_level": attention_state.get_intensity_level().value,
+                "approach": attention_state.approach,
+                "secondary_emotions": attention_state.secondary_emotions,
+                "is_blended": attention_state.is_blended
+            },
+            "attention_modulation": {
+                "precision_modifier": modulation.precision_modifier,
+                "attention_breadth": modulation.attention_breadth,
+                "attention_depth": modulation.attention_depth,
+                "ignition_threshold": modulation.ignition_threshold,
+                "inhibition_strength": modulation.inhibition_strength,
+                "competition_iterations": modulation.competition_iterations,
+                "error_amplification": modulation.error_amplification
+            }
         }
 

@@ -79,12 +79,13 @@ class SubsystemCoordinator:
             self.iwmt_core = None
             logger.info("🧠 IWMT Core disabled (legacy GWT mode)")
         
-        # Initialize attention controller with IWMT precision weighting
+        # Initialize attention controller with IWMT precision weighting and emotional attention
         self.attention = AttentionController(
             attention_budget=config["attention_budget"],
             workspace=workspace,
             affect=self.affect,
-            precision_weighting=self.iwmt_core.precision if self.iwmt_core else None
+            precision_weighting=self.iwmt_core.precision if self.iwmt_core else None,
+            emotional_attention=self.affect.emotional_attention_system
         )
         
         # Initialize perception subsystem

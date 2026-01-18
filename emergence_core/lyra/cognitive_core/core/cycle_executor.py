@@ -50,6 +50,10 @@ class CycleExecutor:
         self.subsystems = subsystems
         self.state = state
         self.action_executor = action_executor
+
+        # IWMT prediction tracking
+        self._current_predictions = []
+        self._current_prediction_errors = []
     
     async def execute_cycle(self) -> Dict[str, float]:
         """
@@ -62,7 +66,32 @@ class CycleExecutor:
             Dict of subsystem timings in milliseconds
         """
         subsystem_timings = {}
-        
+
+        # 0. IWMT PREDICTION: Generate predictions before perception
+        try:
+            step_start = time.time()
+            if hasattr(self.subsystems, 'iwmt_core') and self.subsystems.iwmt_core:
+                context = {
+                    "goals": list(self.state.workspace.goals.values()),
+                    "emotional_state": self.subsystems.affect.get_state(),
+                    "cycle_count": self.state.workspace.cycle_count
+                }
+                self._current_predictions = self.subsystems.iwmt_core.world_model.predict(
+                    time_horizon=1.0,
+                    context=context
+                )
+                self._current_prediction_errors = self.subsystems.iwmt_core.world_model.prediction_errors[-10:]
+                logger.debug(f"🔮 IWMT: Generated {len(self._current_predictions)} predictions")
+            else:
+                self._current_predictions = []
+                self._current_prediction_errors = []
+            subsystem_timings['iwmt_predict'] = (time.time() - step_start) * 1000
+        except Exception as e:
+            logger.error(f"IWMT prediction step failed: {e}", exc_info=True)
+            self._current_predictions = []
+            self._current_prediction_errors = []
+            subsystem_timings['iwmt_predict'] = 0.0
+
         # 1. PERCEPTION: Process queued inputs
         try:
             step_start = time.time()
@@ -72,7 +101,22 @@ class CycleExecutor:
             logger.error(f"Perception step failed: {e}", exc_info=True)
             new_percepts = []
             subsystem_timings['perception'] = 0.0
-        
+
+        # 1.5. IWMT UPDATE: Update world model with new percepts
+        try:
+            if hasattr(self.subsystems, 'iwmt_core') and self.subsystems.iwmt_core and new_percepts:
+                step_start = time.time()
+                for percept in new_percepts:
+                    error = self.subsystems.iwmt_core.world_model.update_on_percept(percept)
+                    if error:
+                        self._current_prediction_errors.append(error)
+                subsystem_timings['iwmt_update'] = (time.time() - step_start) * 1000
+                if self._current_prediction_errors:
+                    logger.debug(f"🔮 IWMT: {len(self._current_prediction_errors)} prediction errors detected")
+        except Exception as e:
+            logger.error(f"IWMT update step failed: {e}", exc_info=True)
+            subsystem_timings['iwmt_update'] = 0.0
+
         # 2. MEMORY RETRIEVAL: Check for memory retrieval goals
         try:
             step_start = time.time()
@@ -82,10 +126,17 @@ class CycleExecutor:
             logger.error(f"Memory retrieval step failed: {e}", exc_info=True)
             subsystem_timings['memory_retrieval'] = 0.0
         
-        # 3. ATTENTION: Select for conscious awareness
+        # 3. ATTENTION: Select for conscious awareness (with IWMT precision weighting)
         try:
             step_start = time.time()
-            attended = self.subsystems.attention.select_for_broadcast(new_percepts)
+            # Get emotional state for precision weighting
+            emotional_state = self.subsystems.affect.get_state()
+            # Pass prediction context for IWMT precision-weighted attention
+            attended = self.subsystems.attention.select_for_broadcast(
+                new_percepts,
+                emotional_state=emotional_state,
+                prediction_errors=self._current_prediction_errors
+            )
             subsystem_timings['attention'] = (time.time() - step_start) * 1000
         except Exception as e:
             logger.error(f"Attention step failed: {e}", exc_info=True)

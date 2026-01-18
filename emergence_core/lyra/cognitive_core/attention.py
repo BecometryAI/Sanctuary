@@ -15,6 +15,8 @@ The attention mechanism is crucial for:
 from __future__ import annotations
 
 import logging
+import warnings
+from functools import wraps
 from collections import deque
 from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass, field
@@ -22,6 +24,23 @@ from enum import Enum
 from datetime import datetime
 
 import numpy as np
+
+
+def deprecated(reason: str):
+    """Decorator to mark methods as deprecated with a reason."""
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            warnings.warn(
+                f"{func.__name__} is deprecated: {reason}",
+                DeprecationWarning,
+                stacklevel=2
+            )
+            return func(*args, **kwargs)
+        wrapper._deprecated = True
+        wrapper._deprecated_reason = reason
+        return wrapper
+    return decorator
 from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine
 
 from .workspace import GlobalWorkspace, Percept
@@ -499,6 +518,7 @@ class AttentionController:
         ignition_threshold: float = 0.5,
         competition_iterations: int = 10,
         coalition_boost: float = 0.2,
+        precision_weighting: Optional[Any] = None,
     ) -> None:
         """
         Initialize the attention controller.
@@ -517,6 +537,7 @@ class AttentionController:
             ignition_threshold: Activation threshold for workspace entry (0.0-1.0)
             competition_iterations: Number of competition iterations (1-100)
             coalition_boost: Boost factor for coalition members (0.0-1.0)
+            precision_weighting: IWMT PrecisionWeighting instance for precision-weighted attention
 
         Note: Weights should sum to approximately 1.0 for balanced scoring.
         """
@@ -544,7 +565,11 @@ class AttentionController:
             iterations=competition_iterations,
             coalition_boost=coalition_boost,
         ) if use_competition else None
-        
+
+        # IWMT precision weighting for attention modulation
+        self.precision_weighting = precision_weighting
+        self.use_iwmt_precision = precision_weighting is not None
+
         # History tracking
         self.recent_percepts: deque = deque(maxlen=50)
         self.attention_history: List[Dict[str, Any]] = []
@@ -559,19 +584,30 @@ class AttentionController:
             f"mode={initial_mode.value}, GWT_competitive={use_competition}"
         )
 
-    def select_for_broadcast(self, candidates: List[Percept]) -> List[Percept]:
+    def select_for_broadcast(
+        self,
+        candidates: List[Percept],
+        emotional_state: Optional[Dict[str, float]] = None,
+        prediction_errors: Optional[List[Any]] = None
+    ) -> List[Percept]:
         """
         Scores candidate percepts and selects top-scoring ones within budget.
-        
+
         Uses GWT-compliant competitive dynamics by default (use_competition=True),
-        or legacy top-N selection if disabled.
-        
+        or legacy top-N selection if disabled. When IWMT precision weighting is
+        enabled, attention scores are modulated by prediction errors and
+        emotional state.
+
         Args:
             candidates: List of candidate percepts to evaluate
-            
+            emotional_state: Optional emotional state dict with 'arousal' and 'valence'
+                for IWMT precision weighting
+            prediction_errors: Optional list of PredictionError objects for
+                IWMT precision weighting (high errors -> higher attention)
+
         Returns:
             Sorted list of selected percepts (highest scoring first)
-            
+
         Raises:
             TypeError: If candidates is not a list or contains non-Percept items
         """
@@ -626,7 +662,14 @@ class AttentionController:
                 total_score = base_score
             
             base_scores[percept.id] = total_score
-        
+
+        # Apply IWMT precision weighting if enabled
+        if self.use_iwmt_precision and emotional_state is not None:
+            base_scores = self._apply_precision_weighting(
+                base_scores, candidates, emotional_state, prediction_errors
+            )
+            logger.debug("🎯 Applied IWMT precision weighting to attention scores")
+
         # Select using competitive dynamics (GWT) or legacy mode
         if self.use_competition and self.competitive_attention:
             # Apply emotional modulation to competition parameters BEFORE selection
@@ -665,7 +708,57 @@ class AttentionController:
         )
         
         return selected
-    
+
+    def _apply_precision_weighting(
+        self,
+        base_scores: Dict[str, float],
+        percepts: List[Percept],
+        emotional_state: Dict[str, float],
+        prediction_errors: Optional[List[Any]] = None
+    ) -> Dict[str, float]:
+        """
+        Apply IWMT precision weighting to attention scores.
+
+        Precision = inverse uncertainty. High prediction error -> high precision
+        (attend to surprises). High arousal -> lower precision (more uncertain).
+
+        Args:
+            base_scores: Initial attention scores by percept ID
+            percepts: List of percepts being scored
+            emotional_state: Current emotional state (arousal, valence)
+            prediction_errors: Optional list of prediction errors from world model
+
+        Returns:
+            Precision-weighted attention scores
+        """
+        if not self.use_iwmt_precision or not self.precision_weighting:
+            return base_scores
+
+        # Compute precision for each percept
+        precisions = {}
+        for percept in percepts:
+            # Find matching prediction error if available
+            error_magnitude = None
+            if prediction_errors:
+                for error in prediction_errors:
+                    # Match by checking if percept content appears in error
+                    if hasattr(error, 'actual'):
+                        percept_str = str(getattr(percept, 'raw', ''))[:50]
+                        error_str = str(error.actual)
+                        if percept_str and percept_str in error_str:
+                            error_magnitude = error.magnitude
+                            break
+
+            precision = self.precision_weighting.compute_precision(
+                percept,
+                emotional_state,
+                error_magnitude
+            )
+            precisions[percept.id] = precision
+
+        # Apply precision weighting: attention = salience * precision
+        return self.precision_weighting.apply_precision_weighting(base_scores, precisions)
+
     def _select_with_competition(
         self,
         candidates: List[Percept],
@@ -756,10 +849,14 @@ class AttentionController:
         
         return selected
 
+    @deprecated("Use select_for_broadcast() with emotional_state and prediction_errors params for IWMT precision weighting. Will be removed in v2.0.")
     def _score(self, percept: Percept) -> float:
         """
-        Calculates relevance score for a single percept.
-        
+        DEPRECATED: Calculates relevance score for a single percept without precision weighting.
+
+        Use select_for_broadcast() with emotional_state and prediction_errors params instead
+        for IWMT-enabled precision-weighted attention.
+
         Score components:
         - Goal relevance (0.0-1.0): Cosine similarity with current goals
         - Novelty (0.0-1.0): How different from recent percepts

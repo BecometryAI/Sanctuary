@@ -68,12 +68,23 @@ class SubsystemCoordinator:
         
         # Initialize affect subsystem first (needed by attention and action)
         self.affect = AffectSubsystem(config=config.get("affect", {}))
+
+        # Initialize IWMT core (needed by attention for precision weighting)
+        iwmt_config = config.get("iwmt", {"enabled": True})
+        if iwmt_config.get("enabled", True):
+            from ..iwmt_core import IWMTCore
+            self.iwmt_core = IWMTCore(iwmt_config)
+            logger.info("🧠 IWMT Core initialized (predictive processing enabled)")
+        else:
+            self.iwmt_core = None
+            logger.info("🧠 IWMT Core disabled (legacy GWT mode)")
         
-        # Initialize attention controller
+        # Initialize attention controller with IWMT precision weighting
         self.attention = AttentionController(
             attention_budget=config["attention_budget"],
             workspace=workspace,
-            affect=self.affect
+            affect=self.affect,
+            precision_weighting=self.iwmt_core.precision if self.iwmt_core else None
         )
         
         # Initialize perception subsystem
@@ -158,7 +169,28 @@ class SubsystemCoordinator:
             config=config.get("communication", {})
         )
         logger.debug("💬 Communication drive system initialized")
-        
+
+        # Initialize communication inhibition system
+        from ..communication import CommunicationInhibitionSystem
+        self.communication_inhibitions = CommunicationInhibitionSystem(
+            config=config.get("communication", {})
+        )
+        logger.debug("💬 Communication inhibition system initialized")
+
+        # Initialize communication decision loop with active inference
+        from ..communication import CommunicationDecisionLoop
+        self.communication_decision = CommunicationDecisionLoop(
+            drive_system=self.communication_drives,
+            inhibition_system=self.communication_inhibitions,
+            config=config.get("communication", {}),
+            free_energy_minimizer=self.iwmt_core.free_energy if self.iwmt_core else None,
+            world_model=self.iwmt_core.world_model if self.iwmt_core else None
+        )
+        if self.iwmt_core:
+            logger.info("💬 Communication decision loop initialized with active inference")
+        else:
+            logger.debug("💬 Communication decision loop initialized (legacy mode)")
+
         # Initialize LLM clients for language interfaces
         self._initialize_llm_clients()
         

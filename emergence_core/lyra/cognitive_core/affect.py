@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import deque
 from enum import Enum
 import logging
@@ -31,7 +31,8 @@ from .emotional_attention import (
     EmotionalAttentionSystem,
     EmotionalState as EmotionalAttentionState,
     EmotionalAttentionOutput,
-    EMOTION_REGISTRY
+    EMOTION_REGISTRY,
+    EmotionProfile
 )
 
 # Configure logging
@@ -204,77 +205,135 @@ class AffectSubsystem:
         emotional_attention_config.setdefault("baseline", self.baseline)
         self.emotional_attention_system = EmotionalAttentionSystem(emotional_attention_config)
 
-        logger.info(f"✅ AffectSubsystem initialized with baseline: {self.baseline}, modulation: {enable_modulation}")
+        # =====================================================================
+        # Mood Persistence State
+        # =====================================================================
+
+        # Current dominant emotion (for emotion-specific dynamics)
+        self._current_emotion: str = "calm"
+        self._emotion_onset_time: datetime = datetime.now()
+        self._emotion_intensity: float = 0.3
+
+        # Momentum tracking (resistance to change)
+        self._momentum_enabled = self.config.get("momentum_enabled", True)
+        self._momentum_strength = self.config.get("momentum_strength", 0.6)
+
+        # Refractory period tracking (prevents rapid emotion switching)
+        self._refractory_enabled = self.config.get("refractory_enabled", True)
+        self._last_emotion_change: datetime = datetime.now()
+        self._refractory_until: Dict[str, datetime] = {}  # emotion -> can't switch to until
+
+        # Mood-congruent processing bias
+        self._mood_congruence_enabled = self.config.get("mood_congruence_enabled", True)
+        self._mood_congruence_strength = self.config.get("mood_congruence_strength", 0.3)
+
+        # Mood vs transient emotion tracking
+        self._mood_threshold_duration = self.config.get("mood_threshold_duration", 30.0)  # seconds
+        self._is_mood = False  # True if emotion has persisted long enough to be a mood
+
+        # Emotion transition smoothing
+        self._target_valence: Optional[float] = None
+        self._target_arousal: Optional[float] = None
+        self._target_dominance: Optional[float] = None
+        self._transition_rate = self.config.get("transition_rate", 0.3)
+
+        logger.info(f"✅ AffectSubsystem initialized with baseline: {self.baseline}, "
+                   f"modulation: {enable_modulation}, mood_persistence: {self._momentum_enabled}")
 
     
     def compute_update(self, snapshot: WorkspaceSnapshot) -> Dict[str, float]:
         """
         Compute emotional state update for current cycle.
-        
+
         Calculates emotional changes based on:
         - Goal progress (success/failure)
         - Percept content (emotional stimuli)
         - Action outcomes
         - Meta-cognitive percepts
-        
+
+        Now includes mood persistence features:
+        - Momentum (resistance to change)
+        - Emotion-specific decay rates
+        - Mood-congruent processing bias
+        - Refractory periods
+
         Args:
             snapshot: WorkspaceSnapshot containing current state
-            
+
         Returns:
             Dict with updated valence, arousal, dominance values
         """
         # Calculate deltas from different sources
         goal_deltas = self._update_from_goals(snapshot.goals)
         percept_deltas = self._update_from_percepts(snapshot.percepts)
-        
+
         # Extract recent actions from metadata if available
         recent_actions = []
         if hasattr(snapshot, 'metadata') and isinstance(snapshot.metadata, dict):
             recent_actions = snapshot.metadata.get("recent_actions", [])
         action_deltas = self._update_from_actions(recent_actions)
-        
+
         # Combine deltas (weighted)
-        total_delta = {
+        raw_delta = {
             "valence": (
                 goal_deltas["valence"] * 0.4 +
                 percept_deltas["valence"] * 0.4 +
                 action_deltas["valence"] * 0.2
             ) * self.sensitivity,
-            
+
             "arousal": (
                 goal_deltas["arousal"] * 0.3 +
                 percept_deltas["arousal"] * 0.5 +
                 action_deltas["arousal"] * 0.2
             ) * self.sensitivity,
-            
+
             "dominance": (
                 goal_deltas["dominance"] * 0.3 +
                 percept_deltas["dominance"] * 0.2 +
                 action_deltas["dominance"] * 0.5
             ) * self.sensitivity
         }
-        
-        # Apply deltas
-        self.valence = np.clip(self.valence + total_delta["valence"], -1.0, 1.0)
-        self.arousal = np.clip(self.arousal + total_delta["arousal"], 0.0, 1.0)
-        self.dominance = np.clip(self.dominance + total_delta["dominance"], 0.0, 1.0)
-        
-        # Apply decay toward baseline
-        self._apply_decay()
-        
+
+        # Apply mood-congruent bias (current mood affects interpretation)
+        if self._mood_congruence_enabled:
+            raw_delta = self._apply_mood_congruent_bias(raw_delta)
+
+        # Apply momentum (emotions resist rapid change)
+        if self._momentum_enabled:
+            raw_delta = self._apply_momentum(raw_delta)
+
+        # Check refractory period before applying deltas
+        target_emotion = self._detect_target_emotion(raw_delta)
+        if self._refractory_enabled and not self._can_transition_to(target_emotion):
+            # Reduce delta magnitude if in refractory period
+            raw_delta = {k: v * 0.3 for k, v in raw_delta.items()}
+            logger.debug(f"Refractory period active: dampened transition to {target_emotion}")
+
+        # Apply deltas with smooth transition
+        self._apply_deltas_with_smoothing(raw_delta)
+
+        # Apply emotion-specific decay toward baseline
+        self._apply_decay_with_profiles()
+
+        # Update emotion tracking
+        new_emotion = self.get_emotion_label()
+        self._update_emotion_tracking(new_emotion)
+
         # Record state
         state = EmotionalState(
             valence=self.valence,
             arousal=self.arousal,
             dominance=self.dominance,
-            timestamp=datetime.now()
+            timestamp=datetime.now(),
+            labels=[new_emotion]
         )
         self.emotion_history.append(state)
-        
+
+        mood_indicator = "🌤️ MOOD" if self._is_mood else "⚡ transient"
         logger.debug(f"Emotion update: V={self.valence:.2f}, "
                     f"A={self.arousal:.2f}, D={self.dominance:.2f} "
-                    f"({self.get_emotion_label()})")
-        
+                    f"({new_emotion}) [{mood_indicator}]")
+
         return state.to_dict()
     
     def _update_from_goals(self, goals: List[Goal]) -> Dict[str, float]:
@@ -521,7 +580,7 @@ class AffectSubsystem:
         return deltas
     
     def _apply_decay(self) -> None:
-        """Gradually return emotions to baseline."""
+        """Gradually return emotions to baseline (legacy simple decay)."""
         self.valence = (
             self.valence * (1 - self.decay_rate) +
             self.baseline["valence"] * self.decay_rate
@@ -534,6 +593,307 @@ class AffectSubsystem:
             self.dominance * (1 - self.decay_rate) +
             self.baseline["dominance"] * self.decay_rate
         )
+
+    # =========================================================================
+    # Mood Persistence Methods
+    # =========================================================================
+
+    def _get_current_emotion_profile(self) -> Optional[EmotionProfile]:
+        """Get the EmotionProfile for the current dominant emotion."""
+        if self._current_emotion in EMOTION_REGISTRY:
+            return EMOTION_REGISTRY[self._current_emotion]
+        return EMOTION_REGISTRY.get("calm")
+
+    def _apply_mood_congruent_bias(self, raw_delta: Dict[str, float]) -> Dict[str, float]:
+        """
+        Apply mood-congruent processing bias.
+
+        Current emotional state biases how new events are interpreted:
+        - Negative mood → amplifies negative events, dampens positive
+        - Positive mood → amplifies positive events, dampens negative
+        - High arousal → amplifies arousing events
+
+        Args:
+            raw_delta: Raw emotional deltas from event appraisal
+
+        Returns:
+            Biased deltas reflecting mood-congruent processing
+        """
+        biased_delta = raw_delta.copy()
+        bias = self._mood_congruence_strength
+
+        # Valence congruence: current valence biases valence perception
+        if self.valence > 0.2:
+            # Positive mood: amplify positive, dampen negative
+            if raw_delta["valence"] > 0:
+                biased_delta["valence"] *= (1 + bias)
+            else:
+                biased_delta["valence"] *= (1 - bias * 0.5)
+        elif self.valence < -0.2:
+            # Negative mood: amplify negative, dampen positive
+            if raw_delta["valence"] < 0:
+                biased_delta["valence"] *= (1 + bias)
+            else:
+                biased_delta["valence"] *= (1 - bias * 0.5)
+
+        # Arousal congruence: high arousal state amplifies arousing events
+        if self.arousal > 0.6:
+            if abs(raw_delta["arousal"]) > 0.1:
+                biased_delta["arousal"] *= (1 + bias * 0.5)
+
+        return biased_delta
+
+    def _apply_momentum(self, raw_delta: Dict[str, float]) -> Dict[str, float]:
+        """
+        Apply emotional momentum (resistance to change).
+
+        Emotions have inertia - they resist rapid changes. The momentum
+        depends on the current emotion's profile and how long it has persisted.
+
+        Args:
+            raw_delta: Raw emotional deltas
+
+        Returns:
+            Momentum-adjusted deltas
+        """
+        profile = self._get_current_emotion_profile()
+        if not profile:
+            return raw_delta
+
+        # Get emotion-specific momentum (higher = more resistance to change)
+        emotion_momentum = profile.momentum
+
+        # Moods (long-persisting emotions) have extra momentum
+        if self._is_mood:
+            emotion_momentum = min(1.0, emotion_momentum + 0.2)
+
+        # Combine with global momentum strength
+        effective_momentum = emotion_momentum * self._momentum_strength
+
+        # Apply momentum: high momentum = smaller effective delta
+        dampening = 1.0 - effective_momentum
+        dampened_delta = {
+            "valence": raw_delta["valence"] * dampening,
+            "arousal": raw_delta["arousal"] * dampening,
+            "dominance": raw_delta["dominance"] * dampening
+        }
+
+        return dampened_delta
+
+    def _detect_target_emotion(self, delta: Dict[str, float]) -> str:
+        """
+        Detect which emotion the deltas are pushing toward.
+
+        Args:
+            delta: Emotional deltas
+
+        Returns:
+            Name of the target emotion
+        """
+        # Compute hypothetical new state
+        new_v = np.clip(self.valence + delta["valence"], -1.0, 1.0)
+        new_a = np.clip(self.arousal + delta["arousal"], 0.0, 1.0)
+        new_d = np.clip(self.dominance + delta["dominance"], 0.0, 1.0)
+
+        # Find closest emotion in registry
+        best_emotion = "calm"
+        best_distance = float('inf')
+
+        for name, profile in EMOTION_REGISTRY.items():
+            distance = np.sqrt(
+                (new_v - profile.valence) ** 2 +
+                (new_a - profile.arousal) ** 2 +
+                (new_d - profile.dominance) ** 2
+            )
+            if distance < best_distance:
+                best_distance = distance
+                best_emotion = name
+
+        return best_emotion
+
+    def _can_transition_to(self, target_emotion: str) -> bool:
+        """
+        Check if transition to target emotion is allowed (refractory period).
+
+        After switching away from an emotion, there's a refractory period
+        before switching back to it (prevents emotional oscillation).
+
+        Args:
+            target_emotion: Emotion to potentially transition to
+
+        Returns:
+            True if transition is allowed
+        """
+        # Same emotion is always allowed
+        if target_emotion == self._current_emotion:
+            return True
+
+        # Check if target is in refractory period
+        if target_emotion in self._refractory_until:
+            if datetime.now() < self._refractory_until[target_emotion]:
+                return False
+            else:
+                # Refractory period expired, remove it
+                del self._refractory_until[target_emotion]
+
+        return True
+
+    def _apply_deltas_with_smoothing(self, delta: Dict[str, float]) -> None:
+        """
+        Apply emotional deltas with smooth transition.
+
+        Instead of instant changes, emotions transition smoothly
+        at a rate determined by the emotion profile's onset rate.
+
+        Args:
+            delta: Emotional deltas to apply
+        """
+        profile = self._get_current_emotion_profile()
+        onset_rate = profile.onset_rate if profile else 0.5
+
+        # Combine onset rate with transition rate config
+        effective_rate = onset_rate * self._transition_rate
+
+        # Apply deltas with smoothing
+        self.valence = np.clip(
+            self.valence + delta["valence"] * effective_rate,
+            -1.0, 1.0
+        )
+        self.arousal = np.clip(
+            self.arousal + delta["arousal"] * effective_rate,
+            0.0, 1.0
+        )
+        self.dominance = np.clip(
+            self.dominance + delta["dominance"] * effective_rate,
+            0.0, 1.0
+        )
+
+    def _apply_decay_with_profiles(self) -> None:
+        """
+        Apply emotion-specific decay toward baseline.
+
+        Different emotions decay at different rates based on their
+        profile. Fear decays quickly, love decays slowly.
+        """
+        profile = self._get_current_emotion_profile()
+
+        # Get emotion-specific decay rate (or default)
+        if profile:
+            effective_decay = profile.decay_rate * self.decay_rate
+        else:
+            effective_decay = self.decay_rate
+
+        # Moods decay slower (they've become persistent)
+        if self._is_mood:
+            effective_decay *= 0.5
+
+        # Apply decay toward baseline
+        self.valence = (
+            self.valence * (1 - effective_decay) +
+            self.baseline["valence"] * effective_decay
+        )
+        self.arousal = (
+            self.arousal * (1 - effective_decay) +
+            self.baseline["arousal"] * effective_decay
+        )
+        self.dominance = (
+            self.dominance * (1 - effective_decay) +
+            self.baseline["dominance"] * effective_decay
+        )
+
+    def _update_emotion_tracking(self, new_emotion: str) -> None:
+        """
+        Update emotion tracking state.
+
+        Tracks current emotion, duration, and determines if it
+        has persisted long enough to be considered a mood.
+
+        Args:
+            new_emotion: The newly computed dominant emotion
+        """
+        now = datetime.now()
+
+        if new_emotion != self._current_emotion:
+            # Emotion changed
+
+            # Set refractory period for the old emotion
+            if self._refractory_enabled and self._current_emotion:
+                profile = self._get_current_emotion_profile()
+                refractory_seconds = profile.refractory_period if profile else 5.0
+                self._refractory_until[self._current_emotion] = (
+                    now + timedelta(seconds=refractory_seconds)
+                )
+
+            # Update tracking
+            self._current_emotion = new_emotion
+            self._emotion_onset_time = now
+            self._is_mood = False
+            self._last_emotion_change = now
+
+            logger.debug(f"Emotion changed to: {new_emotion}")
+
+        else:
+            # Same emotion - check if it's now a mood
+            duration = (now - self._emotion_onset_time).total_seconds()
+            if duration >= self._mood_threshold_duration and not self._is_mood:
+                self._is_mood = True
+                logger.info(f"🌤️ {new_emotion} has become a MOOD (persisted {duration:.1f}s)")
+
+        # Update intensity based on VAD distance from neutral
+        self._emotion_intensity = float(np.sqrt(
+            self.valence**2 + self.arousal**2 + self.dominance**2
+        ) / np.sqrt(3))
+
+    def get_mood_state(self) -> Dict[str, Any]:
+        """
+        Get current mood persistence state.
+
+        Returns:
+            Dict with mood tracking information
+        """
+        now = datetime.now()
+        duration = (now - self._emotion_onset_time).total_seconds()
+
+        return {
+            "current_emotion": self._current_emotion,
+            "is_mood": self._is_mood,
+            "emotion_duration_seconds": duration,
+            "emotion_intensity": self._emotion_intensity,
+            "momentum_enabled": self._momentum_enabled,
+            "refractory_emotions": list(self._refractory_until.keys()),
+            "mood_threshold_duration": self._mood_threshold_duration
+        }
+
+    def set_mood(self, emotion: str, intensity: float = 0.6) -> None:
+        """
+        Directly set a mood state.
+
+        Useful for testing or explicit mood induction.
+
+        Args:
+            emotion: Emotion name from registry
+            intensity: Mood intensity (0.0-1.0)
+        """
+        if emotion not in EMOTION_REGISTRY:
+            logger.warning(f"Unknown emotion: {emotion}, defaulting to calm")
+            emotion = "calm"
+
+        profile = EMOTION_REGISTRY[emotion]
+
+        # Set VAD values from profile, scaled by intensity
+        self.valence = profile.valence * intensity
+        self.arousal = profile.arousal * intensity
+        self.dominance = profile.dominance * intensity
+
+        # Mark as mood immediately
+        self._current_emotion = emotion
+        self._emotion_onset_time = datetime.now() - timedelta(
+            seconds=self._mood_threshold_duration + 1
+        )
+        self._is_mood = True
+        self._emotion_intensity = intensity
+
+        logger.info(f"🌤️ Mood set to: {emotion} (intensity={intensity:.2f})")
     
     def get_emotion_label(self) -> str:
         """
@@ -600,18 +960,25 @@ class AffectSubsystem:
     def get_state(self) -> Dict[str, Any]:
         """
         Return current emotional state with metadata.
-        
+
         Returns:
             Dict containing:
             - VAD values
             - Emotion label
             - History statistics
+            - Mood persistence info
         """
+        now = datetime.now()
+        emotion_duration = (now - self._emotion_onset_time).total_seconds()
+
         return {
             "valence": self.valence,
             "arousal": self.arousal,
             "dominance": self.dominance,
             "label": self.get_emotion_label(),
+            "intensity": self._emotion_intensity,
+            "is_mood": self._is_mood,
+            "emotion_duration": emotion_duration,
             "history_size": len(self.emotion_history),
             "baseline": self.baseline.copy()
         }

@@ -121,8 +121,10 @@ class ActiveInferenceActionSelector:
             reliability = self.action_learner.get_action_reliability(action_type)
             
             if not reliability.unknown:
-                # Higher success rate -> lower expected free energy (more preferred)
-                # Reliability bonus reduces EFE for reliable actions
+                # Apply reliability bias to expected free energy:
+                # - reliability_bonus ranges from 0.0 (complete failure) to reliability_weight (perfect success)
+                # - Higher success rate -> larger bonus -> lower EFE (more preferred action)
+                # - Lower success rate -> smaller bonus -> higher EFE (less preferred action)
                 reliability_bonus = reliability.success_rate * self.reliability_weight
                 efe = efe - reliability_bonus
                 

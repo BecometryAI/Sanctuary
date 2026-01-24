@@ -35,8 +35,15 @@ class IWMTCore:
     5. Update self-model from outcomes
     """
     
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """Initialize IWMT core with all components."""
+    def __init__(self, config: Optional[Dict[str, Any]] = None, 
+                 action_learner: Optional[Any] = None):
+        """
+        Initialize IWMT core with all components.
+        
+        Args:
+            config: Optional configuration dictionary
+            action_learner: Optional ActionOutcomeLearner for action reliability
+        """
         config = config or {}
         
         # Core IWMT components
@@ -45,7 +52,8 @@ class IWMTCore:
         self.precision = PrecisionWeighting(config.get("precision", {}))
         self.active_inference = ActiveInferenceActionSelector(
             self.free_energy,
-            config.get("action_selection", {})
+            config.get("action_selection", {}),
+            action_learner=action_learner
         )
         
         # Optional MeTTa integration
@@ -55,7 +63,10 @@ class IWMTCore:
         self.cycle_count = 0
         self.last_cycle_time: Optional[datetime] = None
         
-        logger.info("IWMTCore initialized")
+        if action_learner:
+            logger.info("IWMTCore initialized with action learning integration")
+        else:
+            logger.info("IWMTCore initialized")
     
     async def cognitive_cycle(
         self,

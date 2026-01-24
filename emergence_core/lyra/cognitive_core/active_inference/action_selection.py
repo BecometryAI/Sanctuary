@@ -14,6 +14,7 @@ from datetime import datetime
 
 if TYPE_CHECKING:
     from ..world_model import WorldModel
+    from ..meta_cognition.action_learning import ActionOutcomeLearner
 
 logger = logging.getLogger(__name__)
 
@@ -48,13 +49,15 @@ class ActiveInferenceActionSelector:
     2. Pragmatic value: Do they achieve goals?
     """
     
-    def __init__(self, free_energy_minimizer, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, free_energy_minimizer, config: Optional[Dict[str, Any]] = None, 
+                 action_learner: Optional[ActionOutcomeLearner] = None):
         """
         Initialize action selector.
         
         Args:
             free_energy_minimizer: FreeEnergyMinimizer instance
             config: Optional configuration
+            action_learner: Optional ActionOutcomeLearner for incorporating historical reliability
         """
         self.free_energy = free_energy_minimizer
         config = config or {}
@@ -63,10 +66,17 @@ class ActiveInferenceActionSelector:
         self.action_threshold = config.get("action_threshold", 0.3)
         self.uncertainty_threshold = config.get("uncertainty_threshold", 0.5)
         
+        # Reliability learning integration
+        self.action_learner = action_learner
+        self.reliability_weight = config.get("reliability_weight", 0.2)
+        
         # History
         self.evaluation_history: List[ActionEvaluation] = []
         
-        logger.info("ActiveInferenceActionSelector initialized")
+        if self.action_learner:
+            logger.info("ActiveInferenceActionSelector initialized with action learning")
+        else:
+            logger.info("ActiveInferenceActionSelector initialized (no action learning)")
     
     def evaluate_action(
         self,
@@ -105,6 +115,22 @@ class ActiveInferenceActionSelector:
         elif action_type == "wait":
             epistemic_value = 0.05
             pragmatic_value = 0.0
+        
+        # Incorporate action reliability if available
+        if self.action_learner:
+            reliability = self.action_learner.get_action_reliability(action_type)
+            
+            if not reliability.unknown:
+                # Higher success rate -> lower expected free energy (more preferred)
+                # Reliability bonus reduces EFE for reliable actions
+                reliability_bonus = reliability.success_rate * self.reliability_weight
+                efe = efe - reliability_bonus
+                
+                logger.debug(f"Action {action_type} reliability: {reliability.success_rate:.2f}, "
+                           f"adjusted EFE: {efe:.3f}")
+            else:
+                # Unknown actions get neutral treatment (no penalty or bonus)
+                logger.debug(f"Action {action_type} has no history, neutral treatment")
         
         # Confidence based on world model state
         error_summary = world_model.get_prediction_error_summary()

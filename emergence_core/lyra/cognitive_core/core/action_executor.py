@@ -101,6 +101,10 @@ class ActionExecutor:
             })
             logger.info(f"🗣️ Lyra: {response[:100]}...")
             
+            # Record output time if temporal grounding available
+            if hasattr(self.subsystems, 'temporal_grounding') and self.subsystems.temporal_grounding:
+                self.subsystems.temporal_grounding.record_output()
+            
             # Record output in communication drive system
             if hasattr(self.subsystems, 'communication_drives'):
                 self.subsystems.communication_drives.record_output()
@@ -139,6 +143,10 @@ class ActionExecutor:
                 "timestamp": datetime.now()
             })
             logger.info(f"🗣️💭 Lyra (autonomous): {response[:100]}...")
+            
+            # Record output time if temporal grounding available
+            if hasattr(self.subsystems, 'temporal_grounding') and self.subsystems.temporal_grounding:
+                self.subsystems.temporal_grounding.record_output()
             
             # Record output in communication drive system
             if hasattr(self.subsystems, 'communication_drives'):

@@ -67,6 +67,21 @@ class CycleExecutor:
         """
         subsystem_timings = {}
 
+        # 0a. TEMPORAL CONTEXT: Fetch temporal awareness at cycle start
+        try:
+            step_start = time.time()
+            if hasattr(self.subsystems, 'temporal_grounding') and self.subsystems.temporal_grounding:
+                temporal_context = self.subsystems.temporal_grounding.get_temporal_context()
+                self.state.workspace.set_temporal_context(temporal_context)
+                logger.debug(
+                    f"⏰ Temporal context: session={temporal_context.get('session_duration_seconds', 0):.1f}s, "
+                    f"since_input={temporal_context.get('time_since_last_input_seconds', 'N/A')}"
+                )
+            subsystem_timings['temporal_context'] = (time.time() - step_start) * 1000
+        except Exception as e:
+            logger.error(f"Temporal context step failed: {e}", exc_info=True)
+            subsystem_timings['temporal_context'] = 0.0
+
         # 0. IWMT PREDICTION: Generate predictions before perception
         try:
             step_start = time.time()
@@ -96,6 +111,11 @@ class CycleExecutor:
         try:
             step_start = time.time()
             new_percepts = await self.state.gather_percepts(self.subsystems.perception)
+            
+            # Record input time if we got new percepts
+            if new_percepts and hasattr(self.subsystems, 'temporal_grounding') and self.subsystems.temporal_grounding:
+                self.subsystems.temporal_grounding.record_input()
+            
             subsystem_timings['perception'] = (time.time() - step_start) * 1000
         except Exception as e:
             logger.error(f"Perception step failed: {e}", exc_info=True)
@@ -196,6 +216,11 @@ class CycleExecutor:
         try:
             step_start = time.time()
             await self._execute_actions()
+            
+            # Record action time if we have temporal grounding
+            if hasattr(self.subsystems, 'temporal_grounding') and self.subsystems.temporal_grounding:
+                self.subsystems.temporal_grounding.record_action()
+            
             subsystem_timings['action'] = (time.time() - step_start) * 1000
         except Exception as e:
             logger.error(f"Action step failed: {e}", exc_info=True)

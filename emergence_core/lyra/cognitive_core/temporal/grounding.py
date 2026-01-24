@@ -57,6 +57,12 @@ class TemporalGrounding:
         # Track last interaction time for effects
         self._last_effect_time: Optional[datetime] = None
         
+        # Track last input/action/output times for cognitive cycle integration
+        self._last_input_time: Optional[datetime] = None
+        self._last_action_time: Optional[datetime] = None
+        self._last_output_time: Optional[datetime] = None
+        self._cycle_count: int = 0
+        
         logger.info("✅ TemporalGrounding initialized")
     
     def on_interaction(self, time: Optional[datetime] = None) -> TemporalContext:
@@ -177,3 +183,88 @@ class TemporalGrounding:
         if self.awareness.current_session:
             self.sessions.on_session_end(self.awareness.current_session)
             self.awareness._end_session()
+    
+    def record_input(self, time: Optional[datetime] = None) -> None:
+        """
+        Record that an input was received.
+        
+        Args:
+            time: Input time (default: now)
+        """
+        self._last_input_time = time or datetime.now()
+        logger.debug(f"📥 Input recorded at {self._last_input_time}")
+    
+    def record_action(self, time: Optional[datetime] = None) -> None:
+        """
+        Record that an action was executed.
+        
+        Args:
+            time: Action time (default: now)
+        """
+        self._last_action_time = time or datetime.now()
+        logger.debug(f"⚡ Action recorded at {self._last_action_time}")
+    
+    def record_output(self, time: Optional[datetime] = None) -> None:
+        """
+        Record that an output was generated.
+        
+        Args:
+            time: Output time (default: now)
+        """
+        self._last_output_time = time or datetime.now()
+        logger.debug(f"📤 Output recorded at {self._last_output_time}")
+    
+    def get_temporal_context(self) -> Dict[str, Any]:
+        """
+        Get temporal context for the current cognitive cycle.
+        
+        This method returns temporal awareness information that should be
+        passed to subsystems and included in workspace broadcasts.
+        
+        Returns:
+            Dictionary with temporal context including:
+            - cycle_timestamp: Current time
+            - session_start: When current session began
+            - session_duration_seconds: Duration of current session
+            - time_since_last_input_seconds: Time since last input (or None)
+            - time_since_last_action_seconds: Time since last action (or None)
+            - time_since_last_output_seconds: Time since last output (or None)
+            - cycles_this_session: Number of cycles in current session
+            - session_id: Current session identifier
+        """
+        now = datetime.now()
+        self._cycle_count += 1
+        
+        # Get session information
+        session_start = None
+        session_duration_seconds = None
+        session_id = None
+        
+        if self.awareness.current_session:
+            session_start = self.awareness.current_session.start_time
+            session_duration_seconds = (now - session_start).total_seconds()
+            session_id = self.awareness.current_session.id
+        
+        # Calculate time since events
+        time_since_last_input = None
+        if self._last_input_time:
+            time_since_last_input = (now - self._last_input_time).total_seconds()
+        
+        time_since_last_action = None
+        if self._last_action_time:
+            time_since_last_action = (now - self._last_action_time).total_seconds()
+        
+        time_since_last_output = None
+        if self._last_output_time:
+            time_since_last_output = (now - self._last_output_time).total_seconds()
+        
+        return {
+            "cycle_timestamp": now,
+            "session_start": session_start,
+            "session_duration_seconds": session_duration_seconds,
+            "time_since_last_input_seconds": time_since_last_input,
+            "time_since_last_action_seconds": time_since_last_action,
+            "time_since_last_output_seconds": time_since_last_output,
+            "cycles_this_session": self._cycle_count,
+            "session_id": session_id,
+        }

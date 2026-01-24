@@ -384,24 +384,12 @@ class GlobalWorkspace:
     
     def set_temporal_context(self, temporal_context: Dict[str, Any]) -> None:
         """
-        Update the temporal context in the workspace.
-        
-        This method should be called at the start of each cognitive cycle
-        to provide temporal awareness to all subsystems.
+        Update temporal context for this cycle.
         
         Args:
-            temporal_context: Dictionary with temporal information
-            
-        Example:
-            >>> temporal_context = {
-            ...     "cycle_timestamp": datetime.now(),
-            ...     "session_duration_seconds": 120.5,
-            ...     "time_since_last_input_seconds": 5.2
-            ... }
-            >>> workspace.set_temporal_context(temporal_context)
+            temporal_context: Temporal information dict from TemporalGrounding
         """
         self.temporal_context = temporal_context
-        logger.debug(f"Temporal context updated: session_duration={temporal_context.get('session_duration_seconds', 0):.1f}s")
 
     def to_dict(self) -> dict:
         """

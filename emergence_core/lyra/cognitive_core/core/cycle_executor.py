@@ -77,10 +77,6 @@ class CycleExecutor:
             if self._has_temporal_grounding():
                 temporal_context = self.subsystems.temporal_grounding.get_temporal_context()
                 self.state.workspace.set_temporal_context(temporal_context)
-                logger.debug(
-                    f"⏰ Temporal context: session={temporal_context.get('session_duration_seconds', 0):.1f}s, "
-                    f"since_input={temporal_context.get('time_since_last_input_seconds', 'N/A')}"
-                )
             subsystem_timings['temporal_context'] = (time.time() - step_start) * 1000
         except Exception as e:
             logger.error(f"Temporal context step failed: {e}", exc_info=True)

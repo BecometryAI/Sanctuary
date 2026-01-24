@@ -69,18 +69,19 @@ class SubsystemCoordinator:
         # Initialize affect subsystem first (needed by attention and action)
         self.affect = AffectSubsystem(config=config.get("affect", {}))
 
-        # Initialize meta-cognitive system early (needed by IWMT for action learning)
-        from ..meta_cognition import MetaCognitiveSystem
-        self.meta_cognitive_system = MetaCognitiveSystem(config=config.get("meta_cognition", {}))
-        logger.info("🧠 MetaCognitiveSystem initialized (action learning, attention history, processing monitor)")
-
-        # Initialize IWMT core with action learner from meta-cognitive system
+        # Initialize action-outcome learner for IWMT (lightweight, only when IWMT enabled)
         iwmt_config = config.get("iwmt", {"enabled": True})
         if iwmt_config.get("enabled", True):
             from ..iwmt_core import IWMTCore
+            from ..meta_cognition import ActionOutcomeLearner
+            
+            # Create action learner for tracking action reliability
+            action_learner_config = config.get("meta_cognition", {}).get("action_learner", {})
+            action_learner = ActionOutcomeLearner(config=action_learner_config)
+            
             self.iwmt_core = IWMTCore(
                 iwmt_config,
-                action_learner=self.meta_cognitive_system.action_learner
+                action_learner=action_learner
             )
             logger.info("🧠 IWMT Core initialized with action learning integration")
         else:

@@ -46,6 +46,14 @@ class IWMTCore:
         """
         config = config or {}
         
+        # Validate action_learner if provided
+        if action_learner is not None:
+            if not hasattr(action_learner, 'get_action_reliability'):
+                raise TypeError(
+                    f"action_learner must have 'get_action_reliability' method, "
+                    f"got {type(action_learner).__name__}"
+                )
+        
         # Core IWMT components
         self.world_model = WorldModel()
         self.free_energy = FreeEnergyMinimizer(config.get("free_energy", {}))

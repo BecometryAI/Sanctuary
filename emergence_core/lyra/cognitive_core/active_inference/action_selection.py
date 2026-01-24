@@ -62,6 +62,14 @@ class ActiveInferenceActionSelector:
         self.free_energy = free_energy_minimizer
         config = config or {}
         
+        # Validate action_learner if provided
+        if action_learner is not None:
+            if not hasattr(action_learner, 'get_action_reliability'):
+                raise TypeError(
+                    f"action_learner must have 'get_action_reliability' method, "
+                    f"got {type(action_learner).__name__}"
+                )
+        
         # Thresholds
         self.action_threshold = config.get("action_threshold", 0.3)
         self.uncertainty_threshold = config.get("uncertainty_threshold", 0.5)

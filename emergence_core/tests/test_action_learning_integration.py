@@ -410,3 +410,20 @@ class TestActionLearnerIntegration:
         # Observe should be between or neutral (no reliability bonus/penalty)
         # Since observe has higher base epistemic value (0.3) vs speak (0.2), 
         # but speak gets reliability bonus, final ordering depends on the weight
+    
+    def test_invalid_action_learner_type(self):
+        """Test that invalid action_learner type is rejected."""
+        minimizer = FreeEnergyMinimizer()
+        
+        # Try to pass an invalid object as action_learner
+        invalid_learner = {"not": "an action learner"}
+        
+        with pytest.raises(TypeError, match="must have 'get_action_reliability' method"):
+            ActiveInferenceActionSelector(minimizer, action_learner=invalid_learner)
+    
+    def test_iwmt_core_invalid_action_learner(self):
+        """Test that IWMTCore rejects invalid action_learner."""
+        invalid_learner = "not an action learner"
+        
+        with pytest.raises(TypeError, match="must have 'get_action_reliability' method"):
+            IWMTCore(action_learner=invalid_learner)

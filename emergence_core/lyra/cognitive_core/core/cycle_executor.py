@@ -317,6 +317,15 @@ class CycleExecutor:
             # Validate prediction after action execution (Phase 4.3)
             if prediction_id and actual_outcome:
                 self._validate_action_prediction(prediction_id, action, actual_outcome)
+            
+            # Update IWMT world model with action outcome
+            if hasattr(self.subsystems, 'iwmt_core') and self.subsystems.iwmt_core and actual_outcome:
+                action_dict = {
+                    "type": str(action.type),
+                    "parameters": action.parameters if hasattr(action, 'parameters') else {},
+                    "reason": action.reason if hasattr(action, 'reason') else ""
+                }
+                self.subsystems.iwmt_core.update_from_action_outcome(action_dict, actual_outcome)
     
     def _record_action_prediction(self, snapshot, actions) -> Optional[str]:
         """Record prediction about action outcome."""

@@ -57,6 +57,12 @@ class TemporalGrounding:
         # Track last interaction time for effects
         self._last_effect_time: Optional[datetime] = None
         
+        # Track last input/action/output times for cognitive cycle integration
+        self._last_input_time: Optional[datetime] = None
+        self._last_action_time: Optional[datetime] = None
+        self._last_output_time: Optional[datetime] = None
+        self._cycle_count: int = 0
+        
         logger.info("✅ TemporalGrounding initialized")
     
     def on_interaction(self, time: Optional[datetime] = None) -> TemporalContext:
@@ -177,3 +183,52 @@ class TemporalGrounding:
         if self.awareness.current_session:
             self.sessions.on_session_end(self.awareness.current_session)
             self.awareness._end_session()
+    
+    def record_input(self, time: Optional[datetime] = None) -> None:
+        """Record input event timestamp."""
+        self._last_input_time = time or datetime.now()
+    
+    def record_action(self, time: Optional[datetime] = None) -> None:
+        """Record action event timestamp."""
+        self._last_action_time = time or datetime.now()
+    
+    def record_output(self, time: Optional[datetime] = None) -> None:
+        """Record output event timestamp."""
+        self._last_output_time = time or datetime.now()
+    
+    def get_temporal_context(self, increment_cycle: bool = True) -> Dict[str, Any]:
+        """
+        Get temporal context for the current cognitive cycle.
+        
+        Args:
+            increment_cycle: Increment cycle counter (default: True)
+        
+        Returns:
+            Dict with cycle_timestamp, session info, time_since_last_* fields, 
+            cycles_this_session, and session_id
+        """
+        now = datetime.now()
+        
+        if increment_cycle:
+            self._cycle_count += 1
+        
+        # Extract session info
+        session = self.awareness.current_session
+        session_start = session.start_time if session else None
+        session_duration_seconds = (now - session_start).total_seconds() if session_start else None
+        session_id = session.id if session else None
+        
+        # Calculate time deltas
+        def time_since(timestamp: Optional[datetime]) -> Optional[float]:
+            return (now - timestamp).total_seconds() if timestamp else None
+        
+        return {
+            "cycle_timestamp": now,
+            "session_start": session_start,
+            "session_duration_seconds": session_duration_seconds,
+            "time_since_last_input_seconds": time_since(self._last_input_time),
+            "time_since_last_action_seconds": time_since(self._last_action_time),
+            "time_since_last_output_seconds": time_since(self._last_output_time),
+            "cycles_this_session": self._cycle_count,
+            "session_id": session_id,
+        }

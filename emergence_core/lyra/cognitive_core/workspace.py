@@ -128,6 +128,7 @@ class WorkspaceSnapshot(BaseModel):
         timestamp: When this snapshot was taken
         cycle_count: Number of cognitive cycles processed
         metadata: Additional context information (e.g., recent_actions)
+        temporal_context: Temporal awareness information (session time, time since events)
     """
     model_config = ConfigDict(frozen=True)  # Immutable
     
@@ -138,6 +139,7 @@ class WorkspaceSnapshot(BaseModel):
     timestamp: datetime
     cycle_count: int
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    temporal_context: Optional[Dict[str, Any]] = None
 
 
 # Legacy dataclass kept for backward compatibility
@@ -232,6 +234,9 @@ class GlobalWorkspace:
         self.timestamp: datetime = datetime.now()
         self.cycle_count: int = 0
         
+        # Temporal context
+        self.temporal_context: Optional[Dict[str, Any]] = None
+        
         logger.info(f"GlobalWorkspace initialized with capacity={capacity}")
 
     def broadcast(self) -> WorkspaceSnapshot:
@@ -257,6 +262,7 @@ class GlobalWorkspace:
             memories=[m.model_dump() for m in self.attended_memories],
             timestamp=self.timestamp,
             cycle_count=self.cycle_count,
+            temporal_context=dict(self.temporal_context) if self.temporal_context else None,
         )
 
     def update(self, subsystem_outputs: List[Any]) -> None:
@@ -372,8 +378,18 @@ class GlobalWorkspace:
         self.attended_memories.clear()
         self.timestamp = datetime.now()
         self.cycle_count = 0
+        self.temporal_context = None
         
         logger.info("Workspace cleared")
+    
+    def set_temporal_context(self, temporal_context: Dict[str, Any]) -> None:
+        """
+        Update temporal context for this cycle.
+        
+        Args:
+            temporal_context: Temporal information dict from TemporalGrounding
+        """
+        self.temporal_context = temporal_context
 
     def to_dict(self) -> dict:
         """

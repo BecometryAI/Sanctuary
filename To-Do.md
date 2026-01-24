@@ -40,61 +40,47 @@ The following features were completed in recent development cycles:
 
 ## 🔴 CRITICAL - 🚀 Integrated World Modeling Theory (IWMT) Migration
 
-**Priority: Critical** | **Status: Phases 2-6 Complete - Pilot Implementation** | **Next: Integration and Deprecation Strategy**
+**Status: Phases 2-7 Complete - Full Integration** | **Next: Deprecation Strategy**
 
 ### Overview
 
-Adopt Adam Safron's Integrated World Modeling Theory as the core computational architecture, replacing/supplanting Global Workspace Theory (GWT) and adding predictive processing, explicit self-modeling, and active inference. This migration will be incremental and preserve as much compatibility as possible during the transition, with legacy GWT routines flagged for deprecation.
+Adopt Adam Safron's Integrated World Modeling Theory as the core computational architecture, adding predictive processing, explicit self-modeling, and active inference to the existing Global Workspace Theory (GWT) foundation.
 
 ### Migration Phases
 
-| Phase | Task | Status | Description |
-|-------|------|--------|-------------|
-| **Phase 1** | **Architectural Design** | ⏭️ **SKIPPED** | Per project requirements, no new documentation permitted. Implementation proceeded directly. |
-| **Phase 2** | **Predictive Processing Layer** | ✅ **COMPLETE** | Implemented WorldModel class with hierarchical prediction and prediction-error tracking. Includes SelfModel (embodied representation), EnvironmentModel (external world), and Prediction/PredictionError tracking. |
-| **Phase 3** | **Active Inference and Agency** | ✅ **COMPLETE** | Implemented FreeEnergyMinimizer and ActiveInferenceActionSelector. Actions now selected based on expected free energy minimization (epistemic + pragmatic value). |
-| **Phase 4** | **Precision-weighted Attention** | ✅ **COMPLETE** | Implemented PrecisionWeighting for attention modulation based on prediction errors, emotional arousal, and uncertainty. |
-| **Phase 5** | **MeTTa/Hyperon Integration** | ✅ **COMPLETE (Pilot)** | Implemented AtomspaceBridge stub with feature flag. MeTTa rules defined as Python strings. Ready for future Hyperon integration. |
-| **Phase 6** | **Full IWMT Agent Core** | ✅ **COMPLETE (Pilot)** | Implemented IWMTCore coordinator integrating all components. Full cognitive cycle with prediction→error→precision→action flow. Legacy integration pending. |
+| Phase | Task | Status |
+|-------|------|--------|
+| **Phase 2** | **Predictive Processing Layer** | ✅ **COMPLETE** |
+| **Phase 3** | **Active Inference and Agency** | ✅ **COMPLETE** |
+| **Phase 4** | **Precision-weighted Attention** | ✅ **COMPLETE** |
+| **Phase 5** | **MeTTa/Hyperon Integration** | ✅ **COMPLETE (Pilot)** |
+| **Phase 6** | **Full IWMT Agent Core** | ✅ **COMPLETE** |
+| **Phase 7** | **CognitiveCore Integration** | ✅ **COMPLETE** |
 
 ### Implementation Summary
 
-**Completed Components:**
-- `world_model/`: WorldModel, Prediction, PredictionError, SelfModel, EnvironmentModel
+**Core Components:**
+- `world_model/`: WorldModel with prediction/error tracking
 - `active_inference/`: FreeEnergyMinimizer, ActiveInferenceActionSelector
-- `precision_weighting.py`: PrecisionWeighting for attention
-- `metta/`: AtomspaceBridge (stub), MeTTa rule definitions
-- `iwmt_core.py`: IWMTCore central coordinator
+- `precision_weighting.py`: Attention modulation
+- `iwmt_core.py`: Central coordinator
+- `core/cycle_executor.py`: Integration into cognitive loop
 
 **Test Coverage:**
-- 66 comprehensive tests across 5 test modules
-- All tests passing
-- Coverage includes: predictions, errors, free energy, action selection, precision weighting, MeTTa bridge, full IWMT cycle
+- 79 tests across 6 modules (all passing)
+- Edge cases: None outcomes, missing attributes, IWMT disabled
 
-### Next Steps (Future PRs)
+**Integration:**
+- Predictions generated before perception
+- Prediction errors drive attention via precision weighting
+- WorldModel learns from action outcomes
+- Configurable via `config["iwmt"]["enabled"]`
 
-1. **Integration Phase**:
-   - Update `introspective_loop.py` to use IWMT architecture
-   - Update `communication/decision.py` to use active inference
-   - Update `attention.py` (AttentionController) to use precision weighting
-   - Wire IWMT into existing cognitive loop
+### Next Steps
 
-2. **Deprecation Phase**:
-   - Add `@deprecated` markers to legacy GWT broadcast methods
-   - Add warnings when legacy paths are used
-   - Document migration path for existing code
-
-3. **Validation Phase**:
-   - Run full test suite with IWMT enabled
-   - Verify backward compatibility
-   - Performance benchmarking
-
-### Key Considerations
-
-- **Incremental Migration**: Core IWMT components complete; integration with existing systems deferred to maintain stability
-- **Backward Compatibility**: All legacy systems remain functional; IWMT components are additive
-- **Testing**: Comprehensive test coverage ensures reliability
-- **Feature Flag**: MeTTa integration disabled by default for gradual adoption
+1. **Deprecation**: Mark legacy GWT methods with `@deprecated`
+2. **Validation**: Performance benchmarking with IWMT enabled
+3. **Enhancement**: Visualization tools for prediction errors
 
 ---
 

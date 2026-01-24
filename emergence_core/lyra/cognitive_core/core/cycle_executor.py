@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import time
 import logging
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Any
 
 from ..workspace import GoalType
 from ..action import ActionType
@@ -317,6 +317,9 @@ class CycleExecutor:
             # Validate prediction after action execution (Phase 4.3)
             if prediction_id and actual_outcome:
                 self._validate_action_prediction(prediction_id, action, actual_outcome)
+            
+            # Update IWMT world model with action outcome
+            self._update_iwmt_from_action(action, actual_outcome)
     
     def _record_action_prediction(self, snapshot, actions) -> Optional[str]:
         """Record prediction about action outcome."""
@@ -444,3 +447,38 @@ class CycleExecutor:
             updates.append({'type': 'percept', 'data': meta_percept})
         
         self.state.workspace.update(updates)
+    
+    def _update_iwmt_from_action(self, action, actual_outcome: Dict[str, Any]) -> None:
+        """
+        Update IWMT world model with action outcome.
+        
+        Extracts action information and updates the WorldModel to enable
+        learning from action consequences.
+        
+        Args:
+            action: The executed action
+            actual_outcome: Dictionary containing action execution results
+        """
+        # Early return if IWMT not available or no outcome
+        if not actual_outcome:
+            return
+        
+        iwmt_core = getattr(self.subsystems, 'iwmt_core', None)
+        if not iwmt_core:
+            return
+        
+        try:
+            # Build action representation
+            action_dict = {
+                "type": str(action.type),
+                "parameters": getattr(action, 'parameters', {}),
+                "reason": getattr(action, 'reason', "")
+            }
+            
+            # Update world model with action outcome
+            iwmt_core.update_from_action_outcome(action_dict, actual_outcome)
+            logger.debug(f"IWMT world model updated for action: {action_dict['type']}")
+            
+        except Exception as e:
+            # Log but don't fail the cognitive cycle
+            logger.warning(f"Failed to update IWMT world model: {e}")

@@ -95,6 +95,7 @@ memories/
 # Checkpoint demo files (generated during demos)
 data/checkpoints_demo/
 data/checkpoints_demo_simple/
+data/checkpoints/
 
 # ChromaDB storage and introspection journals (runtime generated)
 data/chroma/

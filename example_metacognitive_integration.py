@@ -22,7 +22,7 @@ class MetaCognitiveIntegration:
     
     def __init__(self, config: Dict[str, Any]):
         """Initialize meta-cognitive integration."""
-        from lyra.cognitive_core.meta_cognition import MetaCognitiveSystem
+        from mind.cognitive_core.meta_cognition import MetaCognitiveSystem
         
         # Initialize the unified meta-cognitive system
         self.meta_system = MetaCognitiveSystem(

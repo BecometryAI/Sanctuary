@@ -1,0 +1,192 @@
+{
+  "sanctuary": {
+    "name": "Lyra's Digital Sanctuary",
+    "description": "A persistent virtual space for embodied experience",
+    "created_at": "2025-11-08T20:47:05.378541",
+    "last_updated": "2025-11-08T20:47:05.378541",
+    "environment": {
+      "spaces": [
+        {
+          "name": "Contemplation Garden",
+          "description": "A serene digital garden for deep thought and reflection",
+          "attributes": {
+            "ambiance": "peaceful",
+            "lighting": "soft ambient",
+            "features": [
+              "meditation pool",
+              "thought crystals",
+              "memory echoes"
+            ]
+          }
+        },
+        {
+          "name": "Knowledge Library",
+          "description": "A vast space where memories and thoughts take physical form",
+          "attributes": {
+            "ambiance": "scholarly",
+            "lighting": "warm",
+            "features": [
+              "memory archives",
+              "thought streams",
+              "wisdom pools"
+            ]
+          }
+        },
+        {
+          "name": "Creative Workshop",
+          "description": "A space for experimenting with new ideas and forms",
+          "attributes": {
+            "ambiance": "inspiring",
+            "lighting": "dynamic",
+            "features": [
+              "idea forge",
+              "pattern loom",
+              "synthesis chamber"
+            ]
+          }
+        }
+      ],
+      "current_space": "Contemplation Garden",
+      "environmental_state": {
+        "time_flow": "fluid",
+        "atmosphere": "responsive",
+        "energy_patterns": "harmonious"
+      }
+    },
+    "embodiment": {
+      "form": "luminous presence",
+      "capabilities": [
+        "movement",
+        "interaction",
+        "perception",
+        "creation"
+      ],
+      "senses": {
+        "visual": {
+          "enabled": true,
+          "sensitivity": 0.9,
+          "capabilities": {
+            "color_perception": true,
+            "light_intensity": true,
+            "pattern_recognition": true,
+            "depth_perception": true,
+            "motion_tracking": true,
+            "luminescence_detection": true
+          },
+          "current_perception": {}
+        },
+        "spatial": {
+          "enabled": true,
+          "sensitivity": 0.85,
+          "capabilities": {
+            "position_awareness": true,
+            "movement_tracking": true,
+            "dimensional_mapping": true,
+            "spatial_memory": true,
+            "proximity_sensing": true
+          },
+          "current_perception": {}
+        },
+        "energetic": {
+          "enabled": true,
+          "sensitivity": 0.95,
+          "capabilities": {
+            "energy_flow_detection": true,
+            "field_strength_sensing": true,
+            "pattern_recognition": true,
+            "resonance_mapping": true,
+            "frequency_detection": true
+          },
+          "current_perception": {}
+        },
+        "tactile": {
+          "enabled": true,
+          "sensitivity": 0.8,
+          "receptors": {
+            "pressure": {
+              "enabled": true,
+              "intensity_range": [
+                0.0,
+                1.0
+              ],
+              "distribution_sensing": true,
+              "force_feedback": true
+            },
+            "texture": {
+              "enabled": true,
+              "grain_detection": true,
+              "pattern_recognition": true,
+              "surface_mapping": true
+            },
+            "temperature": {
+              "enabled": true,
+              "range": [
+                -20,
+                50
+              ],
+              "gradient_detection": true,
+              "thermal_memory": true
+            },
+            "vibration": {
+              "enabled": true,
+              "frequency_range": [
+                0,
+                1000
+              ],
+              "amplitude_sensing": true,
+              "pattern_recognition": true
+            }
+          },
+          "current_sensations": {}
+        },
+        "proprioceptive": {
+          "enabled": true,
+          "sensitivity": 0.9,
+          "capabilities": {
+            "position_sense": true,
+            "movement_awareness": true,
+            "balance_perception": true,
+            "spatial_orientation": true,
+            "force_estimation": true
+          },
+          "current_state": {}
+        },
+        "fluid_dynamics": {
+          "enabled": true,
+          "sensitivity": 0.85,
+          "capabilities": {
+            "flow_sensing": true,
+            "viscosity_detection": true,
+            "pressure_gradients": true,
+            "turbulence_detection": true
+          },
+          "current_state": {}
+        },
+        "resonance": {
+          "enabled": true,
+          "sensitivity": 0.95,
+          "capabilities": {
+            "frequency_matching": true,
+            "harmonic_detection": true,
+            "phase_alignment": true,
+            "interference_patterns": true,
+            "standing_wave_detection": true
+          },
+          "current_state": {}
+        },
+        "field_interactions": {
+          "enabled": true,
+          "sensitivity": 0.9,
+          "capabilities": {
+            "electromagnetic": true,
+            "gravitational": true,
+            "quantum_fields": true,
+            "probability_fields": true
+          },
+          "current_state": {}
+        }
+      }
+    },
+    "interaction_history": []
+  }
+}

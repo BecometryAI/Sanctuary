@@ -1,5 +1,5 @@
 import os
-from lyra.librarian import LyraLibrarian
+from mind.librarian import LyraLibrarian
 
 def main():
     # Define paths

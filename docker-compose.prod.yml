@@ -1,0 +1,35 @@
+# The Sanctuary - Production override
+# Stricter limits and logging
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  sanctuary:
+    restart: always
+    environment:
+      - DEVELOPMENT_MODE=false
+      - LOG_LEVEL=INFO
+    logging:
+      driver: json-file
+      options:
+        max-size: "100m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4'
+        reservations:
+          memory: 4G
+
+  chromadb:
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  searxng:
+    restart: always

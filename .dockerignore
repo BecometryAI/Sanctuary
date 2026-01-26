@@ -1,0 +1,86 @@
+# Lyra - Docker build ignore
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python build artifacts
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info
+dist
+build
+.installed.cfg
+
+# Virtual environments
+.venv
+venv/
+env/
+.conda
+
+# IDE
+.idea
+.vscode
+*.swp
+*~
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+.hypothesis
+tests/
+emergence_core/tests/
+
+# Documentation (except README)
+docs/_build
+*.md
+!README.md
+
+# Development
+.devcontainer
+.github
+*.log
+*.tmp
+
+# Large files (mount as volumes)
+data/
+.memories/
+memories/
+model_cache/
+*.pt
+*.bin
+*.safetensors
+*.onnx
+
+# Environment files
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.docker.example
+
+# Temp/cache
+*.cache
+.cache
+temp_audio/
+context_state/
+emotional_state/
+self_awareness_state/
+chain/
+test_chain/
+test_memories/
+
+# Lock files
+uv.lock
+poetry.lock
+
+# Docker (prevent recursion)
+docker-compose*.yml
+!docker-compose.yml
+Dockerfile*
+!Dockerfile

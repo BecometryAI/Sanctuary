@@ -5,7 +5,7 @@ Demonstrates memory consolidation with idle detection and scheduling.
 """
 import asyncio
 from datetime import datetime
-from lyra.memory import (
+from mind.memory import (
     MemoryStorage, MemoryEncoder, MemoryConsolidator,
     EpisodicMemory, IdleDetector, ConsolidationScheduler,
 )

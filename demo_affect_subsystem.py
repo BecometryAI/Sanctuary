@@ -16,11 +16,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent / "emergence_core"))
 
 from datetime import datetime
-from lyra.cognitive_core.affect import AffectSubsystem, EmotionalState
-from lyra.cognitive_core.workspace import (
+from mind.cognitive_core.affect import AffectSubsystem, EmotionalState
+from mind.cognitive_core.workspace import (
     Goal, GoalType, Percept, WorkspaceSnapshot
 )
-from lyra.cognitive_core.action import Action, ActionType
+from mind.cognitive_core.action import Action, ActionType
 
 
 def print_section(title: str):

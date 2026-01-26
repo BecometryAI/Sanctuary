@@ -1,13 +1,13 @@
 """
-Setup file for Lyra Emergence package
+Setup file for The Sanctuary cognitive architecture
 """
 from setuptools import setup, find_packages
 
 setup(
-    name="lyra-emergence",
+    name="sanctuary",
     version="0.1.0",
     packages=find_packages(),
-    package_dir={"": "emergence_core"},
+    package_dir={"": "sanctuary"},
     install_requires=[
         # Core ML dependencies
         "numpy>=2.3.4",

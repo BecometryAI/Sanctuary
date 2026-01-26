@@ -1,0 +1,23 @@
+# The Sanctuary - GPU override
+# Enables NVIDIA GPU support
+# Requires: NVIDIA Container Toolkit (nvidia-ctk)
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+
+version: '3.8'
+
+services:
+  sanctuary:
+    build:
+      dockerfile: Dockerfile.gpu
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+        limits:
+          memory: 16G

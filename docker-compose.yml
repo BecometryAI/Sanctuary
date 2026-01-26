@@ -1,0 +1,90 @@
+# The Sanctuary - Docker Compose
+# Usage: docker-compose up -d
+
+version: '3.8'
+
+services:
+  sanctuary:
+    build: .
+    container_name: sanctuary-cognitive-core
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SANCTUARY_BASE_DIR=/app/data
+      - SANCTUARY_CHROMA_DIR=/app/data/chroma
+      - SANCTUARY_LOG_DIR=/app/data/logs
+    ports:
+      - "8000:8000"
+    volumes:
+      - sanctuary_data:/app/data
+      - ./config:/app/config:ro
+      - ./sanctuary/config:/app/sanctuary/config:ro
+      - ./data/identity:/app/data/identity:ro
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 2G
+    healthcheck:
+      test: ["CMD", "python", "-c", "import mind"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      chromadb:
+        condition: service_healthy
+    networks:
+      - sanctuary-network
+
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: sanctuary-chromadb
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    networks:
+      - sanctuary-network
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: sanctuary-searxng
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./sanctuary/searxng:/etc/searxng
+    environment:
+      - INSTANCE_NAME=sanctuary-searxng
+      - BASE_URL=http://localhost:8080/
+      - SEARXNG_SECRET=${SEARXNG_SECRET:-change-me}
+    networks:
+      - sanctuary-network
+    profiles:
+      - search
+
+networks:
+  sanctuary-network:
+
+volumes:
+  sanctuary_data:
+  chroma_data:

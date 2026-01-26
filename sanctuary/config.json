@@ -1,0 +1,9 @@
+{
+    "searxng": {
+        "base_url": "http://localhost:8080",
+        "api_key": "a63ea21913a0599ee9fb20f8a6d25f64f5b937c213137ff3bab7e62703e12ad8"
+    },
+    "wolfram": {
+        "app_id": "YOUR_WOLFRAM_APPID"
+    }
+}

@@ -22,7 +22,7 @@ def show_api_usage():
     print("\n1. Basic Initialization:")
     print("-" * 70)
     print("""
-from lyra.cognitive_core.perception import PerceptionSubsystem
+from mind.cognitive_core.perception import PerceptionSubsystem
 
 # Default configuration (all-MiniLM-L6-v2, 384-dim)
 perception = PerceptionSubsystem()
@@ -92,7 +92,7 @@ intro_percept = await perception.encode(intro_data, modality="introspection")
     print("\n5. Integration with CognitiveCore:")
     print("-" * 70)
     print("""
-from lyra.cognitive_core.core import CognitiveCore
+from mind.cognitive_core.core import CognitiveCore
 
 # Initialize with perception config
 config = {

@@ -1,0 +1,14 @@
+[
+  {
+    "index": 0,
+    "timestamp": 1762655310.5002418,
+    "data": {
+      "type": "genesis",
+      "message": "Lyra Emergence Protocol - Genesis Block",
+      "timestamp": "2025-11-08T18:28:30.500241"
+    },
+    "previous_hash": "0",
+    "nonce": 0,
+    "hash": "ebdc447dbda437e2f4173e9b261ac403bec6530c889fa275997cc0021471bdb4"
+  }
+]

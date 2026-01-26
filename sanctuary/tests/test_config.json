@@ -1,0 +1,11 @@
+{
+    "searxng": {
+        "base_url": "http://localhost:8080"
+    },
+    "wolfram": {
+        "app_id": "test_app_id"
+    },
+    "test_urls": {
+        "example": "https://example.com"
+    }
+}

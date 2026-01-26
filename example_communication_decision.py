@@ -1,6 +1,6 @@
 """Example: Communication Decision Loop usage."""
 
-from lyra.cognitive_core.communication import (
+from mind.cognitive_core.communication import (
     CommunicationDecisionLoop,
     CommunicationDriveSystem,
     CommunicationInhibitionSystem,

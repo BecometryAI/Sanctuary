@@ -13,10 +13,10 @@ from pathlib import Path
 # Add emergence_core to path
 sys.path.insert(0, str(Path(__file__).parent / "emergence_core"))
 
-from lyra.cognitive_core.workspace import GlobalWorkspace, Goal, GoalType, Percept
-from lyra.cognitive_core.meta_cognition import SelfMonitor
-from lyra.cognitive_core.affect import AffectSubsystem, EmotionalState
-from lyra.cognitive_core.action import ActionSubsystem, Action, ActionType
+from mind.cognitive_core.workspace import GlobalWorkspace, Goal, GoalType, Percept
+from mind.cognitive_core.meta_cognition import SelfMonitor
+from mind.cognitive_core.affect import AffectSubsystem, EmotionalState
+from mind.cognitive_core.action import ActionSubsystem, Action, ActionType
 from datetime import datetime
 
 

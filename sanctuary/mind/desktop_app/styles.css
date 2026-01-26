@@ -1,0 +1,183 @@
+:root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #999;
+    --accent-color: #1e3a4f;
+    --accent-hover: #2a4a6f;
+    --success-color: #4CAF50;
+    --warning-color: #FFC107;
+    --error-color: #FF5722;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: var(--bg-secondary);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.status-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--warning-color);
+}
+
+#status-indicator.connected {
+    background-color: var(--success-color);
+}
+
+#status-indicator.disconnected {
+    background-color: var(--error-color);
+}
+
+.connection-info {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.menu-btn {
+    padding: 10px;
+    background-color: var(--accent-color);
+    border: none;
+    border-radius: 5px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.menu-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.main-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+#chat-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding: 10px;
+}
+
+.message {
+    margin: 10px 0;
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 80%;
+}
+
+.user-message {
+    background-color: var(--bg-secondary);
+    margin-left: auto;
+}
+
+.lyra-message {
+    background-color: var(--accent-color);
+    margin-right: auto;
+}
+
+.input-container {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
+    background-color: var(--bg-secondary);
+    border-radius: 5px;
+}
+
+#message-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    resize: none;
+}
+
+#send-btn {
+    padding: 10px 20px;
+    background-color: var(--accent-color);
+    border: none;
+    border-radius: 5px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+#send-btn:hover {
+    background-color: var(--accent-hover);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: var(--bg-secondary);
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 500px;
+}
+
+.setting-group {
+    margin: 15px 0;
+}
+
+.setting-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.setting-group input[type="text"],
+.setting-group select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid var(--accent-color);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}

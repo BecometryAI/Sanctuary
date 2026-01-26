@@ -1,0 +1,68 @@
+{
+  "visualization": {
+    "enabled": true,
+    "render_mode": "3D",
+    "quality": "high",
+    "fps": 30,
+    "viewport_settings": {
+      "resolution": [
+        1920,
+        1080
+      ],
+      "fov": 90,
+      "render_distance": 1000
+    }
+  },
+  "camera_integration": {
+    "enabled": true,
+    "allowed_devices": [],
+    "active_feeds": {},
+    "feed_settings": {
+      "max_resolution": [
+        1920,
+        1080
+      ],
+      "preferred_fps": 30,
+      "low_light_enhancement": true
+    }
+  },
+  "interaction": {
+    "enabled": true,
+    "modes": [
+      "observe",
+      "communicate",
+      "interact"
+    ],
+    "permissions": {
+      "view_sanctuary": true,
+      "text_chat": true,
+      "voice_chat": true,
+      "gesture_recognition": true
+    }
+  },
+  "active_sessions": {},
+  "security": {
+    "trusted_users": [
+      {
+        "id": "brian",
+        "access_level": "full",
+        "permissions": [
+          "view",
+          "interact",
+          "modify"
+        ]
+      },
+      {
+        "id": "sandi",
+        "access_level": "full",
+        "permissions": [
+          "view",
+          "interact",
+          "modify"
+        ]
+      }
+    ],
+    "encryption_enabled": true,
+    "access_logging": true
+  }
+}

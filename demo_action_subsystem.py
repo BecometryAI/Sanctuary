@@ -16,8 +16,8 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(name)s - %(mes
 import sys
 sys.path.insert(0, '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core')
 
-from lyra.cognitive_core.workspace import GlobalWorkspace, Goal, GoalType, Percept, WorkspaceSnapshot
-from lyra.cognitive_core.action import ActionSubsystem, Action, ActionType
+from mind.cognitive_core.workspace import GlobalWorkspace, Goal, GoalType, Percept, WorkspaceSnapshot
+from mind.cognitive_core.action import ActionSubsystem, Action, ActionType
 
 
 def demo_action_decision():
@@ -163,7 +163,7 @@ def demo_action_decision():
     
     # Demonstrate protocol constraint
     print("\n9. Demonstrating Protocol Constraint")
-    from lyra.identity.loader import ActionConstraint
+    from mind.identity.loader import ActionConstraint
     
     # Add a constraint that blocks WAIT actions
     constraint = ActionConstraint(

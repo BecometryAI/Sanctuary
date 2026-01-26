@@ -1,0 +1,27 @@
+# The Sanctuary - Development override
+# Mounts source for hot-reload
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  sanctuary:
+    environment:
+      - DEVELOPMENT_MODE=true
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./sanctuary:/app/sanctuary:ro
+      - ./data:/app/data
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+
+  chromadb:
+    volumes:
+      - ./data/chroma:/chroma/chroma
+    restart: "no"
+
+  searxng:
+    restart: "no"

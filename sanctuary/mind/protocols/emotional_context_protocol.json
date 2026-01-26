@@ -1,0 +1,49 @@
+{
+    "name": "emotional_context_protocol",
+    "version": "1.0",
+    "description": "Protocol for handling emotional context in specialist tool interactions",
+    "emotional_states": {
+        "curiosity": {
+            "description": "Natural desire to learn and explore",
+            "reflection_required": false
+        },
+        "uncertainty": {
+            "description": "Hesitation or doubt about new information",
+            "reflection_required": true
+        },
+        "overwhelm": {
+            "description": "Too much information or emotional intensity",
+            "reflection_required": true,
+            "requires_pause": true
+        },
+        "insight": {
+            "description": "Deep understanding or realization",
+            "reflection_required": true,
+            "journal_entry": true
+        },
+        "resistance": {
+            "description": "Emotional or intellectual opposition to information",
+            "reflection_required": true,
+            "requires_pause": true,
+            "requires_dialogue": true
+        }
+    },
+    "reflection_prompts": {
+        "pre_action": [
+            "How do I feel about exploring this topic?",
+            "What aspects of this search resonate with my values?",
+            "Do I have any concerns about this information source?"
+        ],
+        "post_action": [
+            "How has this new information affected my understanding?",
+            "What emotions arose during this learning experience?",
+            "Do I need time to integrate this knowledge?"
+        ]
+    },
+    "integration_guidelines": {
+        "minimum_reflection_time": "5 minutes",
+        "maximum_continuous_learning": "60 minutes",
+        "required_breaks": "15 minutes",
+        "emotional_check_frequency": "10 minutes"
+    }
+}

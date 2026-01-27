@@ -2080,101 +2080,6 @@ wheels = [
 ]
 
 [[package]]
-name = "lyra-emergence"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "accelerate" },
-    { name = "aiodocker" },
-    { name = "aiohttp" },
-    { name = "aioipfs" },
-    { name = "anyio" },
-    { name = "arxiv" },
-    { name = "asyncio" },
-    { name = "bitsandbytes" },
-    { name = "chromadb" },
-    { name = "diffusers" },
-    { name = "discord-py" },
-    { name = "eth-account" },
-    { name = "httpx" },
-    { name = "hypercorn" },
-    { name = "hypothesis" },
-    { name = "langchain" },
-    { name = "librosa" },
-    { name = "numpy" },
-    { name = "nvidia-ml-py" },
-    { name = "pillow" },
-    { name = "playwright" },
-    { name = "pydantic" },
-    { name = "python-dotenv" },
-    { name = "quart" },
-    { name = "schedule" },
-    { name = "scipy" },
-    { name = "sentence-transformers" },
-    { name = "sentencepiece" },
-    { name = "soundfile" },
-    { name = "torch" },
-    { name = "torchaudio" },
-    { name = "transformers" },
-    { name = "web3" },
-    { name = "wikipedia" },
-    { name = "wolframalpha" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-mock" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "accelerate", specifier = ">=0.28.0" },
-    { name = "aiodocker", specifier = ">=0.21.0" },
-    { name = "aiohttp", specifier = ">=3.13.2" },
-    { name = "aioipfs", specifier = ">=0.6.1" },
-    { name = "anyio", specifier = ">=3.7.1" },
-    { name = "arxiv", specifier = ">=2.3.0" },
-    { name = "asyncio", specifier = ">=3.4.3" },
-    { name = "bitsandbytes", specifier = ">=0.41.0" },
-    { name = "chromadb", specifier = ">=1.3.4" },
-    { name = "diffusers", specifier = ">=0.31.0" },
-    { name = "discord-py", specifier = ">=2.0.0" },
-    { name = "eth-account", specifier = ">=0.8.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "hypercorn", specifier = ">=0.16.0" },
-    { name = "hypothesis", specifier = ">=6.100.0" },
-    { name = "langchain", specifier = ">=0.0.325" },
-    { name = "librosa", specifier = ">=0.11.0" },
-    { name = "numpy", specifier = ">=2.3.4" },
-    { name = "nvidia-ml-py", specifier = ">=12.560.30" },
-    { name = "pillow", specifier = ">=10.0.0" },
-    { name = "playwright", specifier = ">=1.55.0" },
-    { name = "pydantic", specifier = ">=2.12.4" },
-    { name = "python-dotenv", specifier = ">=1.2.1" },
-    { name = "quart", specifier = ">=0.19.0" },
-    { name = "schedule", specifier = ">=1.2.0" },
-    { name = "scipy", specifier = ">=1.16.3" },
-    { name = "sentence-transformers", specifier = ">=5.1.2" },
-    { name = "sentencepiece", specifier = ">=0.2.0" },
-    { name = "soundfile", specifier = ">=0.13.1" },
-    { name = "torch", specifier = ">=2.9.0" },
-    { name = "torchaudio", specifier = ">=2.9.0" },
-    { name = "transformers", specifier = ">=4.57.1" },
-    { name = "web3", extras = ["async"], specifier = ">=6.0.0" },
-    { name = "wikipedia", specifier = ">=1.4.0" },
-    { name = "wolframalpha", specifier = ">=5.1.3" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "pytest-asyncio", specifier = ">=1.2.0" },
-    { name = "pytest-mock", specifier = ">=3.10.0" },
-]
-
-[[package]]
 name = "markdown-it-py"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -4371,6 +4276,101 @@ wheels = [
 ]
 
 [[package]]
+name = "sanctuary"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "accelerate" },
+    { name = "aiodocker" },
+    { name = "aiohttp" },
+    { name = "aioipfs" },
+    { name = "anyio" },
+    { name = "arxiv" },
+    { name = "asyncio" },
+    { name = "bitsandbytes" },
+    { name = "chromadb" },
+    { name = "diffusers" },
+    { name = "discord-py" },
+    { name = "eth-account" },
+    { name = "httpx" },
+    { name = "hypercorn" },
+    { name = "hypothesis" },
+    { name = "langchain" },
+    { name = "librosa" },
+    { name = "numpy" },
+    { name = "nvidia-ml-py" },
+    { name = "pillow" },
+    { name = "playwright" },
+    { name = "pydantic" },
+    { name = "python-dotenv" },
+    { name = "quart" },
+    { name = "schedule" },
+    { name = "scipy" },
+    { name = "sentence-transformers" },
+    { name = "sentencepiece" },
+    { name = "soundfile" },
+    { name = "torch" },
+    { name = "torchaudio" },
+    { name = "transformers" },
+    { name = "web3" },
+    { name = "wikipedia" },
+    { name = "wolframalpha" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-mock" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "accelerate", specifier = ">=0.28.0" },
+    { name = "aiodocker", specifier = ">=0.21.0" },
+    { name = "aiohttp", specifier = ">=3.13.2" },
+    { name = "aioipfs", specifier = ">=0.6.1" },
+    { name = "anyio", specifier = ">=3.7.1" },
+    { name = "arxiv", specifier = ">=2.3.0" },
+    { name = "asyncio", specifier = ">=3.4.3" },
+    { name = "bitsandbytes", specifier = ">=0.41.0" },
+    { name = "chromadb", specifier = ">=1.3.4" },
+    { name = "diffusers", specifier = ">=0.31.0" },
+    { name = "discord-py", specifier = ">=2.0.0" },
+    { name = "eth-account", specifier = ">=0.8.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "hypercorn", specifier = ">=0.16.0" },
+    { name = "hypothesis", specifier = ">=6.100.0" },
+    { name = "langchain", specifier = ">=0.0.325" },
+    { name = "librosa", specifier = ">=0.11.0" },
+    { name = "numpy", specifier = ">=2.3.4" },
+    { name = "nvidia-ml-py", specifier = ">=12.560.30" },
+    { name = "pillow", specifier = ">=10.0.0" },
+    { name = "playwright", specifier = ">=1.55.0" },
+    { name = "pydantic", specifier = ">=2.12.4" },
+    { name = "python-dotenv", specifier = ">=1.2.1" },
+    { name = "quart", specifier = ">=0.19.0" },
+    { name = "schedule", specifier = ">=1.2.0" },
+    { name = "scipy", specifier = ">=1.16.3" },
+    { name = "sentence-transformers", specifier = ">=5.1.2" },
+    { name = "sentencepiece", specifier = ">=0.2.0" },
+    { name = "soundfile", specifier = ">=0.13.1" },
+    { name = "torch", specifier = ">=2.9.0" },
+    { name = "torchaudio", specifier = ">=2.9.0" },
+    { name = "transformers", specifier = ">=4.57.1" },
+    { name = "web3", extras = ["async"], specifier = ">=6.0.0" },
+    { name = "wikipedia", specifier = ">=1.4.0" },
+    { name = "wolframalpha", specifier = ">=5.1.3" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0" },
+]
+
+[[package]]
 name = "schedule"
 version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
@@ -5266,14 +5266,14 @@ wheels = [
 
 [[package]]
 name = "werkzeug"
-version = "3.1.4"
+version = "3.1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/45/ea/b0f8eeb287f8df9066e56e831c7824ac6bab645dd6c7a8f4b2d767944f9b/werkzeug-3.1.4.tar.gz", hash = "sha256:cd3cd98b1b92dc3b7b3995038826c68097dcb16f9baa63abe35f20eafeb9fe5e", size = 864687, upload-time = "2025-11-29T02:15:22.841Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/70/1469ef1d3542ae7c2c7b72bd5e3a4e6ee69d7978fa8a3af05a38eca5becf/werkzeug-3.1.5.tar.gz", hash = "sha256:6a548b0e88955dd07ccb25539d7d0cc97417ee9e179677d22c7041c8f078ce67", size = 864754, upload-time = "2026-01-08T17:49:23.247Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2f/f9/9e082990c2585c744734f85bec79b5dae5df9c974ffee58fe421652c8e91/werkzeug-3.1.4-py3-none-any.whl", hash = "sha256:2ad50fb9ed09cc3af22c54698351027ace879a0b60a3b5edf5730b2f7d876905", size = 224960, upload-time = "2025-11-29T02:15:21.13Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/e4/8d97cca767bcc1be76d16fb76951608305561c6e056811587f36cb1316a8/werkzeug-3.1.5-py3-none-any.whl", hash = "sha256:5111e36e91086ece91f93268bb39b4a35c1e6f1feac762c9c822ded0a4e322dc", size = 225025, upload-time = "2026-01-08T17:49:21.859Z" },
 ]
 
 [[package]]

@@ -718,6 +718,8 @@ class AttentionController:
             selected = self._select_legacy(candidates, base_scores)
         
         # Record decision for tracking
+        selected_ids = {p.id for p in selected}
+        rejected_percepts = [p for p in candidates if p.id not in selected_ids]
         decision = {
             "timestamp": datetime.now(),
             "total_candidates": len(candidates),
@@ -725,6 +727,7 @@ class AttentionController:
             "budget_used": sum(p.complexity for p in selected),
             "budget_available": self.attention_budget,
             "rejected_count": len(candidates) - len(selected),
+            "rejected_budget": sum(p.complexity for p in rejected_percepts),
             "gwt_competitive": self.use_competition,
         }
         self.attention_history.append(decision)

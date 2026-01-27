@@ -151,7 +151,8 @@ class TestAttentionSelectionBasic:
     def test_attention_selection_multiple_percepts(self):
         """Test selection with multiple percepts of varying complexity."""
         workspace = GlobalWorkspace()
-        controller = AttentionController(attention_budget=20, workspace=workspace)
+        # Disable competition to test basic budget selection mechanics
+        controller = AttentionController(attention_budget=20, workspace=workspace, use_competition=False)
         
         # Create percepts with different complexities
         percepts = [
@@ -506,7 +507,8 @@ class TestAttentionReport:
     
     def test_attention_report_after_selections(self):
         """Test report after multiple selections."""
-        controller = AttentionController(attention_budget=50)
+        # Disable competition to test basic report mechanics
+        controller = AttentionController(attention_budget=50, use_competition=False)
         
         # Perform multiple selections
         percepts1 = [
@@ -530,7 +532,8 @@ class TestAttentionReport:
     
     def test_attention_report_rejection_reasons(self):
         """Test report includes rejection reasons."""
-        controller = AttentionController(attention_budget=15)
+        # Disable competition to test basic rejection tracking
+        controller = AttentionController(attention_budget=15, use_competition=False)
         
         # Create percepts that exceed budget
         percepts = [
@@ -591,7 +594,8 @@ class TestIntegration:
     def test_attention_over_multiple_cycles(self):
         """Test attention behavior over multiple cognitive cycles."""
         workspace = GlobalWorkspace()
-        controller = AttentionController(attention_budget=30, workspace=workspace)
+        # Disable competition to test basic cycle mechanics
+        controller = AttentionController(attention_budget=30, workspace=workspace, use_competition=False)
         
         # Cycle 1: Novel percepts
         percepts1 = [

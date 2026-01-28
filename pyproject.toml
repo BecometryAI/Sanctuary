@@ -59,7 +59,10 @@ dependencies = [
     # Utilities
     "python-dotenv>=1.2.1",
     "pydantic>=2.12.4",
-    
+
+    # Serialization (pinned for security - CVE fix for recursion depth bypass)
+    "protobuf>=5.29.3",
+
     # Testing
     "hypothesis>=6.100.0",
 ]

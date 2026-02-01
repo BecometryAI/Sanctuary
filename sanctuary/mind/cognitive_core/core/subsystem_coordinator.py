@@ -7,7 +7,7 @@ Handles initialization and coordination of all cognitive subsystems.
 from __future__ import annotations
 
 import logging
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from pathlib import Path
 
 from ..workspace import GlobalWorkspace
@@ -30,6 +30,34 @@ from ..identity_loader import IdentityLoader
 from ..checkpoint import CheckpointManager
 
 logger = logging.getLogger(__name__)
+
+
+def _try_import_devices():
+    """Try to import device modules (optional dependency)."""
+    try:
+        from ...devices import (
+            DeviceRegistry,
+            DeviceType,
+            MicrophoneDevice,
+            CameraDevice,
+            SerialSensorDevice,
+            HAS_SOUNDDEVICE,
+            HAS_OPENCV,
+            HAS_SERIAL,
+        )
+        return {
+            "DeviceRegistry": DeviceRegistry,
+            "DeviceType": DeviceType,
+            "MicrophoneDevice": MicrophoneDevice,
+            "CameraDevice": CameraDevice,
+            "SerialSensorDevice": SerialSensorDevice,
+            "HAS_SOUNDDEVICE": HAS_SOUNDDEVICE,
+            "HAS_OPENCV": HAS_OPENCV,
+            "HAS_SERIAL": HAS_SERIAL,
+        }
+    except ImportError as e:
+        logger.debug(f"Device modules not available: {e}")
+        return None
 
 
 class SubsystemCoordinator:
@@ -237,7 +265,10 @@ class SubsystemCoordinator:
         else:
             self.checkpoint_manager = None
             logger.info("💾 Checkpoint manager disabled")
-        
+
+        # Initialize device registry for multimodal perception
+        self.device_registry = self._initialize_device_registry(config.get("devices", {}))
+
         logger.info(
             f"🧠 Subsystems initialized: cycle_rate={config['cycle_rate_hz']}Hz, "
             f"attention_budget={config['attention_budget']}"
@@ -284,12 +315,12 @@ class SubsystemCoordinator:
     def initialize_continuous_consciousness(self, cognitive_core) -> ContinuousConsciousnessController:
         """
         Initialize continuous consciousness controller.
-        
+
         This is done separately because it needs a reference to the cognitive core.
-        
+
         Args:
             cognitive_core: Reference to the CognitiveCore instance
-            
+
         Returns:
             ContinuousConsciousnessController instance
         """
@@ -297,3 +328,99 @@ class SubsystemCoordinator:
             cognitive_core,
             config=self.config.get("continuous_consciousness", {})
         )
+
+    def _initialize_device_registry(self, device_config: Dict[str, Any]) -> Optional[Any]:
+        """
+        Initialize device registry for multimodal perception.
+
+        This is done separately because devices are optional dependencies.
+        The registry enables plug-and-play support for cameras, microphones,
+        and other peripherals.
+
+        Args:
+            device_config: Device configuration dict with keys:
+                - enabled: bool (default: True)
+                - hot_plug_interval: float (default: 5.0)
+                - microphone: dict with enabled, sample_rate, etc.
+                - camera: dict with enabled, resolution, fps, etc.
+                - sensors: dict with enabled, serial_port, etc.
+
+        Returns:
+            DeviceRegistry instance or None if devices disabled/unavailable
+        """
+        if not device_config.get("enabled", True):
+            logger.info("📷 Device registry disabled by configuration")
+            return None
+
+        # Try to import device modules
+        device_modules = _try_import_devices()
+        if device_modules is None:
+            logger.info("📷 Device registry not available (optional dependencies not installed)")
+            return None
+
+        DeviceRegistry = device_modules["DeviceRegistry"]
+        DeviceType = device_modules["DeviceType"]
+        MicrophoneDevice = device_modules["MicrophoneDevice"]
+        CameraDevice = device_modules["CameraDevice"]
+        SerialSensorDevice = device_modules["SerialSensorDevice"]
+
+        try:
+            # Create registry
+            registry = DeviceRegistry(config=device_config)
+
+            # Register available device types
+            if device_modules["HAS_SOUNDDEVICE"]:
+                registry.register_device_class(DeviceType.MICROPHONE, MicrophoneDevice)
+                logger.debug("📷 Registered MicrophoneDevice")
+
+            if device_modules["HAS_OPENCV"]:
+                registry.register_device_class(DeviceType.CAMERA, CameraDevice)
+                logger.debug("📷 Registered CameraDevice")
+
+            if device_modules["HAS_SERIAL"]:
+                registry.register_device_class(DeviceType.SENSOR, SerialSensorDevice)
+                logger.debug("📷 Registered SerialSensorDevice")
+
+            logger.info(
+                f"📷 Device registry initialized with {len(registry.get_registered_types())} device types"
+            )
+            return registry
+
+        except Exception as e:
+            logger.warning(f"📷 Failed to initialize device registry: {e}")
+            return None
+
+    def connect_device_registry_to_input(self, input_queue) -> bool:
+        """
+        Connect device registry to the input queue for data routing.
+
+        This must be called after StateManager initializes its queues.
+        Device data will be routed to the cognitive pipeline via the input queue.
+
+        Args:
+            input_queue: asyncio.Queue or InputQueue instance
+
+        Returns:
+            True if connection successful
+        """
+        if self.device_registry is None:
+            return False
+
+        try:
+            # Create an adapter that works with both raw asyncio.Queue and InputQueue
+            import asyncio
+
+            async def route_device_data(data, modality, source, metadata):
+                """Route device data to input queue."""
+                try:
+                    input_queue.put_nowait((data, modality))
+                except asyncio.QueueFull:
+                    logger.warning(f"Input queue full, dropping device data from {source}")
+
+            self.device_registry.set_input_callback(route_device_data)
+            logger.info("📷 Device registry connected to input queue")
+            return True
+
+        except Exception as e:
+            logger.error(f"📷 Failed to connect device registry: {e}")
+            return False

@@ -38,11 +38,13 @@ class ModalityType(Enum):
     TEXT: Natural language text input
     IMAGE: Visual input (photos, diagrams, etc.)
     AUDIO: Auditory input (speech, sounds, music)
+    SENSOR: Physical sensor data (temperature, motion, touch, etc.)
     PROPRIOCEPTIVE: Internal state signals (not external sensory)
     """
     TEXT = "text"
     IMAGE = "image"
     AUDIO = "audio"
+    SENSOR = "sensor"
     PROPRIOCEPTIVE = "proprioceptive"
 
 
@@ -213,6 +215,8 @@ class PerceptionSubsystem:
                 embedding = self._encode_image(raw_input)
             elif modality == "audio":
                 embedding = self._encode_audio(raw_input)
+            elif modality == "sensor":
+                embedding = self._encode_sensor(raw_input)
             elif modality == "introspection":
                 # Introspective percepts are already structured
                 if isinstance(raw_input, dict):
@@ -294,55 +298,956 @@ class PerceptionSubsystem:
     def _encode_image(self, image: Any) -> List[float]:
         """
         Encode image to embedding using CLIP.
-        
+
+        Supports multiple input formats from the device abstraction layer:
+        - PIL Image objects
+        - Numpy arrays (BGR from OpenCV or RGB)
+        - File paths (strings)
+        - Dict with 'data' key containing numpy array (from DeviceDataPacket)
+
         Args:
-            image: PIL Image, numpy array, or file path
-            
+            image: PIL Image, numpy array, file path, or dict with image data
+
         Returns:
             Normalized embedding vector
         """
         if self.image_encoder is None:
             logger.warning("Image encoding requested but CLIP not loaded")
             return [0.0] * self.embedding_dim
-        
+
         try:
-            from PIL import Image
-            
+            from PIL import Image as PILImage
+
+            # Handle dict format from DeviceDataPacket
+            if isinstance(image, dict):
+                if "data" in image:
+                    image = image["data"]
+                elif "raw_data" in image:
+                    image = image["raw_data"]
+
             # Handle different image input types
             if isinstance(image, str):
                 # File path
-                image = Image.open(image)
+                image = PILImage.open(image)
             elif isinstance(image, np.ndarray):
-                image = Image.fromarray(image)
-            
+                # Numpy array - could be BGR (from OpenCV) or RGB
+                if len(image.shape) == 3 and image.shape[2] == 3:
+                    # Check if it looks like BGR (OpenCV format) by checking metadata
+                    # For now, assume BGR from camera devices and convert to RGB
+                    try:
+                        import cv2
+                        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                    except ImportError:
+                        # If cv2 not available, assume RGB
+                        pass
+                image = PILImage.fromarray(image)
+            elif isinstance(image, bytes):
+                # Raw bytes - try to decode as image
+                import io
+                image = PILImage.open(io.BytesIO(image))
+
             # Encode with CLIP
             inputs = self.image_processor(images=image, return_tensors="pt")
             outputs = self.image_encoder.get_image_features(**inputs)
-            
+
             # Normalize and convert to list
             embedding = outputs.detach().numpy()[0]
             embedding = embedding / np.linalg.norm(embedding)
-            
+
             return embedding.tolist()
-            
+
         except Exception as e:
             logger.error(f"Error encoding image: {e}")
             return [0.0] * self.embedding_dim
     
     def _encode_audio(self, audio: Any) -> List[float]:
         """
-        Encode audio by transcribing then encoding text.
-        
+        Encode audio to embedding.
+
+        Supports multiple input formats from the device abstraction layer:
+        - Numpy arrays (float32 samples from sounddevice)
+        - Raw bytes (int16 PCM audio)
+        - Dict with audio data and metadata (from DeviceDataPacket)
+        - Transcribed text (falls back to text encoding)
+
+        For now, audio is encoded by computing spectral features and mapping
+        to the text embedding space. Future versions will integrate with
+        dedicated audio encoders (wav2vec, Whisper embeddings, etc.).
+
         Args:
-            audio: Audio data (future: integrate with Whisper)
-            
+            audio: Audio data in various formats
+
         Returns:
-            Placeholder embedding vector
+            Embedding vector
         """
-        # TODO: Integrate with existing Whisper implementation
-        # For now, return placeholder
-        logger.warning("Audio encoding not yet implemented")
-        return [0.0] * self.embedding_dim
+        try:
+            # Extract audio data from dict format (DeviceDataPacket)
+            sample_rate = 16000  # Default
+            if isinstance(audio, dict):
+                sample_rate = audio.get("sample_rate", 16000)
+                if "data" in audio:
+                    audio = audio["data"]
+                elif "raw_data" in audio:
+                    audio = audio["raw_data"]
+                elif "transcription" in audio:
+                    # If already transcribed, encode the text
+                    return self._encode_text(audio["transcription"])
+
+            # Convert bytes to numpy array
+            if isinstance(audio, bytes):
+                # Assume int16 PCM
+                audio = np.frombuffer(audio, dtype=np.int16).astype(np.float32) / 32768.0
+
+            # If string (transcription), encode as text
+            if isinstance(audio, str):
+                return self._encode_text(audio)
+
+            # If numpy array, compute basic audio features
+            if isinstance(audio, np.ndarray):
+                # Flatten if needed
+                if audio.ndim > 1:
+                    audio = audio.flatten()
+
+                # Compute simple spectral features
+                audio_features = self._compute_audio_features(audio, sample_rate)
+
+                # Map audio features to embedding space
+                # For now, create a pseudo-embedding based on audio statistics
+                # This preserves some audio characteristics while fitting the embedding dim
+                embedding = self._audio_features_to_embedding(audio_features)
+                return embedding
+
+            # Fallback: return zero embedding
+            logger.warning(f"Unsupported audio format: {type(audio)}")
+            return [0.0] * self.embedding_dim
+
+        except Exception as e:
+            logger.error(f"Error encoding audio: {e}")
+            return [0.0] * self.embedding_dim
+
+    def _compute_audio_features(self, audio: np.ndarray, sample_rate: int) -> Dict[str, Any]:
+        """
+        Compute comprehensive audio features for embedding.
+
+        Extracts time-domain, spectral, and perceptual features for robust
+        audio representation. Features are designed to capture:
+        - Voice activity and speech characteristics
+        - Musical/tonal content
+        - Environmental sound properties
+
+        Args:
+            audio: Audio samples as numpy array (float32, normalized -1 to 1)
+            sample_rate: Sample rate in Hz
+
+        Returns:
+            Dict of audio features including:
+            - Time-domain: RMS, ZCR, energy statistics
+            - Spectral: centroid, bandwidth, rolloff, flux
+            - MFCCs: 13 coefficients for speech/audio characterization
+            - Pitch: fundamental frequency estimate
+        """
+        features = {}
+
+        # Ensure float32 and proper shape
+        if audio.dtype != np.float32:
+            audio = audio.astype(np.float32)
+
+        if len(audio) == 0:
+            return {"empty": True}
+
+        # ========== Time-domain features ==========
+        features["mean"] = float(np.mean(audio))
+        features["std"] = float(np.std(audio))
+        features["max_amplitude"] = float(np.max(np.abs(audio)))
+        features["rms"] = float(np.sqrt(np.mean(audio ** 2)))
+
+        # Zero crossing rate (voice activity indicator)
+        zero_crossings = np.sum(np.abs(np.diff(np.sign(audio)))) / 2
+        features["zcr"] = float(zero_crossings / len(audio)) if len(audio) > 1 else 0.0
+
+        # Duration
+        features["duration"] = float(len(audio) / sample_rate)
+
+        # ========== Frame-based analysis ==========
+        frame_length = int(0.025 * sample_rate)  # 25ms frames
+        hop_length = int(0.010 * sample_rate)    # 10ms hop
+        n_fft = 2 ** int(np.ceil(np.log2(frame_length)))  # Next power of 2
+
+        if len(audio) < frame_length:
+            # Too short for spectral analysis - use basic features only
+            features["short_audio"] = True
+            return features
+
+        # Compute STFT
+        num_frames = (len(audio) - frame_length) // hop_length + 1
+
+        # Pre-compute windowed frames
+        window = np.hanning(frame_length)
+        frames = []
+        for i in range(num_frames):
+            start = i * hop_length
+            end = start + frame_length
+            frame = audio[start:end] * window
+            frames.append(frame)
+
+        frames = np.array(frames)
+
+        # Compute magnitude spectra
+        spectra = np.abs(np.fft.rfft(frames, n=n_fft, axis=1))
+        power_spectra = spectra ** 2
+
+        # Frequency bins
+        freqs = np.fft.rfftfreq(n_fft, 1.0 / sample_rate)
+
+        # ========== Spectral features (per-frame then aggregated) ==========
+
+        # Spectral centroid (brightness)
+        centroid_per_frame = []
+        for spectrum in spectra:
+            if np.sum(spectrum) > 1e-10:
+                centroid = np.sum(freqs * spectrum) / np.sum(spectrum)
+            else:
+                centroid = 0.0
+            centroid_per_frame.append(centroid)
+
+        features["spectral_centroid_mean"] = float(np.mean(centroid_per_frame))
+        features["spectral_centroid_std"] = float(np.std(centroid_per_frame))
+
+        # Spectral bandwidth (spread around centroid)
+        bandwidth_per_frame = []
+        for i, spectrum in enumerate(spectra):
+            if np.sum(spectrum) > 1e-10:
+                centroid = centroid_per_frame[i]
+                bandwidth = np.sqrt(np.sum(((freqs - centroid) ** 2) * spectrum) / np.sum(spectrum))
+            else:
+                bandwidth = 0.0
+            bandwidth_per_frame.append(bandwidth)
+
+        features["spectral_bandwidth_mean"] = float(np.mean(bandwidth_per_frame))
+        features["spectral_bandwidth_std"] = float(np.std(bandwidth_per_frame))
+
+        # Spectral rolloff (frequency below which 85% of energy is contained)
+        rolloff_per_frame = []
+        for spectrum in spectra:
+            cumsum = np.cumsum(spectrum)
+            total = cumsum[-1] if cumsum[-1] > 0 else 1.0
+            rolloff_idx = np.searchsorted(cumsum, 0.85 * total)
+            rolloff = freqs[min(rolloff_idx, len(freqs) - 1)]
+            rolloff_per_frame.append(rolloff)
+
+        features["spectral_rolloff_mean"] = float(np.mean(rolloff_per_frame))
+
+        # Spectral flux (rate of change)
+        if len(spectra) > 1:
+            flux = np.mean(np.diff(spectra, axis=0) ** 2)
+            features["spectral_flux"] = float(flux)
+        else:
+            features["spectral_flux"] = 0.0
+
+        # Spectral flatness (noisiness vs tonality)
+        flatness_per_frame = []
+        for spectrum in power_spectra:
+            spectrum_clean = spectrum + 1e-10  # Avoid log(0)
+            geo_mean = np.exp(np.mean(np.log(spectrum_clean)))
+            arith_mean = np.mean(spectrum_clean)
+            flatness = geo_mean / arith_mean if arith_mean > 0 else 0.0
+            flatness_per_frame.append(flatness)
+
+        features["spectral_flatness_mean"] = float(np.mean(flatness_per_frame))
+
+        # ========== MFCCs (speech/audio fingerprint) ==========
+        mfccs = self._compute_mfccs(power_spectra, sample_rate, n_fft, n_mfcc=13)
+        for i, mfcc_mean in enumerate(np.mean(mfccs, axis=0)):
+            features[f"mfcc_{i}"] = float(mfcc_mean)
+
+        # MFCC deltas (velocity)
+        if mfccs.shape[0] > 2:
+            mfcc_delta = np.diff(mfccs, axis=0)
+            features["mfcc_delta_mean"] = float(np.mean(np.abs(mfcc_delta)))
+
+        # ========== Frame energy statistics ==========
+        frame_energies = np.sum(frames ** 2, axis=1)
+        features["energy_mean"] = float(np.mean(frame_energies))
+        features["energy_std"] = float(np.std(frame_energies))
+        features["energy_max"] = float(np.max(frame_energies))
+
+        # Energy ratio (speech activity)
+        if features["energy_max"] > 0:
+            features["energy_ratio"] = float(features["energy_mean"] / features["energy_max"])
+        else:
+            features["energy_ratio"] = 0.0
+
+        # ========== Pitch estimation (for speech) ==========
+        pitch = self._estimate_pitch(audio, sample_rate)
+        if pitch is not None:
+            features["pitch_hz"] = float(pitch)
+            features["has_pitch"] = True
+        else:
+            features["has_pitch"] = False
+
+        return features
+
+    def _compute_mfccs(
+        self,
+        power_spectra: np.ndarray,
+        sample_rate: int,
+        n_fft: int,
+        n_mfcc: int = 13,
+        n_mels: int = 40
+    ) -> np.ndarray:
+        """
+        Compute Mel-Frequency Cepstral Coefficients.
+
+        MFCCs are the standard feature for speech recognition and audio
+        classification. They capture the envelope of the short-term power
+        spectrum on a mel scale (perceptually-weighted frequency).
+
+        Args:
+            power_spectra: Power spectra array (n_frames, n_freq_bins)
+            sample_rate: Sample rate in Hz
+            n_fft: FFT size used
+            n_mfcc: Number of MFCCs to return
+            n_mels: Number of mel filter banks
+
+        Returns:
+            MFCCs array (n_frames, n_mfcc)
+        """
+        # Create mel filterbank
+        mel_filters = self._create_mel_filterbank(sample_rate, n_fft, n_mels)
+
+        # Apply mel filterbank
+        mel_spectra = np.dot(power_spectra, mel_filters.T)
+
+        # Log compression (with floor to avoid log(0))
+        log_mel_spectra = np.log(mel_spectra + 1e-10)
+
+        # DCT (Type-II) to get MFCCs
+        # Using manual DCT implementation for simplicity
+        n_frames = log_mel_spectra.shape[0]
+        mfccs = np.zeros((n_frames, n_mfcc))
+
+        for i in range(n_mfcc):
+            # DCT basis function
+            basis = np.cos(np.pi * i * (np.arange(n_mels) + 0.5) / n_mels)
+            mfccs[:, i] = np.dot(log_mel_spectra, basis)
+
+        # Normalize
+        mfccs[:, 0] *= np.sqrt(1.0 / n_mels)
+        mfccs[:, 1:] *= np.sqrt(2.0 / n_mels)
+
+        return mfccs
+
+    def _create_mel_filterbank(
+        self,
+        sample_rate: int,
+        n_fft: int,
+        n_mels: int = 40,
+        fmin: float = 0.0,
+        fmax: Optional[float] = None
+    ) -> np.ndarray:
+        """
+        Create a mel filterbank matrix.
+
+        Args:
+            sample_rate: Sample rate in Hz
+            n_fft: FFT size
+            n_mels: Number of mel bands
+            fmin: Minimum frequency (Hz)
+            fmax: Maximum frequency (Hz), defaults to sample_rate/2
+
+        Returns:
+            Mel filterbank matrix (n_mels, n_fft//2 + 1)
+        """
+        if fmax is None:
+            fmax = sample_rate / 2.0
+
+        # Mel scale conversion functions
+        def hz_to_mel(hz):
+            return 2595.0 * np.log10(1.0 + hz / 700.0)
+
+        def mel_to_hz(mel):
+            return 700.0 * (10.0 ** (mel / 2595.0) - 1.0)
+
+        # Mel points
+        mel_min = hz_to_mel(fmin)
+        mel_max = hz_to_mel(fmax)
+        mel_points = np.linspace(mel_min, mel_max, n_mels + 2)
+        hz_points = mel_to_hz(mel_points)
+
+        # FFT bin frequencies
+        n_freq = n_fft // 2 + 1
+        fft_freqs = np.linspace(0, sample_rate / 2.0, n_freq)
+
+        # Create filterbank
+        filterbank = np.zeros((n_mels, n_freq))
+
+        for i in range(n_mels):
+            left = hz_points[i]
+            center = hz_points[i + 1]
+            right = hz_points[i + 2]
+
+            # Left slope
+            left_slope = (fft_freqs >= left) & (fft_freqs <= center)
+            filterbank[i, left_slope] = (fft_freqs[left_slope] - left) / (center - left + 1e-10)
+
+            # Right slope
+            right_slope = (fft_freqs > center) & (fft_freqs <= right)
+            filterbank[i, right_slope] = (right - fft_freqs[right_slope]) / (right - center + 1e-10)
+
+        return filterbank
+
+    def _estimate_pitch(
+        self,
+        audio: np.ndarray,
+        sample_rate: int,
+        fmin: float = 50.0,
+        fmax: float = 500.0
+    ) -> Optional[float]:
+        """
+        Estimate fundamental frequency (pitch) using autocorrelation.
+
+        Args:
+            audio: Audio samples
+            sample_rate: Sample rate in Hz
+            fmin: Minimum pitch frequency (Hz)
+            fmax: Maximum pitch frequency (Hz)
+
+        Returns:
+            Estimated pitch in Hz, or None if no clear pitch detected
+        """
+        # Lag range for pitch detection
+        lag_min = int(sample_rate / fmax)
+        lag_max = int(sample_rate / fmin)
+
+        if len(audio) < lag_max * 2:
+            return None
+
+        # Compute autocorrelation for lag range
+        # Use center portion of audio for stability
+        center = len(audio) // 2
+        segment = audio[center - lag_max:center + lag_max]
+
+        if len(segment) < lag_max * 2:
+            return None
+
+        # Normalized autocorrelation
+        autocorr = np.correlate(segment, segment, mode='full')
+        autocorr = autocorr[len(autocorr) // 2:]  # Take positive lags only
+
+        # Normalize
+        if autocorr[0] > 0:
+            autocorr = autocorr / autocorr[0]
+
+        # Find peak in valid lag range
+        valid_autocorr = autocorr[lag_min:lag_max]
+
+        if len(valid_autocorr) == 0:
+            return None
+
+        peak_idx = np.argmax(valid_autocorr)
+        peak_value = valid_autocorr[peak_idx]
+
+        # Require minimum correlation for voiced detection
+        if peak_value < 0.3:
+            return None
+
+        # Convert lag to frequency
+        best_lag = lag_min + peak_idx
+        pitch = sample_rate / best_lag
+
+        return pitch
+
+    def _audio_features_to_embedding(self, features: Dict[str, Any]) -> List[float]:
+        """
+        Map audio features to embedding space.
+
+        Creates a semantically meaningful embedding from audio features by:
+        1. Constructing a feature vector from time-domain, spectral, and MFCC features
+        2. Projecting to embedding dimension using a learned-style projection
+        3. Adding semantic alignment via text encoding of audio descriptors
+
+        The embedding captures audio characteristics while maintaining some
+        semantic compatibility with text embeddings in the same space.
+
+        Args:
+            features: Dict of audio features from _compute_audio_features
+
+        Returns:
+            Normalized embedding vector
+        """
+        if features.get("empty", False):
+            return [0.0] * self.embedding_dim
+
+        # ========== Build structured feature vector ==========
+
+        # Time-domain features (normalized)
+        time_features = [
+            min(features.get("rms", 0.0) * 10, 1.0),  # RMS normalized
+            min(features.get("zcr", 0.0) * 50, 1.0),  # ZCR normalized
+            min(features.get("energy_ratio", 0.0), 1.0),
+            min(features.get("duration", 0.0) / 10.0, 1.0),  # Duration up to 10s
+        ]
+
+        # Spectral features (normalized to typical ranges)
+        spectral_features = [
+            min(features.get("spectral_centroid_mean", 0.0) / 8000.0, 1.0),
+            min(features.get("spectral_centroid_std", 0.0) / 2000.0, 1.0),
+            min(features.get("spectral_bandwidth_mean", 0.0) / 4000.0, 1.0),
+            min(features.get("spectral_rolloff_mean", 0.0) / 10000.0, 1.0),
+            min(features.get("spectral_flux", 0.0) * 100, 1.0),
+            features.get("spectral_flatness_mean", 0.0),  # Already 0-1
+        ]
+
+        # MFCCs (already somewhat normalized by DCT)
+        mfcc_features = []
+        for i in range(13):
+            mfcc_val = features.get(f"mfcc_{i}", 0.0)
+            # Normalize MFCCs to roughly -1 to 1 range
+            mfcc_features.append(np.tanh(mfcc_val / 50.0))
+
+        # Pitch features
+        pitch_features = [
+            1.0 if features.get("has_pitch", False) else 0.0,
+            min(features.get("pitch_hz", 0.0) / 500.0, 1.0) if features.get("has_pitch", False) else 0.0,
+        ]
+
+        # Combine all features
+        all_features = time_features + spectral_features + mfcc_features + pitch_features
+        feature_vector = np.array(all_features, dtype=np.float32)
+
+        # ========== Project to embedding dimension ==========
+
+        # Use a deterministic but pseudo-random projection matrix
+        # This creates a stable mapping from features to embedding space
+        n_features = len(feature_vector)
+
+        # Create projection using seeded random for reproducibility
+        rng = np.random.RandomState(42)  # Fixed seed for reproducibility
+        projection_matrix = rng.randn(self.embedding_dim, n_features).astype(np.float32)
+        projection_matrix /= np.sqrt(n_features)  # Normalize columns
+
+        # Project features
+        projected = np.dot(projection_matrix, feature_vector)
+
+        # ========== Add semantic component ==========
+
+        # Create a text description for semantic alignment
+        # This helps the audio embedding relate to text descriptions
+        descriptors = []
+
+        # Volume descriptor
+        rms = features.get("rms", 0.0)
+        if rms > 0.3:
+            descriptors.append("loud")
+        elif rms < 0.05:
+            descriptors.append("quiet")
+
+        # Speech/tonal detection
+        if features.get("has_pitch", False):
+            pitch = features.get("pitch_hz", 0.0)
+            if pitch > 200:
+                descriptors.append("high-pitched voice")
+            elif pitch < 120:
+                descriptors.append("low-pitched voice")
+            else:
+                descriptors.append("speech")
+
+        # Tonal vs noisy
+        flatness = features.get("spectral_flatness_mean", 0.5)
+        if flatness > 0.5:
+            descriptors.append("noise")
+        elif flatness < 0.1:
+            descriptors.append("tonal")
+
+        # Duration context
+        duration = features.get("duration", 0.0)
+        if duration > 5.0:
+            descriptors.append("long audio")
+        elif duration < 0.5:
+            descriptors.append("short sound")
+
+        # Get semantic embedding from description
+        if descriptors:
+            description = f"Audio: {', '.join(descriptors)}"
+            semantic_embedding = np.array(self._encode_text(description), dtype=np.float32)
+
+            # Blend projected features with semantic embedding
+            # Weight: 70% acoustic features, 30% semantic
+            alpha = 0.7
+            blended = alpha * projected + (1 - alpha) * semantic_embedding
+        else:
+            blended = projected
+
+        # ========== Final normalization ==========
+        norm = np.linalg.norm(blended)
+        if norm > 0:
+            blended = blended / norm
+
+        return blended.tolist()
+
+    def _encode_sensor(self, sensor_data: Any) -> List[float]:
+        """
+        Encode sensor data to embedding with type-specific features.
+
+        Supports sensor readings from the device abstraction layer:
+        - Dict with sensor_type, value, unit (from SensorReading)
+        - Raw numeric values
+        - List of readings (time series)
+        - Multi-axis sensors (accelerometer, gyroscope, magnetometer)
+
+        Uses a hybrid encoding approach:
+        1. Numerical features: Captures precise sensor values and derivatives
+        2. Semantic features: Text embedding for categorical/interpretive meaning
+        3. Blending: Combines both for robust representation
+
+        Args:
+            sensor_data: Sensor reading in various formats
+
+        Returns:
+            Embedding vector
+        """
+        try:
+            # ========== Parse sensor data ==========
+            sensor_type = "unknown"
+            value = None
+            unit = ""
+            confidence = 1.0
+            metadata = {}
+
+            if isinstance(sensor_data, dict):
+                sensor_type = sensor_data.get("sensor_type", "unknown")
+                value = sensor_data.get("value", sensor_data.get("data", 0))
+                unit = sensor_data.get("unit", "")
+                confidence = sensor_data.get("confidence", 1.0)
+                metadata = sensor_data.get("metadata", {})
+            elif isinstance(sensor_data, (int, float)):
+                value = sensor_data
+            elif isinstance(sensor_data, list):
+                value = sensor_data
+            elif isinstance(sensor_data, np.ndarray):
+                value = sensor_data.tolist() if sensor_data.size > 1 else float(sensor_data)
+
+            # ========== Extract numerical features based on sensor type ==========
+            numerical_features = self._extract_sensor_features(sensor_type, value, unit, metadata)
+
+            # ========== Create semantic description ==========
+            semantic_desc = self._create_sensor_description(sensor_type, value, unit, confidence)
+
+            # ========== Hybrid encoding ==========
+            return self._encode_sensor_hybrid(numerical_features, semantic_desc, sensor_type)
+
+        except Exception as e:
+            logger.error(f"Error encoding sensor data: {e}")
+            return [0.0] * self.embedding_dim
+
+    def _extract_sensor_features(
+        self,
+        sensor_type: str,
+        value: Any,
+        unit: str,
+        metadata: Dict[str, Any]
+    ) -> Dict[str, float]:
+        """
+        Extract numerical features based on sensor type.
+
+        Different sensor types have different value ranges and semantics.
+        This normalizes values to a common scale for embedding.
+
+        Args:
+            sensor_type: Type of sensor (TEMPERATURE, ACCELEROMETER, etc.)
+            value: Sensor reading value
+            unit: Unit of measurement
+            metadata: Additional sensor metadata
+
+        Returns:
+            Dict of normalized numerical features
+        """
+        features = {}
+        sensor_type_upper = sensor_type.upper() if isinstance(sensor_type, str) else "UNKNOWN"
+
+        # ========== Environmental sensors ==========
+        if sensor_type_upper == "TEMPERATURE":
+            # Normalize to typical indoor range (celsius assumed)
+            if isinstance(value, (int, float)):
+                # Map typical range (-20 to 50°C) to 0-1
+                features["temp_normalized"] = (float(value) + 20) / 70.0
+                features["temp_cold"] = 1.0 if value < 10 else 0.0
+                features["temp_hot"] = 1.0 if value > 30 else 0.0
+                features["temp_comfortable"] = 1.0 if 18 <= value <= 26 else 0.0
+
+        elif sensor_type_upper == "HUMIDITY":
+            if isinstance(value, (int, float)):
+                features["humidity_normalized"] = float(value) / 100.0
+                features["humidity_dry"] = 1.0 if value < 30 else 0.0
+                features["humidity_humid"] = 1.0 if value > 70 else 0.0
+
+        elif sensor_type_upper == "PRESSURE":
+            if isinstance(value, (int, float)):
+                # Atmospheric pressure (hPa): typical range 950-1050
+                features["pressure_normalized"] = (float(value) - 950) / 100.0
+                features["pressure_low"] = 1.0 if value < 1000 else 0.0
+                features["pressure_high"] = 1.0 if value > 1020 else 0.0
+
+        elif sensor_type_upper == "LIGHT":
+            if isinstance(value, (int, float)):
+                # Log scale for light (lux can vary from 0 to 100000+)
+                features["light_log"] = np.log1p(float(value)) / 12.0  # log(100000) ≈ 11.5
+                features["light_dark"] = 1.0 if value < 50 else 0.0
+                features["light_bright"] = 1.0 if value > 1000 else 0.0
+
+        elif sensor_type_upper == "SOUND_LEVEL":
+            if isinstance(value, (int, float)):
+                # dB scale: typical range 0-120
+                features["sound_normalized"] = float(value) / 120.0
+                features["sound_quiet"] = 1.0 if value < 40 else 0.0
+                features["sound_loud"] = 1.0 if value > 80 else 0.0
+
+        # ========== Motion sensors (multi-axis) ==========
+        elif sensor_type_upper in ("ACCELEROMETER", "GYROSCOPE", "MAGNETOMETER"):
+            if isinstance(value, dict):
+                # Multi-axis: {x, y, z}
+                x = float(value.get("x", value.get("X", 0)))
+                y = float(value.get("y", value.get("Y", 0)))
+                z = float(value.get("z", value.get("Z", 0)))
+
+                # Magnitude
+                magnitude = np.sqrt(x**2 + y**2 + z**2)
+
+                if sensor_type_upper == "ACCELEROMETER":
+                    # Normalize assuming ±16g range, typical gravity ~9.8
+                    features["accel_x"] = x / 16.0
+                    features["accel_y"] = y / 16.0
+                    features["accel_z"] = z / 16.0
+                    features["accel_magnitude"] = magnitude / 16.0
+                    features["accel_stationary"] = 1.0 if 9.0 < magnitude < 10.5 else 0.0
+                    features["accel_moving"] = 1.0 if magnitude > 11.0 or magnitude < 9.0 else 0.0
+
+                elif sensor_type_upper == "GYROSCOPE":
+                    # Normalize assuming ±2000 dps range
+                    features["gyro_x"] = x / 2000.0
+                    features["gyro_y"] = y / 2000.0
+                    features["gyro_z"] = z / 2000.0
+                    features["gyro_magnitude"] = magnitude / 2000.0
+                    features["gyro_rotating"] = 1.0 if magnitude > 50 else 0.0
+
+                elif sensor_type_upper == "MAGNETOMETER":
+                    # Normalize assuming ±1000 µT range
+                    features["mag_x"] = x / 1000.0
+                    features["mag_y"] = y / 1000.0
+                    features["mag_z"] = z / 1000.0
+                    features["mag_magnitude"] = magnitude / 1000.0
+
+            elif isinstance(value, (list, tuple)) and len(value) >= 3:
+                x, y, z = float(value[0]), float(value[1]), float(value[2])
+                magnitude = np.sqrt(x**2 + y**2 + z**2)
+                features["axis_x"] = x / 100.0  # Generic normalization
+                features["axis_y"] = y / 100.0
+                features["axis_z"] = z / 100.0
+                features["axis_magnitude"] = magnitude / 100.0
+
+        elif sensor_type_upper == "DISTANCE":
+            if isinstance(value, (int, float)):
+                # Distance sensors (cm typically): normalize to 0-500cm
+                features["distance_normalized"] = min(float(value) / 500.0, 1.0)
+                features["distance_close"] = 1.0 if value < 30 else 0.0
+                features["distance_far"] = 1.0 if value > 200 else 0.0
+
+        elif sensor_type_upper == "TOUCH":
+            if isinstance(value, (int, float)):
+                features["touch_active"] = 1.0 if value > 0 else 0.0
+                features["touch_value"] = min(float(value) / 1024.0, 1.0)  # Typical 10-bit
+
+        elif sensor_type_upper == "FORCE":
+            if isinstance(value, (int, float)):
+                # Force sensors: normalize to typical 0-100N range
+                features["force_normalized"] = min(float(value) / 100.0, 1.0)
+                features["force_light"] = 1.0 if value < 10 else 0.0
+                features["force_heavy"] = 1.0 if value > 50 else 0.0
+
+        # ========== Generic fallback ==========
+        if not features:
+            if isinstance(value, (int, float)):
+                # Generic single value normalization
+                features["value_raw"] = float(value)
+                features["value_normalized"] = np.tanh(float(value) / 100.0)
+            elif isinstance(value, (list, tuple)):
+                # Time series: compute statistics
+                arr = np.array(value, dtype=np.float32)
+                features["series_mean"] = float(np.mean(arr))
+                features["series_std"] = float(np.std(arr))
+                features["series_min"] = float(np.min(arr))
+                features["series_max"] = float(np.max(arr))
+                features["series_trend"] = float(arr[-1] - arr[0]) if len(arr) > 1 else 0.0
+
+        return features
+
+    def _create_sensor_description(
+        self,
+        sensor_type: str,
+        value: Any,
+        unit: str,
+        confidence: float
+    ) -> str:
+        """
+        Create a human-readable description of the sensor reading.
+
+        This description is used for semantic embedding alignment.
+
+        Args:
+            sensor_type: Type of sensor
+            value: Sensor reading
+            unit: Unit of measurement
+            confidence: Reading confidence (0-1)
+
+        Returns:
+            Text description of the sensor state
+        """
+        sensor_type_upper = sensor_type.upper() if isinstance(sensor_type, str) else "UNKNOWN"
+        descriptions = []
+
+        # Add sensor type
+        type_names = {
+            "TEMPERATURE": "temperature",
+            "HUMIDITY": "humidity level",
+            "PRESSURE": "atmospheric pressure",
+            "LIGHT": "light intensity",
+            "SOUND_LEVEL": "sound level",
+            "ACCELEROMETER": "acceleration",
+            "GYROSCOPE": "rotation rate",
+            "MAGNETOMETER": "magnetic field",
+            "DISTANCE": "distance measurement",
+            "TOUCH": "touch sensor",
+            "FORCE": "force measurement",
+        }
+        type_name = type_names.get(sensor_type_upper, sensor_type.lower())
+
+        # Format value
+        if isinstance(value, dict):
+            value_str = ", ".join(f"{k}={v:.2f}" for k, v in value.items())
+        elif isinstance(value, (list, tuple)):
+            if len(value) <= 5:
+                value_str = ", ".join(f"{v:.2f}" for v in value)
+            else:
+                value_str = f"series of {len(value)} readings"
+        elif isinstance(value, (int, float)):
+            value_str = f"{value:.2f}"
+        else:
+            value_str = str(value)
+
+        # Build description
+        descriptions.append(f"{type_name}: {value_str}")
+        if unit:
+            descriptions[-1] += f" {unit}"
+
+        # Add qualitative descriptors
+        if sensor_type_upper == "TEMPERATURE" and isinstance(value, (int, float)):
+            if value < 0:
+                descriptions.append("freezing cold")
+            elif value < 15:
+                descriptions.append("cold")
+            elif value < 22:
+                descriptions.append("cool")
+            elif value < 28:
+                descriptions.append("warm")
+            else:
+                descriptions.append("hot")
+
+        elif sensor_type_upper == "HUMIDITY" and isinstance(value, (int, float)):
+            if value < 30:
+                descriptions.append("dry air")
+            elif value > 70:
+                descriptions.append("humid air")
+
+        elif sensor_type_upper == "LIGHT" and isinstance(value, (int, float)):
+            if value < 10:
+                descriptions.append("darkness")
+            elif value < 100:
+                descriptions.append("dim light")
+            elif value < 1000:
+                descriptions.append("indoor lighting")
+            else:
+                descriptions.append("bright light")
+
+        elif sensor_type_upper == "ACCELEROMETER" and isinstance(value, dict):
+            mag = np.sqrt(sum(v**2 for v in value.values()))
+            if 9.0 < mag < 10.5:
+                descriptions.append("stationary")
+            else:
+                descriptions.append("motion detected")
+
+        # Add confidence qualifier if low
+        if confidence < 0.7:
+            descriptions.append("uncertain reading")
+
+        return " | ".join(descriptions)
+
+    def _encode_sensor_hybrid(
+        self,
+        numerical_features: Dict[str, float],
+        semantic_desc: str,
+        sensor_type: str
+    ) -> List[float]:
+        """
+        Create hybrid embedding from numerical features and semantic description.
+
+        Blends:
+        - Numerical projection: Direct sensor value representation
+        - Semantic embedding: Text-based meaning alignment
+
+        The blend ratio depends on sensor type:
+        - Motion sensors: More numerical (precise values matter)
+        - Environmental sensors: More semantic (qualitative states matter)
+
+        Args:
+            numerical_features: Dict of normalized numerical features
+            semantic_desc: Text description of sensor state
+            sensor_type: Type of sensor
+
+        Returns:
+            Normalized embedding vector
+        """
+        # ========== Numerical embedding via projection ==========
+        feature_values = list(numerical_features.values())
+
+        if feature_values:
+            feature_vector = np.array(feature_values, dtype=np.float32)
+            n_features = len(feature_vector)
+
+            # Deterministic projection matrix
+            rng = np.random.RandomState(43)  # Different seed from audio
+            projection = rng.randn(self.embedding_dim, n_features).astype(np.float32)
+            projection /= np.sqrt(n_features)
+
+            numerical_embedding = np.dot(projection, feature_vector)
+        else:
+            numerical_embedding = np.zeros(self.embedding_dim, dtype=np.float32)
+
+        # ========== Semantic embedding ==========
+        semantic_embedding = np.array(self._encode_text(semantic_desc), dtype=np.float32)
+
+        # ========== Determine blend ratio based on sensor type ==========
+        sensor_type_upper = sensor_type.upper() if isinstance(sensor_type, str) else "UNKNOWN"
+
+        # High-precision sensors get more numerical weight
+        high_precision_sensors = {"ACCELEROMETER", "GYROSCOPE", "MAGNETOMETER", "FORCE"}
+        # Qualitative sensors get more semantic weight
+        qualitative_sensors = {"TEMPERATURE", "HUMIDITY", "LIGHT", "TOUCH"}
+
+        if sensor_type_upper in high_precision_sensors:
+            alpha = 0.7  # 70% numerical
+        elif sensor_type_upper in qualitative_sensors:
+            alpha = 0.4  # 40% numerical
+        else:
+            alpha = 0.5  # Balanced
+
+        # ========== Blend and normalize ==========
+        blended = alpha * numerical_embedding + (1 - alpha) * semantic_embedding
+
+        norm = np.linalg.norm(blended)
+        if norm > 0:
+            blended = blended / norm
+
+        return blended.tolist()
     
     def _compute_complexity(self, raw_input: Any, modality: str) -> int:
         """
@@ -377,7 +1282,11 @@ class PerceptionSubsystem:
         elif modality == "introspection":
             # Introspection is cognitively expensive
             return 20
-        
+
+        elif modality == "sensor":
+            # Sensor readings are lightweight
+            return 5
+
         else:
             return 10  # Default
     

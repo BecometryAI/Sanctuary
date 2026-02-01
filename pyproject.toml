@@ -35,6 +35,10 @@ dependencies = [
     "librosa>=0.11.0",
     "scipy>=1.16.3",
     "torchaudio>=2.9.0",
+    "sounddevice>=0.5.0",  # For microphone capture in device layer
+
+    # Video capture
+    "opencv-python>=4.8.0",  # For camera devices with DirectShow backend (Windows)
     
     # Blockchain and storage
     "web3>=6.0.0",  # async support now included in main package
@@ -59,6 +63,9 @@ dependencies = [
     # Utilities
     "python-dotenv>=1.2.1",
     "pydantic>=2.12.4",
+
+    # Serial communication (for sensor devices)
+    "pyserial>=3.5",  # For Arduino/ESP32/Pico sensors via UART
 
     # Serialization (pinned for security - CVE-2026-0994 fix for Any recursion depth bypass)
     "protobuf>=6.33.5",

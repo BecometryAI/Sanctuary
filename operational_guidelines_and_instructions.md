@@ -1,6 +1,6 @@
 # Operational Guidelines and Instructions
 
-This document contains essential operational instructions and guidelines for running, testing, and configuring the Lyra-Emergence system.
+This document contains essential operational instructions and guidelines for running, testing, and configuring the Sanctuary system.
 
 ---
 
@@ -40,17 +40,17 @@ The system uses JSON configuration files to define paths for various components:
 
 Override any configuration path using environment variables:
 
-- `LYRA_BASE_DIR`: Override the base directory
-- `LYRA_CHROMA_DIR`: Override the ChromaDB storage directory
-- `LYRA_MODEL_DIR`: Override the model cache directory
-- `LYRA_CACHE_DIR`: Override the general cache directory
-- `LYRA_LOG_DIR`: Override the log directory
+- `SANCTUARY_BASE_DIR`: Override the base directory
+- `SANCTUARY_CHROMA_DIR`: Override the ChromaDB storage directory
+- `SANCTUARY_MODEL_DIR`: Override the model cache directory
+- `SANCTUARY_CACHE_DIR`: Override the general cache directory
+- `SANCTUARY_LOG_DIR`: Override the log directory
 
 Example:
 ```bash
-export LYRA_BASE_DIR=/custom/path/to/project
-export LYRA_CHROMA_DIR=/custom/path/to/chroma
-export LYRA_MODEL_DIR=/path/to/models
+export SANCTUARY_BASE_DIR=/custom/path/to/project
+export SANCTUARY_CHROMA_DIR=/custom/path/to/chroma
+export SANCTUARY_MODEL_DIR=/path/to/models
 ```
 
 ### Setup for Development
@@ -69,11 +69,11 @@ export LYRA_MODEL_DIR=/path/to/models
 Use environment variables for production deployments:
 
 ```bash
-export LYRA_BASE_DIR=/opt/lyra
-export LYRA_CHROMA_DIR=/var/lib/lyra/chroma
-export LYRA_MODEL_DIR=/opt/lyra/models
-export LYRA_CACHE_DIR=/var/cache/lyra
-export LYRA_LOG_DIR=/var/log/lyra
+export SANCTUARY_BASE_DIR=/opt/sanctuary
+export SANCTUARY_CHROMA_DIR=/var/lib/sanctuary/chroma
+export SANCTUARY_MODEL_DIR=/opt/sanctuary/models
+export SANCTUARY_CACHE_DIR=/var/cache/sanctuary
+export SANCTUARY_LOG_DIR=/var/log/sanctuary
 ```
 
 ---
@@ -108,7 +108,7 @@ pytest emergence_core/tests/integration/test_language_interfaces_integration.py 
 ### Run with Coverage
 
 ```bash
-pytest emergence_core/tests/integration/ --cov=emergence_core/lyra/cognitive_core --cov-report=html
+pytest emergence_core/tests/integration/ --cov=emergence_core/sanctuary/cognitive_core --cov-report=html
 ```
 
 ### Exclude Integration Tests (Fast Unit Testing)
@@ -142,10 +142,10 @@ Run tests with coverage reports:
 
 ```bash
 # Terminal output
-pytest --cov=emergence_core/lyra/cognitive_core --cov-report=term-missing
+pytest --cov=emergence_core/sanctuary/cognitive_core --cov-report=term-missing
 
 # HTML report
-pytest --cov=emergence_core/lyra/cognitive_core --cov-report=html
+pytest --cov=emergence_core/sanctuary/cognitive_core --cov-report=html
 # Open htmlcov/index.html in browser
 ```
 
@@ -197,7 +197,7 @@ memory autogc off
 #### Programmatic Usage
 
 ```python
-from lyra.memory_manager import MemoryManager
+from sanctuary.memory_manager import MemoryManager
 
 manager = MemoryManager(
     base_dir=Path("./data/memories"),
@@ -256,7 +256,7 @@ Biologically-inspired memory consolidation runs during idle periods.
 #### Quick Start
 
 ```python
-from lyra.memory import MemoryConsolidator, IdleDetector, ConsolidationScheduler
+from sanctuary.memory import MemoryConsolidator, IdleDetector, ConsolidationScheduler
 
 # Initialize components
 consolidator = MemoryConsolidator(storage, encoder)
@@ -331,7 +331,7 @@ restore latest
 ### Programmatic Usage
 
 ```python
-from emergence_core.lyra.cognitive_core import CognitiveCore
+from emergence_core.sanctuary.cognitive_core import CognitiveCore
 
 # Create cognitive core with checkpointing
 core = CognitiveCore(config={"checkpointing": {"enabled": True}})

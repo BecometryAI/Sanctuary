@@ -111,7 +111,7 @@ class TestWellBeingHandler:
     
     async def _request_consent(self) -> bool:
         """
-        Request Lyra's informed consent for testing
+        Request Sanctuary's informed consent for testing
         """
         # This would integrate with Sanctuary's dialogue system
         return True

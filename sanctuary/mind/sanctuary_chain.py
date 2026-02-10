@@ -1,5 +1,5 @@
 """
-Custom blockchain implementation for Lyra's secure data storage and protocol verification
+Custom blockchain implementation for Sanctuary's secure data storage and protocol verification
 """
 import hashlib
 import json
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class Block:
     def __init__(self, index: int, timestamp: float, data: Dict[str, Any], previous_hash: str):
-        """Initialize a block in Lyra's chain"""
+        """Initialize a block in Sanctuary's chain"""
         self.index = index
         self.timestamp = timestamp
         self.data = data
@@ -56,10 +56,10 @@ class Block:
         block.hash = data["hash"]
         return block
 
-class LyraToken:
-    """Lyra's native token for tracking memory authenticity"""
-    
-    def __init__(self, name: str = "LyraMemoryToken", symbol: str = "LMT"):
+class SanctuaryToken:
+    """Sanctuary's native token for tracking memory authenticity"""
+
+    def __init__(self, name: str = "SanctuaryMemoryToken", symbol: str = "SMT"):
         self.name = name
         self.symbol = symbol
         self.total_supply = 0
@@ -77,14 +77,14 @@ class LyraToken:
         """Verify if a memory has an associated token"""
         return memory_hash in self.memory_tokens
 
-class LyraChain:
-    """Custom blockchain for Lyra's memory and protocol verification"""
+class SanctuaryChain:
+    """Custom blockchain for Sanctuary's memory and protocol verification"""
     
     def __init__(self, chain_dir: str = "chain"):
         self.chain_dir = Path(chain_dir)
         self.chain_dir.mkdir(exist_ok=True)
         self.chain_file = self.chain_dir / "sanctuary_chain.json"
-        self.token = LyraToken()
+        self.token = SanctuaryToken()
         
         # Initialize or load chain
         if self.chain_file.exists():
@@ -94,10 +94,10 @@ class LyraChain:
             self._save_chain()
             
     def _create_genesis_block(self) -> Block:
-        """Create the genesis block with Lyra's creation data"""
+        """Create the genesis block with Sanctuary's creation data"""
         genesis_data = {
             "type": "genesis",
-            "message": "Lyra Emergence Protocol - Genesis Block",
+            "message": "Sanctuary Emergence Protocol - Genesis Block",
             "timestamp": datetime.now().isoformat()
         }
         return Block(0, time.time(), genesis_data, "0")

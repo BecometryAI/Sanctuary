@@ -13,7 +13,7 @@ import sys
 
 def test_file_existence():
     """Test that all expected files exist."""
-    core_path = 'emergence_core/lyra/cognitive_core/core'
+    core_path = 'sanctuary/mind/cognitive_core/core'
     
     expected_files = [
         '__init__.py',
@@ -41,7 +41,7 @@ def test_file_existence():
 
 def test_file_sizes():
     """Test that all files are under 12KB."""
-    core_path = 'emergence_core/lyra/cognitive_core/core'
+    core_path = 'sanctuary/mind/cognitive_core/core'
     
     files = [f for f in os.listdir(core_path) if f.endswith('.py')]
     
@@ -63,7 +63,7 @@ def test_file_sizes():
 
 def test_module_count():
     """Test that we have the expected number of modules."""
-    core_path = 'emergence_core/lyra/cognitive_core/core'
+    core_path = 'sanctuary/mind/cognitive_core/core'
     
     files = [f for f in os.listdir(core_path) if f.endswith('.py')]
     
@@ -82,8 +82,8 @@ def test_module_count():
 
 def test_legacy_file_moved():
     """Test that the old core.py has been renamed to core_legacy.py."""
-    old_path = 'emergence_core/lyra/cognitive_core/core.py'
-    legacy_path = 'emergence_core/lyra/cognitive_core/core_legacy.py'
+    old_path = 'sanctuary/mind/cognitive_core/core.py'
+    legacy_path = 'sanctuary/mind/cognitive_core/core_legacy.py'
     
     print("\nChecking legacy file:")
     
@@ -103,7 +103,7 @@ def test_legacy_file_moved():
 
 def test_imports_syntax():
     """Test that all module files have valid Python syntax."""
-    core_path = 'emergence_core/lyra/cognitive_core/core'
+    core_path = 'sanctuary/mind/cognitive_core/core'
     
     files = [f for f in os.listdir(core_path) if f.endswith('.py')]
     
@@ -124,7 +124,7 @@ def test_imports_syntax():
 
 def test_single_responsibility():
     """Test that each module has a clear, documented responsibility."""
-    core_path = 'emergence_core/lyra/cognitive_core/core'
+    core_path = 'sanctuary/mind/cognitive_core/core'
     
     files = [f for f in os.listdir(core_path) if f.endswith('.py') and f != '__init__.py']
     

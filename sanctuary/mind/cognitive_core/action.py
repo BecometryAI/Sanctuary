@@ -39,7 +39,7 @@ class ActionType(str, Enum):
     UPDATE_GOAL: Modify goal state
     WAIT: Do nothing (valid action!)
     TOOL_CALL: Execute external tool
-    SPEAK_AUTONOMOUS: Unprompted speech initiated by Lyra
+    SPEAK_AUTONOMOUS: Unprompted speech initiated by Sanctuary
     """
     SPEAK = "speak"
     COMMIT_MEMORY = "commit_memory"

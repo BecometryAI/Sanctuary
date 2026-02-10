@@ -13,11 +13,11 @@ def event_loop():
 
 
 @pytest.fixture
-async def lyra_api():
-    """Provide started LyraAPI instance."""
-    from lyra import LyraAPI
-    
-    api = LyraAPI()
+async def sanctuary_api():
+    """Provide started SanctuaryAPI instance."""
+    from sanctuary import SanctuaryAPI
+
+    api = SanctuaryAPI()
     await api.start()
     
     yield api

@@ -226,7 +226,7 @@ class TestRoundTripLanguageProcessing:
         )
         
         # Parse input
-        user_text = "Hello Lyra!"
+        user_text = "Hello Sanctuary!"
         parsed = await parser.parse(user_text)
         
         # Should have goals and percept

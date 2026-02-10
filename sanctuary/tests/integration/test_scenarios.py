@@ -6,7 +6,7 @@ Tests specific use cases and interaction patterns.
 
 import pytest
 
-from mind import LyraAPI
+from mind import SanctuaryAPI
 
 
 @pytest.mark.integration
@@ -16,7 +16,7 @@ class TestConversationScenarios:
     @pytest.mark.asyncio
     async def test_greeting_and_introduction(self):
         """Test greeting and self-introduction scenario."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -26,7 +26,7 @@ class TestConversationScenarios:
             
             # Introduction
             turn2 = await api.chat("My name is Bob. What's your name?")
-            assert "lyra" in turn2.system_response.lower()
+            assert "sanctuary" in turn2.system_response.lower()
             
             # Follow-up
             turn3 = await api.chat("Nice to meet you!")
@@ -38,7 +38,7 @@ class TestConversationScenarios:
     @pytest.mark.asyncio
     async def test_emotional_support_scenario(self):
         """Test providing emotional support."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -58,7 +58,7 @@ class TestConversationScenarios:
     @pytest.mark.asyncio
     async def test_introspective_conversation(self):
         """Test conversation about self-awareness."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:

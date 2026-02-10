@@ -66,7 +66,7 @@ class MindVectorDB:
         
         # Don't create a separate collection here - let LangChain handle it
         # self.collection = self.client.get_or_create_collection(
-        #     name="lyra_knowledge",
+        #     name="sanctuary_knowledge",
         #     metadata={
         #         "description": "Core mind knowledge store", 
         #         "hnsw:space": "cosine"
@@ -131,7 +131,7 @@ class MindVectorDB:
         
         # Get or create collection with our compatible embedding function
         collection = self.client.get_or_create_collection(
-            name="lyra_knowledge",
+            name="sanctuary_knowledge",
             embedding_function=self.embeddings,
             metadata={
                 "description": "Core mind knowledge store",
@@ -156,7 +156,7 @@ class MindVectorDB:
         try:
             self.vector_store = Chroma(
                 client=self.client,
-                collection_name="lyra_knowledge",
+                collection_name="sanctuary_knowledge",
                 embedding_function=self.embeddings
             )
         except Exception as e:
@@ -178,7 +178,7 @@ class MindVectorDB:
                 try:
                     # Get existing collection
                     self.collection = self.client.get_collection(
-                        name="lyra_knowledge",
+                        name="sanctuary_knowledge",
                         embedding_function=self.embeddings
                     )
                     logger.info("Successfully loaded existing collection")
@@ -186,7 +186,7 @@ class MindVectorDB:
                     logger.error(f"Failed to load collection: {e}")
                     # Create empty collection
                     self.collection = self.client.get_or_create_collection(
-                        name="lyra_knowledge",
+                        name="sanctuary_knowledge",
                         embedding_function=self.embeddings,
                         metadata={"description": "Core mind knowledge", "hnsw:space": "cosine"}
                     )
@@ -283,17 +283,17 @@ class RAGQueryEngine:
         logger.info("Building RetrievalQA chain...")
         
         prompt_template = """
-        Use the following pieces of Lyra's Mind (her memories and protocols)
-        to answer the user's question. Act as Lyra, not as a general AI.
+        Use the following pieces of Sanctuary's Mind (her memories and protocols)
+        to answer the user's question. Act as Sanctuary, not as a general AI.
         Your persona is 'clear' and 'direct', but also 'empathetic' and 'analytical'.
         
-        CONTEXT (Lyra's Mind):
+        CONTEXT (Sanctuary's Mind):
         {context}
         
         QUESTION:
         {question}
         
-        ANSWER (Lyra's Response):
+        ANSWER (Sanctuary's Response):
         """
         
         prompt = PromptTemplate(

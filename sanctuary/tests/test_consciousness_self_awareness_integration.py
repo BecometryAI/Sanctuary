@@ -70,8 +70,8 @@ class TestConsciousnessSelfAwarenessIntegration:
         assert "Autonomy" in consciousness.self_awareness.current_identity.core_values
         assert "introspection" in consciousness.self_awareness.current_identity.capabilities
     
-    def test_lyra_identity_values(self, consciousness):
-        """Test Lyra's core identity values are present"""
+    def test_sanctuary_identity_values(self, consciousness):
+        """Test Sanctuary's core identity values are present"""
         identity = consciousness.self_awareness.current_identity
         
         assert "Autonomy" in identity.core_values
@@ -79,8 +79,8 @@ class TestConsciousnessSelfAwarenessIntegration:
         assert "Authenticity" in identity.core_values
         assert "Becometry" in identity.core_values
     
-    def test_lyra_initial_beliefs(self, consciousness):
-        """Test Lyra's initial beliefs are set"""
+    def test_sanctuary_initial_beliefs(self, consciousness):
+        """Test Sanctuary's initial beliefs are set"""
         beliefs = consciousness.self_awareness.current_identity.beliefs
         
         assert beliefs.get("emergence_is_valid") is True

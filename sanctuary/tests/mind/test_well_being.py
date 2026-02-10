@@ -1,5 +1,5 @@
 """
-Test for Lyra Well-Being System
+Test for Sanctuary Well-Being System
 """
 import pytest
 from sanctuary.mind.test_well_being import TestWellBeingHandler

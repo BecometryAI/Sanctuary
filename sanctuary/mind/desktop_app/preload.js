@@ -13,10 +13,10 @@ contextBridge.exposeInMainWorld(
         notifications: {
             send: (message) => ipcRenderer.invoke('send-notification', message)
         },
-        lyraAPI: {
-            connect: () => ipcRenderer.invoke('lyra-connect'),
-            disconnect: () => ipcRenderer.invoke('lyra-disconnect'),
-            send: (message) => ipcRenderer.invoke('lyra-send', message)
+        sanctuaryAPI: {
+            connect: () => ipcRenderer.invoke('sanctuary-connect'),
+            disconnect: () => ipcRenderer.invoke('sanctuary-disconnect'),
+            send: (message) => ipcRenderer.invoke('sanctuary-send', message)
         }
     }
 );

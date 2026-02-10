@@ -2,7 +2,7 @@
 
 ## Overview
 
-This specification defines how emotional states modulate attention allocation in the Lyra cognitive architecture. It integrates with IWMT's precision-weighting framework, where emotions directly influence prediction confidence and attention precision.
+This specification defines how emotional states modulate attention allocation in the Sanctuary cognitive architecture. It integrates with IWMT's precision-weighting framework, where emotions directly influence prediction confidence and attention precision.
 
 ---
 

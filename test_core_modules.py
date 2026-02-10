@@ -12,7 +12,7 @@ from collections import deque
 # Test TimingManager
 def test_timing_manager_initialization():
     """Test TimingManager initializes correctly with valid config."""
-    from emergence_core.lyra.cognitive_core.core.timing import TimingManager
+    from emergence_core.sanctuary.cognitive_core.core.timing import TimingManager
     
     config = {
         "cycle_rate_hz": 10,
@@ -32,7 +32,7 @@ def test_timing_manager_initialization():
 
 def test_timing_manager_invalid_cycle_rate():
     """Test TimingManager rejects invalid cycle rate."""
-    from emergence_core.lyra.cognitive_core.core.timing import TimingManager
+    from emergence_core.sanctuary.cognitive_core.core.timing import TimingManager
     
     config = {"cycle_rate_hz": 0}
     
@@ -42,7 +42,7 @@ def test_timing_manager_invalid_cycle_rate():
 
 def test_timing_manager_invalid_thresholds():
     """Test TimingManager rejects invalid threshold configuration."""
-    from emergence_core.lyra.cognitive_core.core.timing import TimingManager
+    from emergence_core.sanctuary.cognitive_core.core.timing import TimingManager
     
     config = {
         "cycle_rate_hz": 10,
@@ -58,7 +58,7 @@ def test_timing_manager_invalid_thresholds():
 
 def test_timing_manager_check_cycle_timing():
     """Test cycle timing threshold checking."""
-    from emergence_core.lyra.cognitive_core.core.timing import TimingManager
+    from emergence_core.sanctuary.cognitive_core.core.timing import TimingManager
     
     config = {
         "cycle_rate_hz": 10,
@@ -88,7 +88,7 @@ def test_timing_manager_check_cycle_timing():
 
 def test_timing_manager_percentile_edge_cases():
     """Test percentile calculation handles edge cases."""
-    from emergence_core.lyra.cognitive_core.core.timing import TimingManager
+    from emergence_core.sanctuary.cognitive_core.core.timing import TimingManager
     
     config = {"cycle_rate_hz": 10}
     manager = TimingManager(config)
@@ -109,7 +109,7 @@ def test_timing_manager_percentile_edge_cases():
 # Test StateManager
 def test_state_manager_initialization():
     """Test StateManager initializes correctly."""
-    from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
+    from emergence_core.sanctuary.cognitive_core.core.state_manager import StateManager
     
     config = {"max_queue_size": 100}
     manager = StateManager(None, config)
@@ -122,7 +122,7 @@ def test_state_manager_initialization():
 
 def test_state_manager_invalid_queue_size():
     """Test StateManager rejects invalid queue size."""
-    from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
+    from emergence_core.sanctuary.cognitive_core.core.state_manager import StateManager
     
     config = {"max_queue_size": -1}
     
@@ -132,7 +132,7 @@ def test_state_manager_invalid_queue_size():
 
 def test_state_manager_inject_input_before_init():
     """Test inject_input raises error before queue initialization."""
-    from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
+    from emergence_core.sanctuary.cognitive_core.core.state_manager import StateManager
     
     config = {"max_queue_size": 100}
     manager = StateManager(None, config)
@@ -144,7 +144,7 @@ def test_state_manager_inject_input_before_init():
 @pytest.mark.asyncio
 async def test_state_manager_queue_initialization():
     """Test queue initialization in async context."""
-    from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
+    from emergence_core.sanctuary.cognitive_core.core.state_manager import StateManager
     
     config = {"max_queue_size": 10}
     manager = StateManager(None, config)
@@ -159,7 +159,7 @@ async def test_state_manager_queue_initialization():
 @pytest.mark.asyncio
 async def test_state_manager_gather_percepts_empty():
     """Test gather_percepts handles empty queue gracefully."""
-    from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
+    from emergence_core.sanctuary.cognitive_core.core.state_manager import StateManager
     
     config = {"max_queue_size": 100}
     manager = StateManager(None, config)
@@ -176,8 +176,8 @@ async def test_state_manager_gather_percepts_empty():
 @pytest.mark.asyncio
 async def test_action_executor_execute_invalid_response():
     """Test SPEAK action handles invalid response gracefully."""
-    from emergence_core.lyra.cognitive_core.core.action_executor import ActionExecutor
-    from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
+    from emergence_core.sanctuary.cognitive_core.core.action_executor import ActionExecutor
+    from emergence_core.sanctuary.cognitive_core.core.state_manager import StateManager
     
     # Setup mocks
     config = {"max_queue_size": 100}
@@ -209,8 +209,8 @@ async def test_action_executor_execute_invalid_response():
 @pytest.mark.asyncio
 async def test_cycle_executor_handles_perception_failure():
     """Test cycle executor continues despite perception failure."""
-    from emergence_core.lyra.cognitive_core.core.cycle_executor import CycleExecutor
-    from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
+    from emergence_core.sanctuary.cognitive_core.core.cycle_executor import CycleExecutor
+    from emergence_core.sanctuary.cognitive_core.core.state_manager import StateManager
     
     config = {"max_queue_size": 100}
     state = StateManager(None, config)
@@ -254,8 +254,8 @@ async def test_cycle_executor_handles_perception_failure():
 
 def test_config_validation_comprehensive():
     """Test comprehensive config validation across modules."""
-    from emergence_core.lyra.cognitive_core.core.timing import TimingManager
-    from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
+    from emergence_core.sanctuary.cognitive_core.core.timing import TimingManager
+    from emergence_core.sanctuary.cognitive_core.core.state_manager import StateManager
     
     # Test various invalid configs
     invalid_configs = [

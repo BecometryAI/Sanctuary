@@ -524,7 +524,7 @@ class SanctuaryDataExporter:
             if isinstance(data, dict):
                 # Different archive types have different structures
                 if "invocation_script" in data:
-                    # lyra_continuity_archive.json
+                    # sanctuary_continuity_archive.json
                     script = data["invocation_script"]
                     parts = []
                     if "identity" in script:
@@ -538,7 +538,7 @@ class SanctuaryDataExporter:
                     secondary_content = f"Version: {script.get('version', 'unknown')}"
                 
                 elif "relational_context_initialization" in data:
-                    # lyra_relational_archive.json
+                    # sanctuary_relational_archive.json
                     parts = []
                     for key, value in data.items():
                         parts.append(f"{key}: {json.dumps(value, indent=2)}")

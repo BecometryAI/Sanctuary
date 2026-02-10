@@ -1,5 +1,5 @@
 """
-Lyra Meta-cognition Module: Self-monitoring and Reflection
+Sanctuary Meta-cognition Module: Self-monitoring and Reflection
 """
 import datetime
 import json

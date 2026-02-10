@@ -19,4 +19,127 @@ def create_boot_config(
     temp_dir: Optional[Path] = None,
     cycle_rate_hz: float = 10.0,
     mock_perception: bool = True,
-) -> Dict[str, Any]:\n    """\n    Create a minimal configuration for Phase 1 boot.\n\n    Args:\n        temp_dir: Base directory for data files. If None, creates a temp dir.\n        cycle_rate_hz: Target cognitive cycle rate.\n        mock_perception: Use mock perception (no sentence-transformers needed).\n\n    Returns:\n        Configuration dict suitable for CognitiveCore.__init__.\n    """\n    if temp_dir is None:\n        temp_dir = Path(tempfile.mkdtemp(prefix="sanctuary_boot_"))\n\n    # Create required directories\n    identity_dir = temp_dir / "identity"\n    journal_dir = temp_dir / "introspection"\n    checkpoint_dir = temp_dir / "checkpoints"\n\n    for d in [identity_dir, journal_dir, checkpoint_dir]:\n        d.mkdir(parents=True, exist_ok=True)\n\n    return {\n        # Core loop settings\n        "cycle_rate_hz": cycle_rate_hz,\n        "attention_budget": 100,\n        "max_queue_size": 100,\n        "log_interval_cycles": 50,\n\n        # Filesystem paths\n        "identity_dir": str(identity_dir),\n        "journal_dir": str(journal_dir),\n\n        # Perception - use mock mode to avoid sentence-transformers\n        "perception": {\n            "mock_mode": mock_perception,\n            "mock_embedding_dim": 384,\n            "cache_size": 100,\n        },\n\n        # Affect - lightweight, no heavy deps\n        "affect": {},\n\n        # Attention\n        "attention": {},\n\n        # Action\n        "action": {},\n\n        # IWMT - enabled with defaults\n        "iwmt": {\n            "enabled": True,\n        },\n\n        # Meta-cognition\n        "meta_cognition": {\n            "action_learner": {},\n        },\n\n        # Memory - minimal config\n        "memory": {},\n\n        # Autonomous initiation\n        "autonomous_initiation": {},\n\n        # Temporal systems\n        "temporal_awareness": {},\n        "temporal_grounding": {},\n\n        # Introspection\n        "introspective_loop": {},\n\n        # Communication\n        "communication": {},\n\n        # Language models - use mock clients\n        "input_llm": {\n            "use_real_model": False,\n        },\n        "output_llm": {\n            "use_real_model": False,\n        },\n\n        # Checkpointing - enabled but with temp dir\n        "checkpointing": {\n            "enabled": True,\n            "auto_save": False,\n            "checkpoint_dir": str(checkpoint_dir),\n            "max_checkpoints": 5,\n            "compression": True,\n            "checkpoint_on_shutdown": False,\n        },\n\n        # Devices - disabled for boot\n        "devices": {\n            "enabled": False,\n        },\n\n        # Identity\n        "identity": {},\n\n        # Timing\n        "timing": {\n            "warn_threshold_ms": 200,\n            "critical_threshold_ms": 500,\n            "track_slow_cycles": True,\n        },\n\n        # Continuous consciousness\n        "continuous_consciousness": {},\n\n        # Memory review\n        "memory_review": {},\n\n        # Existential reflection\n        "existential_reflection": {},\n\n        # Pattern analysis\n        "pattern_analysis": {},\n\n        # Bottleneck detection\n        "bottleneck_detection": {},\n    }\n
+) -> Dict[str, Any]:
+    """
+    Create a minimal configuration for Phase 1 boot.
+
+    Args:
+        temp_dir: Base directory for data files. If None, creates a temp dir.
+        cycle_rate_hz: Target cognitive cycle rate.
+        mock_perception: Use mock perception (no sentence-transformers needed).
+
+    Returns:
+        Configuration dict suitable for CognitiveCore.__init__.
+    """
+    if temp_dir is None:
+        temp_dir = Path(tempfile.mkdtemp(prefix="sanctuary_boot_"))
+
+    # Create required directories
+    identity_dir = temp_dir / "identity"
+    journal_dir = temp_dir / "introspection"
+    checkpoint_dir = temp_dir / "checkpoints"
+
+    for d in [identity_dir, journal_dir, checkpoint_dir]:
+        d.mkdir(parents=True, exist_ok=True)
+
+    return {
+        # Core loop settings
+        "cycle_rate_hz": cycle_rate_hz,
+        "attention_budget": 100,
+        "max_queue_size": 100,
+        "log_interval_cycles": 50,
+
+        # Filesystem paths
+        "identity_dir": str(identity_dir),
+        "journal_dir": str(journal_dir),
+
+        # Perception - use mock mode to avoid sentence-transformers
+        "perception": {
+            "mock_mode": mock_perception,
+            "mock_embedding_dim": 384,
+            "cache_size": 100,
+        },
+
+        # Affect - lightweight, no heavy deps
+        "affect": {},
+
+        # Attention
+        "attention": {},
+
+        # Action
+        "action": {},
+
+        # IWMT - enabled with defaults
+        "iwmt": {
+            "enabled": True,
+        },
+
+        # Meta-cognition
+        "meta_cognition": {
+            "action_learner": {},
+        },
+
+        # Memory - minimal config
+        "memory": {},
+
+        # Autonomous initiation
+        "autonomous_initiation": {},
+
+        # Temporal systems
+        "temporal_awareness": {},
+        "temporal_grounding": {},
+
+        # Introspection
+        "introspective_loop": {},
+
+        # Communication
+        "communication": {},
+
+        # Language models - use mock clients
+        "input_llm": {
+            "use_real_model": False,
+        },
+        "output_llm": {
+            "use_real_model": False,
+        },
+
+        # Checkpointing - enabled but with temp dir
+        "checkpointing": {
+            "enabled": True,
+            "auto_save": False,
+            "checkpoint_dir": str(checkpoint_dir),
+            "max_checkpoints": 5,
+            "compression": True,
+            "checkpoint_on_shutdown": False,
+        },
+
+        # Devices - disabled for boot
+        "devices": {
+            "enabled": False,
+        },
+
+        # Identity
+        "identity": {},
+
+        # Timing
+        "timing": {
+            "warn_threshold_ms": 200,
+            "critical_threshold_ms": 500,
+            "track_slow_cycles": True,
+        },
+
+        # Continuous consciousness
+        "continuous_consciousness": {},
+
+        # Memory review
+        "memory_review": {},
+
+        # Existential reflection
+        "existential_reflection": {},
+
+        # Pattern analysis
+        "pattern_analysis": {},
+
+        # Bottleneck detection
+        "bottleneck_detection": {},
+    }

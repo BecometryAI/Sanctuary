@@ -5,13 +5,13 @@ import os
 import ast
 import sys
 
-sys.path.insert(0, '/home/runner/work/Lyra-Emergence/Lyra-Emergence')
+sys.path.insert(0, '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence')
 
 def test_parse_syntax():
     """Test that all files have valid Python syntax."""
     print("Testing Python syntax...")
     
-    memory_dir = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory'
+    memory_dir = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory'
     files = [
         'storage.py', 'encoding.py', 'retrieval.py', 'consolidation.py',
         'emotional_weighting.py', 'episodic.py', 'semantic.py', 'working.py',
@@ -30,7 +30,7 @@ def test_parse_syntax():
             all_good = False
     
     # Test main memory.py
-    memory_path = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory.py'
+    memory_path = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory.py'
     try:
         with open(memory_path, 'r') as f:
             ast.parse(f.read())
@@ -46,7 +46,7 @@ def test_module_exports():
     """Test that __init__.py exports all expected classes."""
     print("\nTesting module exports...")
     
-    init_path = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory/__init__.py'
+    init_path = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory/__init__.py'
     with open(init_path, 'r') as f:
         content = f.read()
     
@@ -71,7 +71,7 @@ def test_class_definitions():
     """Test that all expected classes are defined."""
     print("\nTesting class definitions...")
     
-    memory_dir = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory'
+    memory_dir = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory'
     classes_to_check = {
         'storage.py': 'MemoryStorage',
         'encoding.py': 'MemoryEncoder',
@@ -96,7 +96,7 @@ def test_class_definitions():
             all_good = False
     
     # Check MemoryManager in memory.py
-    memory_path = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory.py'
+    memory_path = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory.py'
     with open(memory_path, 'r') as f:
         content = f.read()
     
@@ -113,7 +113,7 @@ def test_method_presence():
     """Test that key methods are defined in memory.py."""
     print("\nTesting method presence in MemoryManager...")
     
-    memory_path = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory.py'
+    memory_path = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory.py'
     with open(memory_path, 'r') as f:
         content = f.read()
     
@@ -147,7 +147,7 @@ def test_module_sizes():
     """Test that all modules are under 10KB."""
     print("\nTesting module sizes...")
     
-    memory_dir = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory'
+    memory_dir = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory'
     modules = [
         'storage.py', 'encoding.py', 'retrieval.py', 'consolidation.py',
         'emotional_weighting.py', 'episodic.py', 'semantic.py', 'working.py'
@@ -164,7 +164,7 @@ def test_module_sizes():
             all_good = False
     
     # Check main memory.py
-    main_path = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory.py'
+    main_path = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory.py'
     main_size_kb = os.path.getsize(main_path) / 1024
     original_size_kb = 50.0
     reduction = ((original_size_kb - main_size_kb) / original_size_kb) * 100
@@ -177,7 +177,7 @@ def test_imports_structure():
     """Test that memory.py imports from the new modules."""
     print("\nTesting import structure...")
     
-    memory_path = '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core/lyra/memory.py'
+    memory_path = '/home/runner/work/Sanctuary-Emergence/Sanctuary-Emergence/emergence_core/sanctuary/memory.py'
     with open(memory_path, 'r') as f:
         content = f.read()
     

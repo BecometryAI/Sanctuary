@@ -85,7 +85,7 @@ class TestCompleteCognitiveCycle:
             await asyncio.sleep(0.5)
             
             # Inject input
-            core.inject_input("Hello Lyra", modality="text")
+            core.inject_input("Hello Sanctuary", modality="text")
             
             # Wait for processing
             await asyncio.sleep(1.0)

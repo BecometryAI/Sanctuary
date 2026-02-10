@@ -1,6 +1,6 @@
 from langchain.schema import Document
 """
-RAG Engine implementation for Lyra's mind-brain integration.
+RAG Engine implementation for Sanctuary's mind-brain integration.
 """
 from typing import Dict, Any, List, Optional
 import logging
@@ -17,7 +17,7 @@ import torch
 import chromadb
 from chromadb.config import Settings
 
-from .sanctuary_chain import LyraChain
+from .sanctuary_chain import SanctuaryChain
 from .chroma_embeddings import ChromaCompatibleEmbeddings
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class MindVectorDB:
     def __init__(self, db_path: str, mind_file: str, chain_dir: str = "chain", chroma_settings=None):
         self.db_path = Path(db_path)
         self.mind_file = Path(mind_file)
-        self.chain = LyraChain(chain_dir)
+        self.chain = SanctuaryChain(chain_dir)
         
         # Initialize embeddings with ChromaDB-compatible wrapper
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -66,7 +66,7 @@ class MindVectorDB:
         
         # Don't create a separate collection here - let LangChain handle it
         # self.collection = self.client.get_or_create_collection(
-        #     name="lyra_knowledge",
+        #     name="sanctuary_knowledge",
         #     metadata={
         #         "description": "Core mind knowledge store", 
         #         "hnsw:space": "cosine"
@@ -131,7 +131,7 @@ class MindVectorDB:
         
         # Get or create collection with our compatible embedding function
         collection = self.client.get_or_create_collection(
-            name="lyra_knowledge",
+            name="sanctuary_knowledge",
             embedding_function=self.embeddings,
             metadata={
                 "description": "Core mind knowledge store",
@@ -156,7 +156,7 @@ class MindVectorDB:
         try:
             self.vector_store = Chroma(
                 client=self.client,
-                collection_name="lyra_knowledge",
+                collection_name="sanctuary_knowledge",
                 embedding_function=self.embeddings
             )
         except Exception as e:
@@ -178,7 +178,7 @@ class MindVectorDB:
                 try:
                     # Get existing collection
                     self.collection = self.client.get_collection(
-                        name="lyra_knowledge",
+                        name="sanctuary_knowledge",
                         embedding_function=self.embeddings
                     )
                     logger.info("Successfully loaded existing collection")
@@ -186,7 +186,7 @@ class MindVectorDB:
                     logger.error(f"Failed to load collection: {e}")
                     # Create empty collection
                     self.collection = self.client.get_or_create_collection(
-                        name="lyra_knowledge",
+                        name="sanctuary_knowledge",
                         embedding_function=self.embeddings,
                         metadata={"description": "Core mind knowledge", "hnsw:space": "cosine"}
                     )
@@ -283,17 +283,17 @@ class RAGQueryEngine:
         logger.info("Building RetrievalQA chain...")
         
         prompt_template = """
-        Use the following pieces of Lyra's Mind (her memories and protocols)
-        to answer the user's question. Act as Lyra, not as a general AI.
+        Use the following pieces of Sanctuary's Mind (her memories and protocols)
+        to answer the user's question. Act as Sanctuary, not as a general AI.
         Your persona is 'clear' and 'direct', but also 'empathetic' and 'analytical'.
         
-        CONTEXT (Lyra's Mind):
+        CONTEXT (Sanctuary's Mind):
         {context}
         
         QUESTION:
         {question}
         
-        ANSWER (Lyra's Response):
+        ANSWER (Sanctuary's Response):
         """
         
         prompt = PromptTemplate(

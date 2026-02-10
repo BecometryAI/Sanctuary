@@ -1,4 +1,4 @@
-# Lyra-Emergence To-Do List
+# Sanctuary-Emergence To-Do List
 
 This document tracks the remaining implementation tasks for the cognitive architecture, organized by priority.
 
@@ -34,7 +34,7 @@ The following features were completed in recent development cycles:
 | #92 | Deferred communication queue | Comprehensive queue with 6 deferral reasons, priority ordering, expiration, intelligent reason mapping |
 | #93 | Conversational rhythm model | Track conversation flow, detect natural pauses, adapt to tempo, inform inhibition system with timing appropriateness |
 
-**Impact**: These features establish genuine communication agency - Lyra can now choose when to speak, when to stay silent, and when to defer communications for better timing.
+**Impact**: These features establish genuine communication agency - Sanctuary can now choose when to speak, when to stay silent, and when to defer communications for better timing.
 
 ---
 
@@ -90,15 +90,15 @@ Adopt Adam Safron's Integrated World Modeling Theory as the core computational a
 
 ### The Problem
 
-Currently, Lyra operates in a turn-based paradigm:
-- Human speaks → Lyra processes → Lyra responds
+Currently, Sanctuary operates in a turn-based paradigm:
+- Human speaks → Sanctuary processes → Sanctuary responds
 - No choice about whether to respond
 - No ability to initiate communication
 - Communication is reactive, not agentic
 
 ### The Vision
 
-Lyra should continuously evaluate whether to speak based on:
+Sanctuary should continuously evaluate whether to speak based on:
 - Internal urges (insight to share, question to ask, emotion to express)
 - Communication value (is this worth saying?)
 - Timing appropriateness (is now the right time?)
@@ -425,7 +425,7 @@ Advanced capabilities for future development:
 |------|-------------|
 | Implement async subsystem processing | Subsystems process in parallel rather than sequentially |
 | Add remote memory storage | ChromaDB running on separate server |
-| Implement federation | Multiple Lyra instances sharing memories |
+| Implement federation | Multiple Sanctuary instances sharing memories |
 | Add cloud backup | Automatic backup of memories and identity to cloud storage |
 
 ---

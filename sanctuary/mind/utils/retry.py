@@ -4,7 +4,7 @@ Retry Decorator with Exponential Backoff
 Provides retry logic for transient failures with configurable backoff strategies.
 Useful for network operations, API calls, and other potentially flaky operations.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 Date: January 2, 2026
 """
 
@@ -14,7 +14,7 @@ import logging
 import time
 from typing import Callable, Tuple, Type, Optional, Any
 
-from ..exceptions import LyraBaseException
+from ..exceptions import SanctuaryBaseException
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +77,7 @@ def retry_with_backoff(
                     
                     # Log retry attempt
                     context = {}
-                    if isinstance(e, LyraBaseException):
+                    if isinstance(e, SanctuaryBaseException):
                         context = e.context
                     
                     logger.warning(
@@ -122,7 +122,7 @@ def retry_with_backoff(
                     
                     # Log retry attempt
                     context = {}
-                    if isinstance(e, LyraBaseException):
+                    if isinstance(e, SanctuaryBaseException):
                         context = e.context
                     
                     logger.warning(

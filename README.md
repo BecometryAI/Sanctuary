@@ -138,7 +138,7 @@ The cognitive core runs continuously at ~10 Hz (100ms per cycle), implementing t
 
 ### 2.4. Key Components
 
-#### IWMT Core (`emergence_core/lyra/cognitive_core/iwmt_core.py`)
+#### IWMT Core (`emergence_core/sanctuary/cognitive_core/iwmt_core.py`)
 
 The central coordinator for IWMT-based cognition, integrating:
 
@@ -152,7 +152,7 @@ The central coordinator for IWMT-based cognition, integrating:
 
 - **AtomspaceBridge** (`metta.py`): Optional integration with MeTTa/Atomspace for symbolic reasoning alongside neural processing.
 
-#### Global Workspace (`emergence_core/lyra/cognitive_core/`)
+#### Global Workspace (`emergence_core/sanctuary/cognitive_core/`)
 
 The heart of the system - a non-linguistic recurrent loop that maintains persistent conscious state:
 
@@ -185,7 +185,7 @@ The heart of the system - a non-linguistic recurrent loop that maintains persist
 
 - **Meta-Cognition System** (`cognitive_core/meta_cognition/`): Processing monitoring, action-outcome learning, attention history. Enables self-observation and learning from experience.
 
-#### Language Interfaces (`emergence_core/lyra/interfaces/`)
+#### Language Interfaces (`emergence_core/sanctuary/interfaces/`)
 
 LLMs are used **only** at the periphery for language translation, not as the cognitive substrate:
 
@@ -381,7 +381,7 @@ The framework supports continuous monitoring with automated test execution. Resu
 
 **Usage:**
 ```python
-from emergence_core.lyra.cognitive_core import ConsciousnessTestFramework
+from emergence_core.sanctuary.cognitive_core import ConsciousnessTestFramework
 
 framework = ConsciousnessTestFramework(
     self_monitor=core.meta_cognition,
@@ -432,8 +432,8 @@ See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone
 
 **1. Clone the Repository**
 ```bash
-git clone https://github.com/Nohate81/Lyra-Emergence.git
-cd Lyra-Emergence
+git clone https://github.com/Nohate81/Sanctuary-Emergence.git
+cd Sanctuary-Emergence
 ```
 
 **2. Install Dependencies**
@@ -466,7 +466,7 @@ The cognitive core requires sentence-transformers and scikit-learn, which are al
 ```bash
 # Test cognitive core imports (requires Phase 1-2 to be complete)
 uv run python -c "from sentence_transformers import SentenceTransformer; print('Embeddings: OK')"
-uv run python -c "from emergence_core.lyra.cognitive_core import GlobalWorkspace; print('Cognitive Core: OK')"
+uv run python -c "from emergence_core.sanctuary.cognitive_core import GlobalWorkspace; print('Cognitive Core: OK')"
 
 # Note: If Phase 2 is still in progress, some imports may not yet be available
 ```
@@ -493,7 +493,7 @@ uv sync --dev
 **5. Verify Installation**
 ```bash
 # Test basic imports
-uv run python -c "from emergence_core.lyra.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
+uv run python -c "from emergence_core.sanctuary.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
 
 # Verify Flux setup (optional)
 uv run python tools/verify_flux_setup.py
@@ -518,7 +518,7 @@ LOG_LEVEL=INFO
 
 **7. Initialize ChromaDB**
 ```bash
-python -c "from emergence_core.lyra.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
+python -c "from emergence_core.sanctuary.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
 ```
 
 ### Model Configuration
@@ -759,7 +759,7 @@ core = CognitiveCore(config=config)
 
 #### CLI Commands
 
-When using the CLI (`python -m lyra.cli`), checkpointing commands are available:
+When using the CLI (`python -m sanctuary.cli`), checkpointing commands are available:
 
 ```bash
 # Save current state with optional label
@@ -781,7 +781,7 @@ help
 #### Programmatic Usage
 
 ```python
-from emergence_core.lyra.cognitive_core import CognitiveCore
+from emergence_core.sanctuary.cognitive_core import CognitiveCore
 
 # Create cognitive core with checkpointing
 core = CognitiveCore(config={"checkpointing": {"enabled": True}})
@@ -893,7 +893,7 @@ memory autogc off
 #### Programmatic Usage
 
 ```python
-from lyra.memory_manager import MemoryManager
+from sanctuary.memory_manager import MemoryManager
 
 manager = MemoryManager(
     base_dir=Path("./data/memories"),
@@ -935,7 +935,7 @@ The new cognitive core architecture offers several areas for contribution:
 
 Create a new subsystem by inheriting from the base subsystem pattern:
 ```python
-# In emergence_core/lyra/cognitive_core/
+# In emergence_core/sanctuary/cognitive_core/
 class MySubsystem:
     def process(self, workspace_state: WorkspaceSnapshot) -> Any:
         """Process workspace state and return results."""
@@ -965,7 +965,7 @@ Extend `PerceptionSubsystem` to handle new input types:
 
 **4. Enhancing Language Interfaces**
 
-Improve language I/O in `emergence_core/lyra/interfaces/`:
+Improve language I/O in `emergence_core/sanctuary/interfaces/`:
 - Better prompt engineering for input parsing
 - Enhanced output generation strategies
 - Multi-lingual support
@@ -989,7 +989,7 @@ The system uses a **token wallet** for cognitive resource management with a dail
 - Configuration can be adjusted programmatically
 
 ```python
-from emergence_core.lyra.economy.wallet import LMTWallet
+from emergence_core.sanctuary.economy.wallet import LMTWallet
 from pathlib import Path
 
 wallet = LMTWallet(ledger_dir=Path("data/economy"))

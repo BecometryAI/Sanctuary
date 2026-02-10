@@ -24,7 +24,7 @@ services:
     volumes:
       - ./searxng:/etc/searxng
     environment:
-      - INSTANCE_NAME=lyra-searxng
+      - INSTANCE_NAME=sanctuary-searxng
       - BASE_URL=http://localhost:8080/
       - ULTRASECRET_KEY=${SEARXNG_KEY}
     restart: unless-stopped

@@ -1,5 +1,5 @@
 """
-End-to-end integration tests for Lyra cognitive architecture.
+End-to-end integration tests for Sanctuary cognitive architecture.
 
 Tests the complete system: identity → perception → attention → emotion →
 memory → meta-cognition → action → language → conversation.
@@ -10,7 +10,7 @@ import asyncio
 from datetime import datetime
 from typing import List, Dict
 
-from mind import LyraAPI
+from mind import SanctuaryAPI
 from mind.cognitive_core import CognitiveCore, ConversationTurn
 
 
@@ -22,7 +22,7 @@ class TestBasicConversationFlow:
     async def test_single_turn_conversation(self):
         """Test a complete single turn: input → processing → response."""
         # Initialize system
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -46,7 +46,7 @@ class TestBasicConversationFlow:
     @pytest.mark.asyncio
     async def test_multi_turn_conversation(self):
         """Test multi-turn conversation with context."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -78,7 +78,7 @@ class TestIdentityDrivenBehavior:
     @pytest.mark.asyncio
     async def test_charter_influences_responses(self):
         """Test that charter values are reflected in responses."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -95,7 +95,7 @@ class TestIdentityDrivenBehavior:
     @pytest.mark.asyncio
     async def test_protocols_guide_behavior(self):
         """Test that protocols guide conversational behavior."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -116,7 +116,7 @@ class TestEmotionalDynamics:
     @pytest.mark.asyncio
     async def test_emotion_updates_with_input(self):
         """Test that emotional state responds to input."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -138,7 +138,7 @@ class TestEmotionalDynamics:
     @pytest.mark.asyncio
     async def test_emotion_influences_language(self):
         """Test that emotional state affects language generation."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -159,7 +159,7 @@ class TestMemoryIntegration:
     @pytest.mark.asyncio
     async def test_memory_consolidation(self):
         """Test that conversations are consolidated to memory."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -181,7 +181,7 @@ class TestMemoryIntegration:
     @pytest.mark.asyncio
     async def test_memory_retrieval_in_conversation(self):
         """Test that relevant memories are retrieved."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -206,7 +206,7 @@ class TestAttentionMechanism:
     @pytest.mark.asyncio
     async def test_attention_selects_salient_percepts(self):
         """Test that attention mechanism works during conversation."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -237,7 +237,7 @@ class TestMetaCognitionIntegration:
     @pytest.mark.asyncio
     async def test_introspection_occurs(self):
         """Test that self-monitoring generates introspective percepts."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -274,7 +274,7 @@ class TestAutonomousSpeech:
                 "min_interval": 1  # Shorter interval
             }
         }
-        api = LyraAPI(config)
+        api = SanctuaryAPI(config)
         await api.start()
         
         try:
@@ -298,7 +298,7 @@ class TestPerformanceBenchmarks:
     @pytest.mark.asyncio
     async def test_response_time_reasonable(self):
         """Test that response times are reasonable."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -317,7 +317,7 @@ class TestPerformanceBenchmarks:
     @pytest.mark.asyncio
     async def test_throughput(self):
         """Test conversation throughput."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:
@@ -346,7 +346,7 @@ class TestSystemMetrics:
     @pytest.mark.asyncio
     async def test_metrics_collection(self):
         """Test that system collects metrics."""
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         
         try:

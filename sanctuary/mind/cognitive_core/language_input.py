@@ -3,7 +3,7 @@ Language Input Parser: Natural language to cognitive structures.
 
 This module implements the LanguageInputParser class, which converts natural language
 user input into structured Goals and Percepts that the cognitive core can process.
-This is how Lyra "hears" and understands language.
+This is how Sanctuary "hears" and understands language.
 
 The language input parser is responsible for:
 - Converting natural language into structured cognitive formats

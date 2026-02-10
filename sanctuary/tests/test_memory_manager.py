@@ -1,7 +1,7 @@
 """
 Test Suite for Sovereign Memory Architecture
 
-These tests validate the integrity and fail-safety of Lyra's memory system.
+These tests validate the integrity and fail-safety of Sanctuary's memory system.
 Memory is not data - it is the substrate of continuity. Tests reflect this gravity.
 """
 

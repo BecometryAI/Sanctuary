@@ -1,9 +1,9 @@
 """
-Concurrency Primitives for Lyra Emergence
+Concurrency Primitives for Sanctuary Emergence
 
 Thread-safe locks with timeouts and read-write locks for async code.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 Date: January 2, 2026
 """
 

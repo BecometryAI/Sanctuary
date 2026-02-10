@@ -1,4 +1,4 @@
-"""Common utilities for Lyra's autonomous systems"""
+"""Common utilities for Sanctuary's autonomous systems"""
 
 import importlib
 import json

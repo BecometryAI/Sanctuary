@@ -2,7 +2,7 @@
 Element 4: Executive Function and Decision-Making
 
 Provides planning, goal management, priority assessment, decision tree evaluation,
-and action sequencing for Lyra's consciousness system.
+and action sequencing for Sanctuary's consciousness system.
 
 This module enables:
 - Goal creation and tracking

@@ -11,7 +11,7 @@ The memory integration is responsible for:
 - Consolidating significant workspace states into long-term memory
 - Triggering memory operations based on emotional arousal and goal completion
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 """
 
 from __future__ import annotations
@@ -33,7 +33,7 @@ class MemoryIntegration:
     Bridge between cognitive core and existing memory system.
     
     The MemoryIntegration class connects the real-time cognitive loop with
-    Lyra's persistent memory architecture. It implements bidirectional flow:
+    Sanctuary's persistent memory architecture. It implements bidirectional flow:
     memories can be retrieved into the workspace (becoming percepts), and
     workspace states can be consolidated into long-term memory.
     

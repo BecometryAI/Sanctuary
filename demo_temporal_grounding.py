@@ -15,13 +15,13 @@ from pathlib import Path
 # Add the cognitive_core directory to the path
 # Try to find it relative to this script's location
 script_dir = Path(__file__).parent.resolve()
-cognitive_core_path = script_dir / "emergence_core" / "lyra" / "cognitive_core"
+cognitive_core_path = script_dir / "emergence_core" / "sanctuary" / "cognitive_core"
 
 if cognitive_core_path.exists():
     sys.path.insert(0, str(cognitive_core_path))
 else:
     # Fallback: try parent directory structure
-    parent_cognitive_core = script_dir.parent / "emergence_core" / "lyra" / "cognitive_core"
+    parent_cognitive_core = script_dir.parent / "emergence_core" / "sanctuary" / "cognitive_core"
     if parent_cognitive_core.exists():
         sys.path.insert(0, str(parent_cognitive_core))
     else:

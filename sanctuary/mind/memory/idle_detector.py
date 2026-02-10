@@ -4,7 +4,7 @@ Idle Detection Module
 Detects when the cognitive system has low activity and can run
 memory consolidation processes without interfering with active cognition.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import logging
 from datetime import datetime, timedelta

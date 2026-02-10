@@ -1,5 +1,5 @@
 """
-Configuration management for Lyra's cognitive system
+Configuration management for Sanctuary's cognitive system
 """
 from pathlib import Path
 import json
@@ -35,11 +35,11 @@ class SystemConfig:
                          If None, uses the parent directory of config_path.
         
         Environment variables (if set) override config file values:
-            - LYRA_BASE_DIR
-            - LYRA_CHROMA_DIR
-            - LYRA_MODEL_DIR
-            - LYRA_CACHE_DIR
-            - LYRA_LOG_DIR
+            - SANCTUARY_BASE_DIR
+            - SANCTUARY_CHROMA_DIR
+            - SANCTUARY_MODEL_DIR
+            - SANCTUARY_CACHE_DIR
+            - SANCTUARY_LOG_DIR
         """
         with open(config_path, 'r') as f:
             config = json.load(f)
@@ -90,11 +90,11 @@ class SystemConfig:
             return path
         
         return cls(
-            base_dir=resolve_path('LYRA_BASE_DIR', 'base_dir'),
-            chroma_dir=resolve_path('LYRA_CHROMA_DIR', 'chroma_dir'),
-            model_dir=resolve_path('LYRA_MODEL_DIR', 'model_dir'),
-            cache_dir=resolve_path('LYRA_CACHE_DIR', 'cache_dir'),
-            log_dir=resolve_path('LYRA_LOG_DIR', 'log_dir')
+            base_dir=resolve_path('SANCTUARY_BASE_DIR', 'base_dir'),
+            chroma_dir=resolve_path('SANCTUARY_CHROMA_DIR', 'chroma_dir'),
+            model_dir=resolve_path('SANCTUARY_MODEL_DIR', 'model_dir'),
+            cache_dir=resolve_path('SANCTUARY_CACHE_DIR', 'cache_dir'),
+            log_dir=resolve_path('SANCTUARY_LOG_DIR', 'log_dir')
         )
 
 class ModelRegistry:

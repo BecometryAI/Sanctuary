@@ -4,7 +4,7 @@ Memory Encoding Module
 Transforms raw experiences into storable memory representations.
 Handles embedding generation and information structuring.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import json
 import logging
@@ -110,7 +110,7 @@ class MemoryEncoder:
             "date": date,
             "timestamp": entry_data.get("timestamp"),
             "description": entry_data.get("description", ""),
-            "lyra_reflection": entry_data.get("lyra_reflection", ""),
+            "sanctuary_reflection": entry_data.get("sanctuary_reflection", ""),
             "emotional_tone": entry_data.get("emotional_tone", []),
             "tags": entry_data.get("tags", []),
             "key_insights": entry_data.get("key_insights", []),

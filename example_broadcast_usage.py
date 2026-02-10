@@ -15,7 +15,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Add to path
-sys.path.insert(0, str(Path(__file__).parent / "emergence_core" / "lyra" / "cognitive_core"))
+sys.path.insert(0, str(Path(__file__).parent / "emergence_core" / "sanctuary" / "cognitive_core"))
 
 from broadcast import (
     GlobalBroadcaster,

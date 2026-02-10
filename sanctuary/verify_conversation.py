@@ -21,12 +21,12 @@ def test_imports():
         print("✅ ConversationManager imported")
         print("✅ ConversationTurn imported")
         
-        from mind.client import LyraAPI, Lyra
-        print("✅ LyraAPI imported")
-        print("✅ Lyra imported")
-        
-        from lyra import LyraAPI as API2, Lyra as Lyra2
-        print("✅ Imports from lyra package work")
+        from mind.client import SanctuaryAPI, Sanctuary
+        print("✅ SanctuaryAPI imported")
+        print("✅ Sanctuary imported")
+
+        from sanctuary import SanctuaryAPI as API2, Sanctuary as Sanctuary2
+        print("✅ Imports from sanctuary package work")
         
         return True
     except Exception as e:
@@ -174,31 +174,31 @@ def test_metrics_structure():
         return False
 
 def test_api_classes():
-    """Test LyraAPI and Lyra classes."""
+    """Test SanctuaryAPI and Sanctuary classes."""
     print("\nTesting API classes...")
-    
+
     try:
-        from mind.client import LyraAPI, Lyra
-        
-        # Test LyraAPI instantiation
-        api = LyraAPI()
+        from mind.client import SanctuaryAPI, Sanctuary
+
+        # Test SanctuaryAPI instantiation
+        api = SanctuaryAPI()
         assert api is not None
         assert hasattr(api, 'core')
         assert hasattr(api, 'conversation')
         assert hasattr(api, 'start')
         assert hasattr(api, 'stop')
         assert hasattr(api, 'chat')
-        print("✅ LyraAPI instantiation works")
-        
-        # Test Lyra instantiation
-        lyra = Lyra()
-        assert lyra is not None
-        assert hasattr(lyra, 'api')
-        assert hasattr(lyra, 'loop')
-        assert hasattr(lyra, 'start')
-        assert hasattr(lyra, 'stop')
-        assert hasattr(lyra, 'chat')
-        print("✅ Lyra instantiation works")
+        print("✅ SanctuaryAPI instantiation works")
+
+        # Test Sanctuary instantiation
+        sanctuary = Sanctuary()
+        assert sanctuary is not None
+        assert hasattr(sanctuary, 'api')
+        assert hasattr(sanctuary, 'loop')
+        assert hasattr(sanctuary, 'start')
+        assert hasattr(sanctuary, 'stop')
+        assert hasattr(sanctuary, 'chat')
+        print("✅ Sanctuary instantiation works")
         
         return True
     except Exception as e:
@@ -219,7 +219,7 @@ def test_cli_file():
         # Read and check for key components
         content = cli_path.read_text()
         assert "async def main()" in content
-        assert "LyraAPI" in content
+        assert "SanctuaryAPI" in content
         assert "quit" in content
         print("✅ CLI file has correct structure")
         

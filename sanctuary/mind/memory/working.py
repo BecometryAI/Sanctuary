@@ -4,7 +4,7 @@ Working Memory Module
 Short-term buffer for currently active memories.
 Interface with Global Workspace.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import logging
 from datetime import datetime

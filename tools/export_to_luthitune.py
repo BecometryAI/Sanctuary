@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Export Lyra's cognitive history for LuthiWorks fine-tuning.
+Export Sanctuary's cognitive history for LuthiWorks fine-tuning.
 
-This script aggregates Lyra's entire cognitive architecture:
+This script aggregates Sanctuary's entire cognitive architecture:
 - Journals (narrative memory)
 - Protocols (instructional logic)
 - Lexicon (vocabulary/definitions)
@@ -30,8 +30,8 @@ class LuthiWorksExportEntry(BaseModel):
     secondary_content: Optional[str] = None  # instruction, prompt, or metadata
 
 
-class LyraDataExporter:
-    """Export Lyra's cognitive history to LuthiWorks format."""
+class SanctuaryDataExporter:
+    """Export Sanctuary's cognitive history to LuthiWorks format."""
     
     def __init__(self, data_dir: Path, output_path: Path):
         """Initialize the exporter.
@@ -111,9 +111,9 @@ class LyraDataExporter:
                         if insights:
                             primary_parts.append("Key Insights: " + "; ".join(insights))
                     
-                    # Add Lyra's reflection
-                    if "lyra_reflection" in journal_content:
-                        primary_parts.append(f"Lyra's Reflection: {journal_content['lyra_reflection']}")
+                    # Add Sanctuary's reflection
+                    if "sanctuary_reflection" in journal_content:
+                        primary_parts.append(f"Sanctuary's Reflection: {journal_content['sanctuary_reflection']}")
                     
                     primary_content = "\n\n".join(primary_parts) if primary_parts else json.dumps(journal_content)
                     
@@ -571,7 +571,7 @@ class LyraDataExporter:
     
     def export_all(self) -> None:
         """Export all cognitive data to JSONL format."""
-        print("🚀 Starting Lyra cognitive history export to LuthiWorks format...")
+        print("🚀 Starting Sanctuary cognitive history export to LuthiWorks format...")
         print(f"📂 Data directory: {self.data_dir}")
         print(f"📄 Output file: {self.output_path}")
         print()
@@ -657,10 +657,10 @@ def main():
     """Main entry point for the export script."""
     # Set up paths
     data_dir = PROJECT_ROOT / "data"
-    output_path = PROJECT_ROOT / "data" / "exports" / "lyra_raw_export.jsonl"
+    output_path = PROJECT_ROOT / "data" / "exports" / "sanctuary_raw_export.jsonl"
     
     # Create exporter and run
-    exporter = LyraDataExporter(data_dir, output_path)
+    exporter = SanctuaryDataExporter(data_dir, output_path)
     exporter.export_all()
 
 

@@ -1,21 +1,21 @@
 """
-Exception Hierarchy for Lyra Emergence System
+Exception Hierarchy for Sanctuary System
 
 Structured exception classes for all subsystems to enable proper error handling,
 recovery, and debugging throughout the system.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2, 2026
 """
 
 from typing import Optional, Dict, Any
 
 
-class LyraBaseException(Exception):
+class SanctuaryBaseException(Exception):
     """
-    Base exception for all Lyra errors.
-    
-    All Lyra-specific exceptions should inherit from this class to enable
+    Base exception for all Sanctuary errors.
+
+    All Sanctuary-specific exceptions should inherit from this class to enable
     systematic error handling and recovery strategies.
     
     Attributes:
@@ -52,7 +52,7 @@ class LyraBaseException(Exception):
         }
 
 
-class ModelLoadError(LyraBaseException):
+class ModelLoadError(SanctuaryBaseException):
     """
     Model loading/initialization failures.
     
@@ -76,7 +76,7 @@ class ModelLoadError(LyraBaseException):
         super().__init__(message, context, recoverable)
 
 
-class MemoryError(LyraBaseException):
+class MemoryError(SanctuaryBaseException):
     """
     Memory system errors (ChromaDB, consolidation).
     
@@ -100,7 +100,7 @@ class MemoryError(LyraBaseException):
         super().__init__(message, context, recoverable)
 
 
-class ConsciousnessError(LyraBaseException):
+class ConsciousnessError(SanctuaryBaseException):
     """
     Consciousness subsystem errors.
     
@@ -149,7 +149,7 @@ class GPUMemoryError(ModelLoadError):
         super().__init__(message, context=context, recoverable=True)
 
 
-class ValidationError(LyraBaseException):
+class ValidationError(SanctuaryBaseException):
     """
     Data validation errors.
     
@@ -175,7 +175,7 @@ class ValidationError(LyraBaseException):
         super().__init__(message, context, recoverable)
 
 
-class RateLimitError(LyraBaseException):
+class RateLimitError(SanctuaryBaseException):
     """
     Rate limiting errors.
     
@@ -201,7 +201,7 @@ class RateLimitError(LyraBaseException):
         super().__init__(message, context, recoverable)
 
 
-class ConcurrencyError(LyraBaseException):
+class ConcurrencyError(SanctuaryBaseException):
     """
     Concurrency and locking errors.
     

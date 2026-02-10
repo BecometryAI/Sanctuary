@@ -15,10 +15,10 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 
 # Direct imports to avoid dependency issues
-from emergence_core.lyra.cognitive_core.identity.computed import Identity, ComputedIdentity
-from emergence_core.lyra.cognitive_core.identity.behavior_logger import BehaviorLogger
-from emergence_core.lyra.cognitive_core.identity.continuity import IdentityContinuity
-from emergence_core.lyra.cognitive_core.identity.manager import IdentityManager
+from emergence_core.sanctuary.cognitive_core.identity.computed import Identity, ComputedIdentity
+from emergence_core.sanctuary.cognitive_core.identity.behavior_logger import BehaviorLogger
+from emergence_core.sanctuary.cognitive_core.identity.continuity import IdentityContinuity
+from emergence_core.sanctuary.cognitive_core.identity.manager import IdentityManager
 
 
 # Mock classes for demonstration

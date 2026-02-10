@@ -14,7 +14,7 @@ import importlib.util
 # Load the drive module directly without package imports
 def load_drive_module():
     """Load the drive module directly from file."""
-    drive_path = Path(__file__).parent / "emergence_core" / "lyra" / "cognitive_core" / "communication" / "drive.py"
+    drive_path = Path(__file__).parent / "emergence_core" / "sanctuary" / "cognitive_core" / "communication" / "drive.py"
     
     spec = importlib.util.spec_from_file_location("communication_drive", drive_path)
     module = importlib.util.module_from_spec(spec)

@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(name)s - %(mes
 
 # Add the emergence_core to path
 import sys
-sys.path.insert(0, '/home/runner/work/Lyra-Emergence/Lyra-Emergence/emergence_core')
+sys.path.insert(0, '/home/runner/work/Sanctuary/Sanctuary/emergence_core')
 
 from mind.cognitive_core.workspace import GlobalWorkspace, Goal, GoalType, Percept, WorkspaceSnapshot
 from mind.cognitive_core.action import ActionSubsystem, Action, ActionType

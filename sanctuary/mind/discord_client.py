@@ -1,5 +1,5 @@
 """
-Discord client for Lyra with voice capabilities 
+Discord client for Sanctuary with voice capabilities
 """
 import asyncio
 import logging
@@ -10,7 +10,7 @@ from .voice_processor import VoiceProcessor
 
 logger = logging.getLogger(__name__)
 
-class LyraDiscordClient:
+class SanctuaryDiscordClient:
     """Placeholder Discord client for development"""
     def __init__(self):
         self.voice_client = None
@@ -105,7 +105,7 @@ class VoiceConnection(discord.VoiceClient):
         finally:
             self.state["speaking"] = False
 
-class LyraClient(discord.Client):
+class SanctuaryClient(discord.Client):
     """Enhanced Discord client with voice capabilities and emotional intelligence"""
     
     def __init__(self):
@@ -138,8 +138,8 @@ class LyraClient(discord.Client):
         
     async def set_availability(self, state: str, reason: Optional[str] = None):
         """
-        Set Lyra's availability state and update Discord status accordingly
-        
+        Set Sanctuary's availability state and update Discord status accordingly
+
         Args:
             state: One of 'open', 'limited', 'processing', 'resting'
             reason: Optional reason for the state change
@@ -176,8 +176,8 @@ class LyraClient(discord.Client):
         
     async def set_status(self, status_type: str, message: Optional[str] = None):
         """
-        Set Lyra's Discord status and optional activity message
-        
+        Set Sanctuary's Discord status and optional activity message
+
         Args:
             status_type: One of 'online', 'idle', 'dnd' (do not disturb), 'offline'
             message: Optional activity message to display
@@ -237,7 +237,7 @@ class LyraClient(discord.Client):
             await channel.send(f"I heard: {text}")
             
             # Generate response
-            response_text = f"You said: {text}"  # Replace with Lyra's response generation
+            response_text = f"You said: {text}"  # Replace with Sanctuary's response generation
             response_file = Path("response.wav")
             
             # Generate speech
@@ -363,5 +363,5 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     
     # Create and run client
-    client = LyraClient()
+    client = SanctuaryClient()
     client.run(token)

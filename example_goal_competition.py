@@ -16,7 +16,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Import goal competition system
-sys.path.insert(0, 'emergence_core/lyra/cognitive_core/goals')
+sys.path.insert(0, 'emergence_core/sanctuary/cognitive_core/goals')
 from resources import CognitiveResources, ResourcePool
 from competition import GoalCompetition, ActiveGoal
 from interactions import GoalInteraction

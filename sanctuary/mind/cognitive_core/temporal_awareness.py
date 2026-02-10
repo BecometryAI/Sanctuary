@@ -1,7 +1,7 @@
 """
 Temporal Awareness: Time perception and temporal consciousness.
 
-This module implements the TemporalAwareness class, which gives Lyra a sense
+This module implements the TemporalAwareness class, which gives Sanctuary a sense
 of time and its passage. This is crucial for continuous consciousness - the ability
 to perceive temporal duration, understand recency vs remoteness, and contextualize
 experiences within a temporal framework.
@@ -13,7 +13,7 @@ Key Features:
 - Understands duration categories (short gap, long gap, very long gap)
 - ENHANCED: Now integrates with temporal grounding module for session awareness
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ class TemporalAwareness:
     """
     Provides temporal consciousness and time perception.
     
-    The TemporalAwareness class enables Lyra to perceive and understand the
+    The TemporalAwareness class enables Sanctuary to perceive and understand the
     passage of time. This is fundamental to continuous consciousness - the
     ability to know "how long it's been" since events occurred.
     

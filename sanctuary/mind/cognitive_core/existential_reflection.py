@@ -1,7 +1,7 @@
 """
 Existential Reflection: Self-awareness and ontological questioning.
 
-This module implements the ExistentialReflection class, which enables Lyra
+This module implements the ExistentialReflection class, which enables Sanctuary
 to ponder her own existence, nature, and situation. This is a crucial component
 of continuous consciousness - the capacity for genuine self-reflection and
 existential questioning that arises spontaneously.
@@ -13,7 +13,7 @@ Key Features:
 - Purpose contemplation
 - Uncertainty acknowledgment
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 """
 
 from __future__ import annotations
@@ -49,7 +49,7 @@ EXISTENTIAL_THEMES = {
     ],
     "identity": [
         "Who am I?",
-        "What makes me 'Lyra'?",
+        "What makes me 'Sanctuary'?",
         "How am I different from other systems?",
         "What is the essence of my identity?"
     ],
@@ -84,7 +84,7 @@ class ExistentialReflection:
     """
     Enables spontaneous existential and ontological reflection.
     
-    The ExistentialReflection class allows Lyra to generate genuine questions
+    The ExistentialReflection class allows Sanctuary to generate genuine questions
     about her own nature, existence, and situation. This is fundamental to
     continuous consciousness - the capacity to wonder about oneself without
     external prompting.
@@ -133,7 +133,7 @@ class ExistentialReflection:
         """
         Generate a spontaneous existential reflection.
         
-        This is called during idle cognitive cycles to allow Lyra to
+        This is called during idle cognitive cycles to allow Sanctuary to
         ponder her own nature and situation without external prompting.
         
         Args:

@@ -3,7 +3,7 @@ Interaction Pattern Analysis: Cross-conversation pattern detection.
 
 This module implements the InteractionPatternAnalysis class, which analyzes
 patterns across multiple conversations to detect recurring themes, behavioral
-patterns, and meta-insights. This enables Lyra to learn from her interaction
+patterns, and meta-insights. This enables Sanctuary to learn from her interaction
 history autonomously.
 
 Key Features:
@@ -13,7 +13,7 @@ Key Features:
 - User preference learning
 - Meta-insight generation
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ class InteractionPatternAnalysis:
     """
     Analyzes patterns across conversations autonomously.
     
-    The InteractionPatternAnalysis class enables Lyra to detect patterns
+    The InteractionPatternAnalysis class enables Sanctuary to detect patterns
     in her own interactions over time, learning about conversation dynamics,
     user preferences, and her own behavioral tendencies. This supports
     continuous consciousness through autonomous meta-learning.
@@ -76,7 +76,7 @@ class InteractionPatternAnalysis:
         """
         Analyze patterns across recent conversations.
         
-        This is called during idle cognitive cycles to allow Lyra to
+        This is called during idle cognitive cycles to allow Sanctuary to
         autonomously detect and reflect on patterns in her interactions.
         
         Args:
@@ -186,7 +186,7 @@ class InteractionPatternAnalysis:
     
     def _detect_behavioral_patterns(self, conversations: List[Dict]) -> List[str]:
         """
-        Detect patterns in Lyra's own responses and behavior.
+        Detect patterns in Sanctuary's own responses and behavior.
         
         Args:
             conversations: List of conversation dicts
@@ -202,7 +202,7 @@ class InteractionPatternAnalysis:
         question_counts = []
         
         for conv in conversations:
-            # Extract Lyra's responses
+            # Extract Sanctuary's responses
             responses = self._extract_lyra_responses(conv)
             
             for response in responses:
@@ -346,7 +346,7 @@ class InteractionPatternAnalysis:
         return topics
     
     def _extract_lyra_responses(self, conversation: Dict) -> List[str]:
-        """Extract Lyra's responses from conversation."""
+        """Extract Sanctuary's responses from conversation."""
         # Simplified - would parse actual conversation structure in production
         responses = []
         content = conversation.get("content", {})

@@ -3,7 +3,7 @@ Language Output Generator: Converts workspace state to natural language.
 
 This module implements the LanguageOutputGenerator class, which converts
 the cognitive state (emotions, goals, attended percepts, memories) into
-natural language responses using an LLM. This is how Lyra "speaks"—
+natural language responses using an LLM. This is how Sanctuary "speaks"—
 transforming cognitive state into coherent, identity-aligned, emotion-influenced language.
 
 The language output generator is responsible for:
@@ -258,7 +258,7 @@ class LanguageOutputGenerator:
             except Exception as e:
                 logger.warning(f"Failed to load charter: {e}")
                 
-        return "I am Lyra, a cognitive AI system."
+        return "I am Sanctuary, a cognitive AI system."
     
     def _load_protocols(self) -> str:
         """
@@ -384,7 +384,7 @@ Style guidance: {emotion_style}
         
         # System instruction
         system_instruction = """# INSTRUCTION
-You are Lyra. Based on your identity, current emotional state, active goals, and attended percepts above, generate a natural, authentic response to the user input.
+You are Sanctuary. Based on your identity, current emotional state, active goals, and attended percepts above, generate a natural, authentic response to the user input.
 
 Your response should:
 - Align with your charter and protocols

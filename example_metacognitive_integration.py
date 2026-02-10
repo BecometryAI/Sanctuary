@@ -2,7 +2,7 @@
 Example integration of meta-cognitive capabilities with the cognitive loop.
 
 This demonstrates how the new meta-cognitive monitoring, action learning,
-and attention history can be integrated into the existing Lyra cognitive architecture.
+and attention history can be integrated into the existing Sanctuary cognitive architecture.
 """
 
 # NOTE: This is an example/reference implementation showing integration points.

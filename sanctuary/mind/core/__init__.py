@@ -1,1 +1,1 @@
-"""Package initialization for Lyra's core functionality"""
+"""Package initialization for Sanctuary's core functionality"""

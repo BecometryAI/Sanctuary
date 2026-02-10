@@ -4,7 +4,7 @@ ChromaDB Transaction Wrapper
 Provides atomic operations for ChromaDB with rollback support.
 Ensures data consistency by treating multiple operations as a single unit.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2, 2026
 """
 

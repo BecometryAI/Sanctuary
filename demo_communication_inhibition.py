@@ -21,7 +21,7 @@ def load_module(name, file_path):
     return module
 
 # Load the inhibition and drive modules
-base_path = Path(__file__).parent / "emergence_core" / "lyra" / "cognitive_core" / "communication"
+base_path = Path(__file__).parent / "emergence_core" / "sanctuary" / "cognitive_core" / "communication"
 inhibition = load_module("inhibition", base_path / "inhibition.py")
 drive = load_module("drive", base_path / "drive.py")
 

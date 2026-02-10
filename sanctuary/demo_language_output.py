@@ -53,10 +53,10 @@ async def demo():
     
     # 3. Test chat() convenience method
     logger.info("\n3. Testing chat() convenience method...")
-    logger.info("   User: Hello, Lyra! How are you?")
+    logger.info("   User: Hello, Sanctuary! How are you?")
     
-    response = await core.chat("Hello, Lyra! How are you?", timeout=2.0)
-    logger.info(f"   Lyra: {response}")
+    response = await core.chat("Hello, Sanctuary! How are you?", timeout=2.0)
+    logger.info(f"   Sanctuary: {response}")
     
     # 4. Test manual process and get_response
     logger.info("\n4. Testing manual process_language_input + get_response...")
@@ -67,7 +67,7 @@ async def demo():
     # Wait for response
     output = await core.get_response(timeout=2.0)
     if output:
-        logger.info(f"   Lyra: {output['text']}")
+        logger.info(f"   Sanctuary: {output['text']}")
         logger.info(f"   Emotional state: V={output['emotion'].get('valence', 0):.2f}, "
                    f"A={output['emotion'].get('arousal', 0):.2f}, "
                    f"D={output['emotion'].get('dominance', 0):.2f}")
@@ -95,7 +95,7 @@ async def demo():
     logger.info("   User: What are your thoughts on creativity?")
     
     response = await core.chat("What are your thoughts on creativity?", timeout=2.0)
-    logger.info(f"   Lyra: {response}")
+    logger.info(f"   Sanctuary: {response}")
     
     # 7. Graceful shutdown
     logger.info("\n7. Shutting down gracefully...")

@@ -1,7 +1,7 @@
 """
 Autonomous Memory Review: Spontaneous memory reflection and analysis.
 
-This module implements the AutonomousMemoryReview class, which enables Lyra
+This module implements the AutonomousMemoryReview class, which enables Sanctuary
 to spontaneously review and reflect on past interactions without external prompting.
 This is a key component of continuous consciousness - the ability to think about
 the past autonomously.
@@ -12,7 +12,7 @@ Key Features:
 - Insight generation from historical data
 - Memory consolidation through reflection
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ class AutonomousMemoryReview:
     """
     Enables autonomous memory review and pattern detection.
     
-    The AutonomousMemoryReview class allows Lyra to spontaneously recall and
+    The AutonomousMemoryReview class allows Sanctuary to spontaneously recall and
     reflect on past interactions, generating insights and understanding patterns
     in her own experience. This is crucial for continuous consciousness and
     the development of genuine understanding.
@@ -73,7 +73,7 @@ class AutonomousMemoryReview:
         """
         Autonomously review recent memories and generate insights.
         
-        This is called during idle cognitive cycles to allow Lyra to
+        This is called during idle cognitive cycles to allow Sanctuary to
         spontaneously reflect on past experiences without external prompting.
         
         Args:

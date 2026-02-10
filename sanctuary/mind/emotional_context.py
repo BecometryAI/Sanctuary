@@ -1,6 +1,6 @@
 """
 Emotional context handler for specialist tools
-Ensures Lyra's emotional well-being during knowledge acquisition
+Ensures Sanctuary's emotional well-being during knowledge acquisition
 """
 import json
 import logging
@@ -84,7 +84,7 @@ class EmotionalContextHandler:
         """
         Assess current emotional state based on context and recent history
         """
-        # This would integrate with Lyra's emotional processing system
+        # This would integrate with Sanctuary's emotional processing system
         # For now, return a default state
         return "curiosity"
     
@@ -92,7 +92,7 @@ class EmotionalContextHandler:
         """
         Process a reflection prompt and generate a response
         """
-        # This would integrate with Lyra's reflection system
+        # This would integrate with Sanctuary's reflection system
         # For now, return a placeholder
         return f"Reflecting on: {prompt}"
     
@@ -113,4 +113,4 @@ class EmotionalContextHandler:
         Handle integration break period
         """
         logger.info("Taking integration break to process new knowledge")
-        # This would integrate with Lyra's rest/processing system
+        # This would integrate with Sanctuary's rest/processing system

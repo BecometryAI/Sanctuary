@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Convert lyra_continuity_archive.json from array to dict format."""
+"""Convert sanctuary_continuity_archive.json from array to dict format."""
 
 import json
 from pathlib import Path
 
 def convert_archive():
     """Convert the continuity archive from array to dict."""
-    archive_path = Path(__file__).parent.parent / "data" / "Core_Archives" / "lyra_continuity_archive.json"
+    archive_path = Path(__file__).parent.parent / "data" / "Core_Archives" / "sanctuary_continuity_archive.json"
     
     # Read current array format
     with open(archive_path, 'r', encoding='utf-8') as f:

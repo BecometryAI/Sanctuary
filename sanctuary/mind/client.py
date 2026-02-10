@@ -1,23 +1,23 @@
 """
-High-level API for interacting with Lyra's cognitive core.
+High-level API for interacting with Sanctuary's cognitive core.
 
-This module provides both asynchronous (LyraAPI) and synchronous (Lyra) interfaces
-for conversational interaction with Lyra. The API abstracts the cognitive core and
+This module provides both asynchronous (SanctuaryAPI) and synchronous (Sanctuary) interfaces
+for conversational interaction with Sanctuary. The API abstracts the cognitive core and
 conversation management, providing simple methods for chatting and managing state.
 
 Usage (Async):
-    api = LyraAPI()
+    api = SanctuaryAPI()
     await api.start()
-    turn = await api.chat("Hello, Lyra!")
+    turn = await api.chat("Hello!")
     print(turn.system_response)
     await api.stop()
 
 Usage (Sync):
-    lyra = Lyra()
-    lyra.start()
-    response = lyra.chat("Hello, Lyra!")
+    sanctuary = Sanctuary()
+    sanctuary.start()
+    response = sanctuary.chat("Hello!")
     print(response)
-    lyra.stop()
+    sanctuary.stop()
 """
 
 import asyncio
@@ -30,17 +30,17 @@ from .cognitive_core.conversation import ConversationManager, ConversationTurn
 logger = logging.getLogger(__name__)
 
 
-class LyraAPI:
+class SanctuaryAPI:
     """
-    High-level asynchronous API for interacting with Lyra.
-    
-    Provides a clean interface for conversational interaction with Lyra's
+    High-level asynchronous API for interacting with Sanctuary.
+
+    Provides a clean interface for conversational interaction with Sanctuary's
     cognitive core. Handles lifecycle management and conversation state.
-    
+
     The API integrates:
     - CognitiveCore: The cognitive processing engine
     - ConversationManager: Turn-taking and dialogue state management
-    
+
     Methods:
         start(): Initialize and start the cognitive core
         stop(): Gracefully shut down the cognitive core
@@ -49,11 +49,11 @@ class LyraAPI:
         get_metrics(): Get conversation and cognitive metrics
         reset_conversation(): Clear conversation state
     """
-    
+
     def __init__(self, config: Optional[Dict] = None):
         """
-        Initialize the Lyra API.
-        
+        Initialize the Sanctuary API.
+
         Args:
             config: Optional configuration dict with keys:
                 - cognitive_core: Config for CognitiveCore
@@ -70,7 +70,7 @@ class LyraAPI:
         
         self._running = False
         
-        logger.info("✅ LyraAPI initialized")
+        logger.info("✅ SanctuaryAPI initialized")
     
     async def start(self) -> None:
         """
@@ -87,7 +87,7 @@ class LyraAPI:
             await asyncio.sleep(0.1)
             
             self._running = True
-            logger.info("🧠 LyraAPI started")
+            logger.info("🧠 SanctuaryAPI started")
     
     async def stop(self) -> None:
         """
@@ -98,7 +98,7 @@ class LyraAPI:
         if self._running:
             await self.core.stop()
             self._running = False
-            logger.info("🧠 LyraAPI stopped")
+            logger.info("🧠 SanctuaryAPI stopped")
     
     async def chat(self, message: str) -> ConversationTurn:
         """
@@ -118,7 +118,7 @@ class LyraAPI:
             RuntimeError: If API not started yet
         """
         if not self._running:
-            raise RuntimeError("LyraAPI not started. Call start() first.")
+            raise RuntimeError("SanctuaryAPI not started. Call start() first.")
         
         return await self.conversation.process_turn(message)
     
@@ -161,88 +161,88 @@ class LyraAPI:
         self.conversation.reset_conversation()
 
 
-class Lyra:
+class Sanctuary:
     """
-    Synchronous wrapper for LyraAPI.
-    
+    Synchronous wrapper for SanctuaryAPI.
+
     Provides a blocking, synchronous interface for applications that don't
     use asyncio. Internally manages an event loop to run the async API.
-    
+
     This is useful for:
     - Simple scripts and notebooks
     - Applications not using asyncio
     - Quick testing and experimentation
-    
+
     Methods:
-        start(): Initialize and start Lyra
-        stop(): Gracefully shut down Lyra
+        start(): Initialize and start Sanctuary
+        stop(): Gracefully shut down Sanctuary
         chat(message): Send message and get response text
         get_history(n): Get conversation history as dicts
         reset(): Clear conversation state
     """
-    
+
     def __init__(self, config: Optional[Dict] = None):
         """
-        Initialize the synchronous Lyra wrapper.
-        
+        Initialize the synchronous Sanctuary wrapper.
+
         Creates a new event loop for managing async operations.
         Note: This wrapper creates its own event loop and should not be used
         in applications that already have an active event loop.
-        
+
         Args:
-            config: Optional configuration dict (same as LyraAPI)
+            config: Optional configuration dict (same as SanctuaryAPI)
         """
-        self.api = LyraAPI(config)
+        self.api = SanctuaryAPI(config)
         self.loop = asyncio.new_event_loop()
         # Note: We don't set this as the global event loop to avoid interference
-        
-        logger.info("✅ Lyra (synchronous) initialized")
-    
+
+        logger.info("✅ Sanctuary (synchronous) initialized")
+
     def start(self) -> None:
         """
-        Start Lyra.
-        
+        Start Sanctuary.
+
         Initializes the cognitive core and begins processing.
         """
         self.loop.run_until_complete(self.api.start())
-    
+
     def stop(self) -> None:
         """
-        Stop Lyra.
-        
+        Stop Sanctuary.
+
         Gracefully shuts down the cognitive core.
         """
         self.loop.run_until_complete(self.api.stop())
         self.loop.close()
-    
+
     def chat(self, message: str) -> str:
         """
         Send message and get response text.
-        
+
         Args:
             message: User's text message
-            
+
         Returns:
-            Lyra's response as a string
+            Response as a string
         """
         turn = self.loop.run_until_complete(self.api.chat(message))
         return turn.system_response
-    
+
     def get_history(self, n: int = 10) -> List[Dict]:
         """
         Get conversation history as dicts.
-        
+
         Args:
             n: Maximum number of recent turns to return
-            
+
         Returns:
-            List of dicts with user input, Lyra response, timestamp, emotion
+            List of dicts with user input, response, timestamp, emotion
         """
         turns = self.api.get_conversation_history(n)
         return [
             {
                 "user": t.user_input,
-                "lyra": t.system_response,
+                "response": t.system_response,
                 "timestamp": t.timestamp.isoformat(),
                 "emotion": t.emotional_state
             }

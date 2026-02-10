@@ -5,7 +5,7 @@ Cue-based memory retrieval with similarity matching.
 Supports both RAG-based and direct ChromaDB queries.
 Implements cue-dependent retrieval with spreading activation.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import json
 import logging

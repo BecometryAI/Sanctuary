@@ -35,7 +35,7 @@ async def demo_input_queue():
     
     # Test 1: Add inputs
     print("\n📥 Adding inputs to queue...")
-    await queue.add_input("Hello, Lyra!", source="human")
+    await queue.add_input("Hello, Sanctuary!", source="human")
     await queue.add_input("How are you?", source="human")
     await queue.add_input("System notification", source="system")
     
@@ -188,7 +188,7 @@ async def demo_mixed_input():
     
     # Cycle 6: Add input
     print("\n   Cycle 6: Human input arrives")
-    await queue.add_input("Hello Lyra!", source="human")
+    await queue.add_input("Hello Sanctuary!", source="human")
     inputs = queue.get_pending_inputs()
     activities = await idle.generate_idle_activity(workspace)
     print(f"      Cycle 6: {len(inputs)} inputs, {len(activities)} idle activities")

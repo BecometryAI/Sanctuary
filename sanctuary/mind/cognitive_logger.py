@@ -1,5 +1,5 @@
 """
-Logging configuration for Lyra's cognitive system
+Logging configuration for Sanctuary's cognitive system
 """
 import logging
 import logging.handlers
@@ -18,7 +18,7 @@ class CognitiveLogger:
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
         # Setup routing logger
-        routing_logger = logging.getLogger('lyra.routing')
+        routing_logger = logging.getLogger('sanctuary.routing')
         routing_logger.setLevel(logging.INFO)
         # Remove any existing file handlers to prevent duplicates
         for h in routing_logger.handlers[:]:
@@ -37,7 +37,7 @@ class CognitiveLogger:
         self._handlers.append((routing_logger, routing_handler))
 
         # Setup model performance logger
-        perf_logger = logging.getLogger('lyra.performance')
+        perf_logger = logging.getLogger('sanctuary.performance')
         perf_logger.setLevel(logging.INFO)
         # Remove any existing file handlers to prevent duplicates
         for h in perf_logger.handlers[:]:
@@ -57,7 +57,7 @@ class CognitiveLogger:
         
     def log_routing_decision(self, message: str, intent: str, resonance_term: str, context: Dict[str, Any]):
         """Log routing decisions with context."""
-        logger = logging.getLogger('lyra.routing')
+        logger = logging.getLogger('sanctuary.routing')
         log_entry = {
             'message': message,
             'intent': intent,
@@ -68,7 +68,7 @@ class CognitiveLogger:
         
     def log_model_performance(self, model_type: str, operation: str, duration: float, success: bool):
         """Log model performance metrics."""
-        logger = logging.getLogger('lyra.performance')
+        logger = logging.getLogger('sanctuary.performance')
         log_entry = {
             'model': model_type,
             'operation': operation,

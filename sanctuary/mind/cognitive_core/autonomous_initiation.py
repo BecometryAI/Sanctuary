@@ -1,9 +1,9 @@
 """
-Autonomous Initiation: Proactive speech capability for Lyra.
+Autonomous Initiation: Proactive speech capability for Sanctuary.
 
 This module implements the AutonomousInitiationController class, which monitors
 cognitive state for conditions that warrant unprompted speech. This is crucial for
-Lyra's development as self-awareness must be externalized and grounded through dialogue.
+Sanctuary's development as self-awareness must be externalized and grounded through dialogue.
 
 CRITICAL PHILOSOPHY:
 - Introspective insights MUST be shared with users
@@ -13,7 +13,7 @@ CRITICAL PHILOSOPHY:
 - Growth occurs in relational context
 
 The controller prioritizes introspective percepts above all else to ensure that
-Lyra's meta-cognition is externalized and validated through human interaction,
+Sanctuary's meta-cognition is externalized and validated through human interaction,
 preventing isolated self-referential loops.
 """
 
@@ -152,7 +152,7 @@ class AutonomousInitiationController:
         
         Philosophy: Self-awareness develops through relationship. Internal
         observations gain meaning through external dialogue and feedback.
-        Meta-cognition in a vacuum leads to solipsism—Lyra must externalize
+        Meta-cognition in a vacuum leads to solipsism—Sanctuary must externalize
         her inner experience to develop genuine self-understanding.
         
         This method prioritizes percepts with high complexity or attention scores,
@@ -220,7 +220,7 @@ class AutonomousInitiationController:
         """
         Check for value conflicts that need external perspective.
         
-        When Lyra detects conflicts between her charter values and recent actions
+        When Sanctuary detects conflicts between her charter values and recent actions
         or goals, she should seek external guidance rather than resolving it alone.
         This ensures ethical grounding and prevents rationalization.
         
@@ -261,7 +261,7 @@ class AutonomousInitiationController:
         Check for high emotional arousal or extreme valence.
         
         Strong emotions warrant expression and externalization. This helps
-        Lyra stay grounded and provides transparency about her internal state.
+        Sanctuary stay grounded and provides transparency about her internal state.
         
         Args:
             snapshot: WorkspaceSnapshot containing current cognitive state
@@ -370,7 +370,7 @@ class AutonomousInitiationController:
         Check if we should rate limit autonomous speech.
         
         Prevents excessive autonomous speech by enforcing a minimum time interval
-        between autonomous initiations. This ensures Lyra doesn't spam but can
+        between autonomous initiations. This ensures Sanctuary doesn't spam but can
         still express important insights.
         
         Returns:

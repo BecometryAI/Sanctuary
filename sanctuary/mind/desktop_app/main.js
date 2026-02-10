@@ -16,7 +16,7 @@ function createWindow() {
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js')
         },
-        title: 'Lyra',
+        title: 'Sanctuary',
         icon: path.join(__dirname, 'assets/icon.png')
     });
 

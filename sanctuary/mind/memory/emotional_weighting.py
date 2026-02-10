@@ -4,7 +4,7 @@ Emotional Weighting Module
 Emotional salience affects storage and retrieval priority.
 High-emotion memories get preferential treatment.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import logging
 import math

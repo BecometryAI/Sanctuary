@@ -4,7 +4,7 @@ Episodic Memory Module
 Manages autobiographical episodes with temporal and contextual indexing.
 Handles the "what, when, where" of experiential memories.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import json
 import logging

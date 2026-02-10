@@ -21,7 +21,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from emergence_core.lyra.cognitive_core.consciousness_tests import (
+from emergence_core.sanctuary.cognitive_core.consciousness_tests import (
     ConsciousnessTestFramework,
     ConsciousnessReportGenerator,
     MirrorTest,

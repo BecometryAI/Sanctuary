@@ -2,7 +2,7 @@
 """
 Comprehensive Data Validation and Formatting Tool
 
-This script validates all JSON files in the Lyra data directory, ensuring:
+This script validates all JSON files in the Sanctuary data directory, ensuring:
 1. Valid JSON syntax
 2. Correct Pydantic model compliance (for journal entries)
 3. Proper file formatting (POSIX compliance, trailing newlines)
@@ -33,7 +33,7 @@ Exit Codes:
     0: All files valid
     1: Validation errors found or execution error
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 Date: November 23, 2025
 Version: 2.0
 """

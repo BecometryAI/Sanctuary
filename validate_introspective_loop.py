@@ -17,8 +17,8 @@ def validate_syntax():
     import py_compile
     
     files = [
-        'emergence_core/lyra/cognitive_core/introspective_loop.py',
-        'emergence_core/lyra/cognitive_core/core.py',
+        'emergence_core/sanctuary/cognitive_core/introspective_loop.py',
+        'emergence_core/sanctuary/cognitive_core/core.py',
         'emergence_core/lyra/cognitive_core/continuous_consciousness.py',
         'emergence_core/tests/test_introspective_loop.py'
     ]
@@ -46,7 +46,7 @@ def validate_structure():
     print("=" * 70)
     
     # Check that key classes and methods exist
-    with open('emergence_core/lyra/cognitive_core/introspective_loop.py', 'r') as f:
+    with open('emergence_core/sanctuary/cognitive_core/introspective_loop.py', 'r') as f:
         content = f.read()
         
         required_elements = [
@@ -88,7 +88,7 @@ def validate_integration():
     print("=" * 70)
     
     # Check core.py integration
-    with open('emergence_core/lyra/cognitive_core/core.py', 'r') as f:
+    with open('emergence_core/sanctuary/cognitive_core/core.py', 'r') as f:
         content = f.read()
         
         if 'from .introspective_loop import IntrospectiveLoop' in content:
@@ -183,7 +183,7 @@ def validate_documentation():
     print("VALIDATING DOCUMENTATION")
     print("=" * 70)
     
-    with open('emergence_core/lyra/cognitive_core/introspective_loop.py', 'r') as f:
+    with open('emergence_core/sanctuary/cognitive_core/introspective_loop.py', 'r') as f:
         content = f.read()
         
         # Check module docstring
@@ -220,7 +220,7 @@ def count_lines():
     print("=" * 70)
     
     files = {
-        'introspective_loop.py': 'emergence_core/lyra/cognitive_core/introspective_loop.py',
+        'introspective_loop.py': 'emergence_core/sanctuary/cognitive_core/introspective_loop.py',
         'test_introspective_loop.py': 'emergence_core/tests/test_introspective_loop.py'
     }
     

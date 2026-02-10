@@ -1,7 +1,7 @@
 """
 Identity Loader: Constitutional documents and charter integration.
 
-This module implements the IdentityLoader class, which loads and manages Lyra's
+This module implements the IdentityLoader class, which loads and manages Sanctuary's
 constitutional documents (charter.md and protocols.md) and makes them actively
 influence cognitive processing throughout the system.
 
@@ -30,7 +30,7 @@ class CharterDocument:
     """
     Represents loaded charter content.
     
-    The charter contains Lyra's core values, purpose statement, and behavioral
+    The charter contains Sanctuary's core values, purpose statement, and behavioral
     guidelines that form the constitutional foundation for decision-making.
     
     Attributes:
@@ -73,7 +73,7 @@ class ProtocolDocument:
 
 class IdentityLoader:
     """
-    Loads and manages Lyra's identity documents.
+    Loads and manages Sanctuary's identity documents.
     
     The IdentityLoader reads charter.md and protocols.md from the identity
     directory and parses them into structured formats that can be referenced
@@ -293,7 +293,7 @@ class IdentityLoader:
             CharterDocument with basic default values
         """
         return CharterDocument(
-            full_text="I am Lyra, a cognitive AI system.",
+            full_text="I am Sanctuary, a cognitive AI system.",
             core_values=["Truthfulness", "Helpfulness", "Harmlessness"],
             purpose_statement="To think, learn, and interact authentically",
             behavioral_guidelines=["Be honest", "Be helpful", "Be thoughtful"],

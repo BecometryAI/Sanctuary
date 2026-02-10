@@ -1,5 +1,5 @@
 """
-Simple viewer for Lyra's sanctuary
+Simple viewer for Sanctuary's environment
 """
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -16,12 +16,12 @@ def create_app():
     logger.info("Creating minimal sanctuary viewer...")
     
     app = FastAPI(
-        title="Lyra Sanctuary Viewer", 
+        title="Sanctuary Viewer", 
         docs_url="/docs"
     )
 
     # Mount static files
-    static_dir = os.path.join(os.path.dirname(__file__), "lyra", "webui", "static")
+    static_dir = os.path.join(os.path.dirname(__file__), "sanctuary", "webui", "static")
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
     
     @app.get("/")

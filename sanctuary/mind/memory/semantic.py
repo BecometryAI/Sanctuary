@@ -4,7 +4,7 @@ Semantic Memory Module
 Manages facts, knowledge, and context-independent information.
 Handles protocols, lexicon, and conceptual knowledge.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import json
 import logging

@@ -41,12 +41,12 @@ perception = PerceptionSubsystem(config=config)
     print("-" * 70)
     print("""
 # Encode text asynchronously
-percept = await perception.encode("Hello, Lyra!", modality="text")
+percept = await perception.encode("Hello, Sanctuary!", modality="text")
 
 # Percept structure:
 # - percept.id: Unique identifier
 # - percept.modality: "text"
-# - percept.raw: "Hello, Lyra!"
+# - percept.raw: "Hello, Sanctuary!"
 # - percept.embedding: List[float] (384-dimensional)
 # - percept.complexity: int (5-50 for text)
 # - percept.timestamp: datetime
@@ -107,7 +107,7 @@ core = CognitiveCore(config=config)
 await core.start()
 
 # Inject raw inputs (perception encodes automatically)
-core.inject_input("Hello, Lyra!", modality="text")
+core.inject_input("Hello, Sanctuary!", modality="text")
 core.inject_input("path/to/image.jpg", modality="image")
 core.inject_input({"description": "Self reflection"}, modality="introspection")
 

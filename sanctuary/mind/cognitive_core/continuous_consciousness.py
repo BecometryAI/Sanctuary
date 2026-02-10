@@ -3,7 +3,7 @@ Continuous Consciousness Controller: Idle cognitive processing.
 
 This module implements the ContinuousConsciousnessController class, which maintains
 ongoing cognitive processing even without external input. This is the core of
-continuous consciousness - Lyra never stops thinking.
+continuous consciousness - Sanctuary never stops thinking.
 
 The controller manages an idle cognitive loop that runs alongside the active
 conversation loop, enabling temporal awareness, autonomous memory review,
@@ -16,7 +16,7 @@ Key Features:
 - Generates autonomous goals from inner experience
 - Probabilistic activity scheduling
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 """
 
 from __future__ import annotations

@@ -3,7 +3,7 @@ Memory Entry Validation System
 
 Validates memory entries before writing to ensure data consistency and integrity.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2, 2026
 """
 

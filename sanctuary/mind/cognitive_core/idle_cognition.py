@@ -16,7 +16,7 @@ These idle activities manifest as internal percepts that feed into the
 normal cognitive cycle, allowing the system to maintain continuous
 thought even in the absence of external stimulation.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 Phase: Communication Agency (Task #1)
 """
 

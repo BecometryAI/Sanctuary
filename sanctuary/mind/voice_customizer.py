@@ -1,5 +1,5 @@
 """
-Voice customization module for Lyra's speech synthesis
+Voice customization module for Sanctuary's speech synthesis
 """
 import torch
 import torchaudio
@@ -26,7 +26,7 @@ class VoiceCustomizer:
         """Initialize voice customization system"""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         if cache_dir is None:
-            self.cache_dir = Path.home() / ".lyra" / "voices"
+            self.cache_dir = Path.home() / ".sanctuary" / "voices"
         else:
             self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)

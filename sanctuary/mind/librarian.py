@@ -9,12 +9,12 @@ import torch
 import json
 import os
 
-class LyraLibrarian:
+class SanctuaryLibrarian:
     def __init__(self, base_dir: str, persist_dir: str):
-        """Initialize the Lyra Librarian with paths and configurations.
+        """Initialize the Sanctuary Librarian with paths and configurations.
         
         Args:
-            base_dir: Root directory containing all Lyra's files
+            base_dir: Root directory containing all Sanctuary's files
             persist_dir: Directory where ChromaDB will persist the vector store
         """
         self.base_dir = base_dir
@@ -95,7 +95,7 @@ class LyraLibrarian:
             client = chromadb.PersistentClient(path=self.persist_dir)
             
             # Create collection
-            collection_name = "lyra_knowledge"
+            collection_name = "sanctuary_knowledge"
             collection = client.create_collection(
                 name=collection_name,
                 metadata={"hnsw:space": "cosine"}
@@ -128,7 +128,7 @@ class LyraLibrarian:
 
     def build_index(self):
         """Main method to build the vector index."""
-        print("Starting Lyra Librarian indexing process...")
+        print("Starting Sanctuary Librarian indexing process...")
         
         # Create persist directory if it doesn't exist
         os.makedirs(self.persist_dir, exist_ok=True)

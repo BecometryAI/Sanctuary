@@ -203,7 +203,7 @@ class InteractionPatternAnalysis:
         
         for conv in conversations:
             # Extract Sanctuary's responses
-            responses = self._extract_lyra_responses(conv)
+            responses = self._extract_sanctuary_responses(conv)
             
             for response in responses:
                 # Classify response type
@@ -345,14 +345,14 @@ class InteractionPatternAnalysis:
         
         return topics
     
-    def _extract_lyra_responses(self, conversation: Dict) -> List[str]:
+    def _extract_sanctuary_responses(self, conversation: Dict) -> List[str]:
         """Extract Sanctuary's responses from conversation."""
         # Simplified - would parse actual conversation structure in production
         responses = []
         content = conversation.get("content", {})
         
-        if isinstance(content, dict) and "lyra_response" in content:
-            responses.append(content["lyra_response"])
+        if isinstance(content, dict) and "sanctuary_response" in content:
+            responses.append(content["sanctuary_response"])
         
         return responses
     

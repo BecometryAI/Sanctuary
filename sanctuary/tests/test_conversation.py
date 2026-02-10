@@ -134,11 +134,11 @@ class TestSingleTurn:
             
             asyncio.create_task(delayed_response())
             
-            turn = await manager.process_turn("Hello, Lyra!")
+            turn = await manager.process_turn("Hello, Sanctuary!")
             
             # Verify turn structure
             assert isinstance(turn, ConversationTurn)
-            assert turn.user_input == "Hello, Lyra!"
+            assert turn.user_input == "Hello, Sanctuary!"
             assert turn.system_response == "Hello! How can I help you?"
             assert isinstance(turn.timestamp, datetime)
             assert turn.response_time > 0

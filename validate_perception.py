@@ -39,8 +39,8 @@ def main():
     # Check syntax of main files
     print("\n1. Validating Python syntax...")
     files_to_check = [
-        "emergence_core/lyra/cognitive_core/perception.py",
-        "emergence_core/lyra/cognitive_core/core.py",
+        "emergence_core/sanctuary/cognitive_core/perception.py",
+        "emergence_core/sanctuary/cognitive_core/core.py",
         "emergence_core/tests/test_perception.py",
     ]
     
@@ -61,7 +61,7 @@ def main():
     print("\n2. Checking PerceptionSubsystem structure...")
     
     # Parse the perception.py file to check for required elements
-    with open("emergence_core/lyra/cognitive_core/perception.py", 'r') as f:
+    with open("emergence_core/sanctuary/cognitive_core/perception.py", 'r') as f:
         content = f.read()
     
     required_elements = [
@@ -99,7 +99,7 @@ def main():
     # Check core.py updates
     print("\n3. Checking CognitiveCore integration...")
     
-    with open("emergence_core/lyra/cognitive_core/core.py", 'r') as f:
+    with open("emergence_core/sanctuary/cognitive_core/core.py", 'r') as f:
         core_content = f.read()
     
     required_core_changes = [

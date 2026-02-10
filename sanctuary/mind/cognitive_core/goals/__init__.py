@@ -1,7 +1,7 @@
 """
 Goal Competition System
 
-This module implements resource-based goal competition for Lyra's cognitive system.
+This module implements resource-based goal competition for Sanctuary's cognitive system.
 Goals compete for limited cognitive resources using activation-based dynamics with
 lateral inhibition, allowing for realistic goal selection and prioritization.
 """

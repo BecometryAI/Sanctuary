@@ -5,7 +5,7 @@ This module integrates the broadcast system into the existing cognitive architec
 It provides a BroadcastCoordinator that manages broadcast consumers and coordinates
 workspace broadcasts with the existing subsystems.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 """
 
 from __future__ import annotations

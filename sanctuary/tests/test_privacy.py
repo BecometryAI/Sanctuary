@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
-app = FastAPI(title="Lyra Privacy Controls Test")
+app = FastAPI(title="Sanctuary Privacy Controls Test")
 
 # Simple in-memory storage for testing
 privacy_settings = {
@@ -25,7 +25,7 @@ privacy_settings = {
 @app.get("/")
 async def root():
     """Redirect to privacy controls"""
-    return {"message": "Welcome to Lyra Privacy Controls Test"}
+    return {"message": "Welcome to Sanctuary Privacy Controls Test"}
 
 @app.get("/admin/privacy")
 async def privacy_controls():

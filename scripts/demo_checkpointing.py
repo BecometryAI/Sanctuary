@@ -20,8 +20,8 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from emergence_core.lyra.cognitive_core.core import CognitiveCore
-from emergence_core.lyra.cognitive_core.workspace import Goal, GoalType
+from emergence_core.sanctuary.cognitive_core.core import CognitiveCore
+from emergence_core.sanctuary.cognitive_core.workspace import Goal, GoalType
 
 
 async def demo_basic_save_restore():

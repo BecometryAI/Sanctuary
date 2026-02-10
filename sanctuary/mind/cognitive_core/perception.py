@@ -248,11 +248,16 @@ class PerceptionSubsystem:
         self.stats["cache_misses"] += 1
         start_time = time.time()
         
-        embedding = self.text_encoder.encode(
+        raw_embedding = self.text_encoder.encode(
             text,
             convert_to_numpy=True,
             normalize_embeddings=True
-        ).tolist()
+        )
+        # SentenceTransformer.encode() may return 2D array for single string;
+        # squeeze to 1D before converting to list of floats
+        if hasattr(raw_embedding, 'ndim') and raw_embedding.ndim == 2:
+            raw_embedding = raw_embedding[0]
+        embedding = raw_embedding.tolist()
         
         encoding_time = time.time() - start_time
         # Keep only last 100 encoding times to prevent memory leak

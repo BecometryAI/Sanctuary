@@ -7,10 +7,10 @@ from datetime import datetime
 from unittest.mock import Mock, MagicMock
 
 import sys
-sys.path.insert(0, '/home/runner/work/Lyra-Emergence/Lyra-Emergence')
+sys.path.insert(0, '/home/runner/work/Sanctuary/Sanctuary')
 
-from emergence_core.lyra.memory.emotional_weighting import EmotionalWeighting
-from emergence_core.lyra.memory.working import WorkingMemory
+from emergence_core.sanctuary.memory.emotional_weighting import EmotionalWeighting
+from emergence_core.sanctuary.memory.working import WorkingMemory
 
 
 class TestEmotionalWeightingEdgeCases:
@@ -190,7 +190,7 @@ class TestMemoryRetrieverEdgeCases:
     
     def test_retrieve_with_empty_query(self):
         """Test retrieval with empty query."""
-        from emergence_core.lyra.memory.retrieval import MemoryRetriever
+        from emergence_core.sanctuary.memory.retrieval import MemoryRetriever
         
         storage = Mock()
         vector_db = Mock()
@@ -201,7 +201,7 @@ class TestMemoryRetrieverEdgeCases:
     
     def test_retrieve_with_none_query(self):
         """Test retrieval with None query."""
-        from emergence_core.lyra.memory.retrieval import MemoryRetriever
+        from emergence_core.sanctuary.memory.retrieval import MemoryRetriever
         
         storage = Mock()
         vector_db = Mock()
@@ -212,7 +212,7 @@ class TestMemoryRetrieverEdgeCases:
     
     def test_retrieve_with_whitespace_query(self):
         """Test retrieval with whitespace-only query."""
-        from emergence_core.lyra.memory.retrieval import MemoryRetriever
+        from emergence_core.sanctuary.memory.retrieval import MemoryRetriever
         
         storage = Mock()
         vector_db = Mock()
@@ -223,7 +223,7 @@ class TestMemoryRetrieverEdgeCases:
     
     def test_retrieve_with_zero_k(self):
         """Test retrieval with k=0."""
-        from emergence_core.lyra.memory.retrieval import MemoryRetriever
+        from emergence_core.sanctuary.memory.retrieval import MemoryRetriever
         
         storage = Mock()
         vector_db = Mock()
@@ -237,7 +237,7 @@ class TestMemoryRetrieverEdgeCases:
     
     def test_retrieve_with_negative_k(self):
         """Test retrieval with negative k."""
-        from emergence_core.lyra.memory.retrieval import MemoryRetriever
+        from emergence_core.sanctuary.memory.retrieval import MemoryRetriever
         
         storage = Mock()
         vector_db = Mock()
@@ -253,7 +253,7 @@ class TestMemoryStorageEdgeCases:
     
     def test_add_to_blockchain_with_empty_data(self):
         """Test blockchain add with empty dict."""
-        from emergence_core.lyra.memory.storage import MemoryStorage
+        from emergence_core.sanctuary.memory.storage import MemoryStorage
         
         # This would require full initialization, so we'll just test the validation logic
         # by checking the method signature
@@ -264,7 +264,7 @@ class TestMemoryStorageEdgeCases:
     def test_verify_block_with_empty_hash(self):
         """Test block verification with empty hash."""
         # Similar validation test
-        from emergence_core.lyra.memory.storage import MemoryStorage
+        from emergence_core.sanctuary.memory.storage import MemoryStorage
         import inspect
         sig = inspect.signature(MemoryStorage.verify_block)
         assert 'block_hash' in sig.parameters

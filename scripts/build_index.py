@@ -1,5 +1,5 @@
 import os
-from mind.librarian import LyraLibrarian
+from mind.librarian import SanctuaryLibrarian
 
 def main():
     # Define paths
@@ -7,7 +7,7 @@ def main():
     persist_dir = os.path.join(base_dir, 'model_cache', 'chroma_db')
     
     # Initialize Librarian
-    librarian = LyraLibrarian(
+    librarian = SanctuaryLibrarian(
         base_dir=base_dir,
         persist_dir=persist_dir
     )

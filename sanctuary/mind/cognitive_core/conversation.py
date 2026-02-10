@@ -136,7 +136,7 @@ class ConversationManager:
                 "conversation_history": [
                     {
                         "user": turn.user_input,
-                        "lyra": turn.system_response,
+                        "sanctuary": turn.system_response,
                         "timestamp": turn.timestamp.isoformat()
                     }
                     for turn in list(self.conversation_history)[-3:]

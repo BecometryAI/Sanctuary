@@ -1,5 +1,5 @@
 """
-Tools for voice interaction in Lyra's specialist system
+Tools for voice interaction in Sanctuary's specialist system
 """
 import logging
 from typing import Optional, Dict, Any
@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from .voice_processor import VoiceProcessor
-from .discord_client import LyraDiscordClient
+from .discord_client import SanctuaryDiscordClient
 
 logger = logging.getLogger(__name__)
 
@@ -19,10 +19,10 @@ class VoiceToolkit:
         Initialize voice toolkit
         
         Args:
-            voice_path: Path to Lyra's voice file
+            voice_path: Path to Sanctuary's voice file
         """
         self.voice_processor = VoiceProcessor(voice_path)
-        self.discord_client = LyraDiscordClient(self.voice_processor)
+        self.discord_client = SanctuaryDiscordClient(self.voice_processor)
         self.voice_enabled = False
         
     async def initialize(self) -> None:

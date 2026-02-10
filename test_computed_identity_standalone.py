@@ -24,19 +24,19 @@ def load_module(module_name, file_path):
 # Load identity modules directly
 computed = load_module(
     "computed",
-    "emergence_core/lyra/cognitive_core/identity/computed.py"
+    "sanctuary/mind/cognitive_core/identity/computed.py"
 )
 behavior_logger = load_module(
     "behavior_logger",
-    "emergence_core/lyra/cognitive_core/identity/behavior_logger.py"
+    "sanctuary/mind/cognitive_core/identity/behavior_logger.py"
 )
 continuity = load_module(
     "continuity",
-    "emergence_core/lyra/cognitive_core/identity/continuity.py"
+    "sanctuary/mind/cognitive_core/identity/continuity.py"
 )
 manager = load_module(
     "manager",
-    "emergence_core/lyra/cognitive_core/identity/manager.py"
+    "sanctuary/mind/cognitive_core/identity/manager.py"
 )
 
 Identity = computed.Identity

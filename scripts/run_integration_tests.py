@@ -12,7 +12,7 @@ from pathlib import Path
 
 def main():
     """Run integration tests."""
-    print("🧪 Running Lyra Integration Tests\n")
+    print("🧪 Running Sanctuary Integration Tests\n")
     print("=" * 60)
     
     # Run pytest with integration marker

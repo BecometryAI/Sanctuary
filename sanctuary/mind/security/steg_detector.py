@@ -1,5 +1,5 @@
 """
-Steganography detection and prevention module for Lyra.
+Steganography detection and prevention module for Sanctuary.
 """
 import re
 import math

@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import time
 
 from mind.exceptions import (
-    LyraBaseException,
+    SanctuaryBaseException,
     ModelLoadError,
     MemoryError,
     ConsciousnessError,
@@ -29,9 +29,9 @@ from mind.utils.retry import (
 class TestExceptions:
     """Test exception hierarchy."""
     
-    def test_lyra_base_exception(self):
+    def test_sanctuary_base_exception(self):
         """Test base exception creation."""
-        exc = LyraBaseException(
+        exc = SanctuaryBaseException(
             "Test error",
             context={"key": "value"},
             recoverable=True
@@ -42,7 +42,7 @@ class TestExceptions:
         assert exc.recoverable is True
         
         exc_dict = exc.to_dict()
-        assert exc_dict["type"] == "LyraBaseException"
+        assert exc_dict["type"] == "SanctuaryBaseException"
         assert exc_dict["message"] == "Test error"
         assert exc_dict["recoverable"] is True
     

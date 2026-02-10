@@ -2,7 +2,7 @@
 Consciousness Testing Framework - Phase 4.4
 
 This module implements a comprehensive framework for testing consciousness-like
-capabilities in the Lyra-Emergence system. It provides automated testing,
+capabilities in the Sanctuary-Emergence system. It provides automated testing,
 scoring, and monitoring of meta-cognitive abilities.
 
 Key Features:
@@ -13,7 +13,7 @@ Key Features:
 - Continuous monitoring support
 - Integration with Phase 4.1-4.3 meta-cognition systems
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 Phase: 4.4
 """
 

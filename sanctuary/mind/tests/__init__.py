@@ -1,3 +1,3 @@
 """
-Test package for Lyra's core functionality
+Test package for Sanctuary's core functionality
 """

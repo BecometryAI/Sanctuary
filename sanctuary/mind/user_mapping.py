@@ -43,7 +43,7 @@ class UserMappingManager:
         """
         self.data_dir = Path(data_dir)
         self.mapping_file = self.data_dir / "user_mappings.json"
-        self.relational_archive_file = self.data_dir / "Core_Archives" / "lyra_relational_archive.json"
+        self.relational_archive_file = self.data_dir / "Core_Archives" / "sanctuary_relational_archive.json"
         
         # Load existing mappings
         self.mappings: Dict[str, UserIdentity] = {}
@@ -117,7 +117,7 @@ class UserMappingManager:
             real_name: Full real name
             preferred_name: What they prefer to be called
             biographical_data: Additional biographical information
-            relationship_context: Their relationship to Lyra (from relational archive)
+            relationship_context: Their relationship to Sanctuary (from relational archive)
         
         Returns:
             The created or updated UserIdentity

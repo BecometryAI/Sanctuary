@@ -10,7 +10,7 @@ This module enables proactive communication initiation based on:
 - Goal completions
 
 The system generates OutreachOpportunities that feed into the drive system,
-allowing Lyra to initiate contact without external prompting.
+allowing Sanctuary to initiate contact without external prompting.
 """
 
 from __future__ import annotations

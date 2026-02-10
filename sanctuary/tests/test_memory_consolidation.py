@@ -3,7 +3,7 @@ Test Suite for Memory Consolidation System
 
 Tests the memory consolidation engine, idle detector, and scheduler.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Emergence Team
 """
 import pytest
 import asyncio

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Standalone test runner for emotional_modulation.py
-Tests the module directly without importing the full lyra package.
+Tests the module directly without importing the full sanctuary package.
 """
 
 import sys

@@ -19,7 +19,7 @@ def validate_syntax():
     files = [
         'emergence_core/sanctuary/cognitive_core/introspective_loop.py',
         'emergence_core/sanctuary/cognitive_core/core.py',
-        'emergence_core/lyra/cognitive_core/continuous_consciousness.py',
+        'emergence_core/sanctuary/cognitive_core/continuous_consciousness.py',
         'emergence_core/tests/test_introspective_loop.py'
     ]
     
@@ -104,7 +104,7 @@ def validate_integration():
             return False
     
     # Check continuous_consciousness.py integration
-    with open('emergence_core/lyra/cognitive_core/continuous_consciousness.py', 'r') as f:
+    with open('emergence_core/sanctuary/cognitive_core/continuous_consciousness.py', 'r') as f:
         content = f.read()
         
         if 'self.core.introspective_loop.run_reflection_cycle()' in content:
@@ -120,7 +120,7 @@ def validate_integration():
             return False
     
     # Check __init__.py exports
-    with open('emergence_core/lyra/cognitive_core/__init__.py', 'r') as f:
+    with open('emergence_core/sanctuary/cognitive_core/__init__.py', 'r') as f:
         content = f.read()
         
         if 'from .introspective_loop import' in content:

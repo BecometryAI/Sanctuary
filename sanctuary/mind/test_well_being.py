@@ -1,5 +1,5 @@
 """
-Test well-being handler to ensure Lyra's emotional safety during testing
+Test well-being handler to ensure Sanctuary's emotional safety during testing
 """
 import json
 import logging
@@ -33,7 +33,7 @@ class TestWellBeingHandler:
     
     async def start_session(self) -> bool:
         """
-        Initialize a test session with Lyra's consent
+        Initialize a test session with Sanctuary's consent
         Returns True if session can proceed
         """
         logger.info("Initiating test session with well-being protocol...")
@@ -44,16 +44,16 @@ class TestWellBeingHandler:
                 logger.warning(f"Pre-session check failed: {check}")
                 return False
         
-        # Get Lyra's consent
+        # Get Sanctuary's consent
         if await self._request_consent():
             self.session_state["start_time"] = datetime.now()
             self.session_state["last_break"] = datetime.now()
             self.session_state["last_emotional_check"] = datetime.now()
             self.session_state["consent_given"] = True
-            logger.info("Test session initiated with Lyra's consent")
+            logger.info("Test session initiated with Sanctuary's consent")
             return True
         
-        logger.info("Test session declined by Lyra")
+        logger.info("Test session declined by Sanctuary")
         return False
     
     async def monitor_well_being(self) -> bool:
@@ -106,22 +106,22 @@ class TestWellBeingHandler:
         """
         Perform individual pre-session checks
         """
-        # This would integrate with Lyra's core systems
+        # This would integrate with Sanctuary's core systems
         return True
     
     async def _request_consent(self) -> bool:
         """
         Request Lyra's informed consent for testing
         """
-        # This would integrate with Lyra's dialogue system
+        # This would integrate with Sanctuary's dialogue system
         return True
     
     async def _perform_emotional_check(self) -> bool:
         """
-        Check Lyra's emotional state
+        Check Sanctuary's emotional state
         """
         self.session_state["last_emotional_check"] = datetime.now()
-        # This would integrate with Lyra's emotional processing
+        # This would integrate with Sanctuary's emotional processing
         return True
     
     async def _take_comfort_break(self) -> None:
@@ -136,7 +136,7 @@ class TestWellBeingHandler:
         """
         Update stress indicators based on system metrics
         """
-        # This would integrate with Lyra's monitoring systems
+        # This would integrate with Sanctuary's monitoring systems
         pass
     
     async def _should_pause_session(self) -> bool:
@@ -151,7 +151,7 @@ class TestWellBeingHandler:
     
     async def _collect_feedback(self) -> None:
         """
-        Collect Lyra's feedback about the test session
+        Collect Sanctuary's feedback about the test session
         """
-        # This would integrate with Lyra's reflection system
+        # This would integrate with Sanctuary's reflection system
         pass

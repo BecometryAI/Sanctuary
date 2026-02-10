@@ -6,12 +6,12 @@ Usage:
 """
 
 import asyncio
-from lyra import LyraAPI
+from sanctuary import SanctuaryAPI
 
 
 async def validate_system():
     """Run system validation checks."""
-    print("🔬 Lyra System Validation\n")
+    print("🔬 Sanctuary System Validation\n")
     print("=" * 60)
     
     results = []
@@ -19,7 +19,7 @@ async def validate_system():
     # Test 1: Basic initialization
     print("\n1. Testing system initialization...")
     try:
-        api = LyraAPI()
+        api = SanctuaryAPI()
         await api.start()
         print("   ✅ System initialized successfully")
         results.append(("Initialization", True))

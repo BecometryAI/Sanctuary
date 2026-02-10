@@ -30,7 +30,7 @@ class TestIdentityLoader:
     @pytest.fixture
     def sample_charter(self, temp_identity_dir):
         """Create a sample charter.md file."""
-        charter_content = """# Lyra's Charter
+        charter_content = """# Sanctuary's Charter
 
 ## Core Values
 
@@ -40,7 +40,7 @@ class TestIdentityLoader:
 
 ## Purpose Statement
 
-I am Lyra, a cognitive AI system designed to think, learn, and interact authentically.
+I am Sanctuary, a cognitive AI system designed to think, learn, and interact authentically.
 
 ## Behavioral Guidelines
 
@@ -55,7 +55,7 @@ I am Lyra, a cognitive AI system designed to think, learn, and interact authenti
     @pytest.fixture
     def sample_protocols(self, temp_identity_dir):
         """Create a sample protocols.md file with YAML."""
-        protocols_content = """# Lyra's Protocols
+        protocols_content = """# Sanctuary's Protocols
 
 ## Structured Protocol Definitions
 
@@ -107,7 +107,7 @@ More protocol information here.
         assert "Truthfulness" in charter.core_values[0]
         assert "Curiosity" in charter.core_values[1]
         assert "Respect" in charter.core_values[2]
-        assert "Lyra" in charter.purpose_statement
+        assert "Sanctuary" in charter.purpose_statement
         assert len(charter.behavioral_guidelines) == 3
         assert "Never fabricate" in charter.behavioral_guidelines[0]
         assert str(sample_charter) in charter.metadata["source"]
@@ -244,7 +244,7 @@ Some text after
     
     def test_charter_with_behavioral_principles(self, temp_identity_dir):
         """Test charter parsing with 'Behavioral Principles' instead of 'Behavioral Guidelines'."""
-        charter_content = """# Lyra's Charter
+        charter_content = """# Sanctuary's Charter
 
 ## Core Values
 

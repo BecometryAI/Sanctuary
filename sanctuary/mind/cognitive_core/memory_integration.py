@@ -314,7 +314,7 @@ class MemoryIntegration:
         # Significant percepts = consolidate
         significant_percepts = [
             p for p in snapshot.percepts.values()
-            if p.get("complexity", 0) > 30
+            if getattr(p, "complexity", 0) > 30
         ]
         if len(significant_percepts) > 2:
             logger.debug(f"Consolidation triggered by {len(significant_percepts)} significant percepts")

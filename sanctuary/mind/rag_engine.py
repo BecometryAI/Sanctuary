@@ -1,6 +1,6 @@
 from langchain.schema import Document
 """
-RAG Engine implementation for Lyra's mind-brain integration.
+RAG Engine implementation for Sanctuary's mind-brain integration.
 """
 from typing import Dict, Any, List, Optional
 import logging
@@ -17,7 +17,7 @@ import torch
 import chromadb
 from chromadb.config import Settings
 
-from .sanctuary_chain import LyraChain
+from .sanctuary_chain import SanctuaryChain
 from .chroma_embeddings import ChromaCompatibleEmbeddings
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class MindVectorDB:
     def __init__(self, db_path: str, mind_file: str, chain_dir: str = "chain", chroma_settings=None):
         self.db_path = Path(db_path)
         self.mind_file = Path(mind_file)
-        self.chain = LyraChain(chain_dir)
+        self.chain = SanctuaryChain(chain_dir)
         
         # Initialize embeddings with ChromaDB-compatible wrapper
         device = 'cuda' if torch.cuda.is_available() else 'cpu'

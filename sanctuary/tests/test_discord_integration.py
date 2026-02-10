@@ -10,7 +10,7 @@ from pathlib import Path
 from discord.voice_client import VoiceClient
 from discord import VoiceState, Member, Guild
 from mind.voice_processor import VoiceProcessor
-from mind.discord_client import LyraClient
+from mind.discord_client import SanctuaryClient
 
 class MockVoiceClient:
     def __init__(self):
@@ -75,25 +75,25 @@ def mock_discord():
     }
 
 @pytest.fixture
-def lyra_client():
-    client = LyraClient()
+def sanctuary_client():
+    client = SanctuaryClient()
     client.voice_processor = VoiceProcessor()
     return client
 
 @pytest.mark.asyncio
-async def test_voice_emotion_integration(lyra_client, mock_discord):
+async def test_voice_emotion_integration(sanctuary_client, mock_discord):
     """Test voice processing with emotion detection in Discord context"""
     member = mock_discord["member"]
     voice_client = MockVoiceClient()
     
     # Setup voice client
-    lyra_client.voice_clients = [voice_client]
+    sanctuary_client.voice_clients = [voice_client]
     
     # Start voice processing
     audio_stream = voice_client.create_stream()
     results = []
     
-    async for result in lyra_client.voice_processor.process_stream(audio_stream):
+    async for result in sanctuary_client.voice_processor.process_stream(audio_stream):
         results.append(result)
         if len(results) >= 3:  # Get 3 emotional segments
             break
@@ -113,13 +113,13 @@ async def test_voice_emotion_integration(lyra_client, mock_discord):
         assert -1 <= context["dominance"] <= 1
 
 @pytest.mark.asyncio
-async def test_voice_state_tracking(lyra_client, mock_discord):
+async def test_voice_state_tracking(sanctuary_client, mock_discord):
     """Test voice state changes with emotional context"""
     member = mock_discord["member"]
     voice_client = MockVoiceClient()
     
     # Simulate voice state update
-    await lyra_client.on_voice_state_update(
+    await sanctuary_client.on_voice_state_update(
         member,
         member.voice,
         member.voice
@@ -131,33 +131,33 @@ async def test_voice_state_tracking(lyra_client, mock_discord):
     
     # Process some audio
     results = []
-    async for result in lyra_client.voice_processor.process_stream(audio_stream):
+    async for result in sanctuary_client.voice_processor.process_stream(audio_stream):
         results.append(result)
         if len(results) >= 2:
             break
     
     # Check emotional state tracking
-    assert len(lyra_client.voice_processor.emotional_context["emotion_history"]) > 0
+    assert len(sanctuary_client.voice_processor.emotional_context["emotion_history"]) > 0
     
     # Stop recording
     voice_client.stop_recording()
     
 @pytest.mark.asyncio
-async def test_emotional_response_generation(lyra_client, mock_discord):
+async def test_emotional_response_generation(sanctuary_client, mock_discord):
     """Test generating responses with emotional awareness"""
     # Process some emotional audio first
     voice_client = MockVoiceClient()
     audio_stream = voice_client.create_stream()
     
     # Get emotional context
-    async for result in lyra_client.voice_processor.process_stream(audio_stream):
+    async for result in sanctuary_client.voice_processor.process_stream(audio_stream):
         emotion = result["emotion"]
         context = result["emotional_context"]
         
         # Generate response with matching emotion
         response_text = "This is a test response."
         with open("test_response.wav", "wb") as f:
-            lyra_client.voice_processor.generate_speech(
+            sanctuary_client.voice_processor.generate_speech(
                 response_text,
                 "test_response.wav"
             )

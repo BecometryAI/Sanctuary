@@ -26,7 +26,7 @@ import importlib.util
 
 spec = importlib.util.spec_from_file_location(
     "incremental_journal",
-    Path(__file__).parent.parent / "emergence_core" / "lyra" / "cognitive_core" / "incremental_journal.py"
+    Path(__file__).parent.parent / "emergence_core" / "sanctuary" / "cognitive_core" / "incremental_journal.py"
 )
 incremental_journal = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(incremental_journal)

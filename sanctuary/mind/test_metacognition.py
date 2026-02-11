@@ -1,11 +1,11 @@
 """
-Test for Lyra Meta-cognition Module
+Test for Meta-cognition Module
 """
 from .metacognition import MetaCognition
 
 def test_metacognition():
     meta = MetaCognition(log_dir="test_meta_logs")
-    meta.log_event("decision", {"action": "respond", "input": "Hello Lyra!"})
+    meta.log_event("decision", {"action": "respond", "input": "Hello!"})
     meta.reflect("Test reflection", ["Learned to log events.", "Reflection works."])
     log = meta.get_log()
     assert len(log["events"]) == 1

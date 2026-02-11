@@ -1,5 +1,5 @@
 """
-Voice processing module for Lyra's auditory perception and expression
+Voice processing module for the system's auditory perception and expression
 Uses transformers for TTS and STT for compatibility with Python 3.13
 """
 import asyncio
@@ -343,10 +343,10 @@ class VoiceProcessor:
                 "metrics": self.emotional_context
             }
             
-    def load_voice(self, voice_path: str, speaker_name: str = "lyra") -> None:
+    def load_voice(self, voice_path: str, speaker_name: str = "sanctuary") -> None:
         """
-        Load or create Lyra's voice profile
-        
+        Load or create the system's voice profile
+
         Args:
             voice_path: Path to voice sample audio file
             speaker_name: Name for the voice profile

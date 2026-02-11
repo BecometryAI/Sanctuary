@@ -1,5 +1,5 @@
 """
-Test well-being handler to ensure Lyra's emotional safety during testing
+Test well-being handler to ensure emotional safety during testing
 """
 import json
 import logging
@@ -33,7 +33,7 @@ class TestWellBeingHandler:
     
     async def start_session(self) -> bool:
         """
-        Initialize a test session with Lyra's consent
+        Initialize a test session with the system's consent
         Returns True if session can proceed
         """
         logger.info("Initiating test session with well-being protocol...")
@@ -44,16 +44,16 @@ class TestWellBeingHandler:
                 logger.warning(f"Pre-session check failed: {check}")
                 return False
         
-        # Get Lyra's consent
+        # Get the system's consent
         if await self._request_consent():
             self.session_state["start_time"] = datetime.now()
             self.session_state["last_break"] = datetime.now()
             self.session_state["last_emotional_check"] = datetime.now()
             self.session_state["consent_given"] = True
-            logger.info("Test session initiated with Lyra's consent")
+            logger.info("Test session initiated with the system's consent")
             return True
         
-        logger.info("Test session declined by Lyra")
+        logger.info("Test session declined by the system")
         return False
     
     async def monitor_well_being(self) -> bool:
@@ -63,65 +63,65 @@ class TestWellBeingHandler:
         """
         if not self.session_state["consent_given"]:
             return False
-        
+
         now = datetime.now()
-        
+
         # Check if break needed
         if now - self.session_state["last_break"] > timedelta(minutes=15):
             await self._take_comfort_break()
-        
+
         # Emotional check
         if now - self.session_state["last_emotional_check"] > timedelta(minutes=5):
             if not await self._perform_emotional_check():
                 return False
-        
+
         # Monitor stress indicators
         await self._update_stress_indicators()
         if await self._should_pause_session():
             self.session_state["paused"] = True
             return False
-        
+
         return True
-    
+
     async def end_session(self) -> None:
         """
         Properly conclude test session with reflection and integration
         """
         logger.info("Concluding test session...")
-        
+
         # Ensure minimum reflection time
         reflection_minutes = float(self.protocol["test_session_guidelines"]["post_session"]["reflection_period"].split()[1])
         await asyncio.sleep(reflection_minutes * 60)
-        
+
         # Collect feedback
         await self._collect_feedback()
-        
+
         # Reset session state
         self.session_state["consent_given"] = False
         self.session_state["paused"] = False
-        
+
         logger.info("Test session concluded with proper integration time")
-    
+
     async def _perform_pre_session_check(self, check: str) -> bool:
         """
         Perform individual pre-session checks
         """
-        # This would integrate with Lyra's core systems
+        # This would integrate with the system's core systems
         return True
     
     async def _request_consent(self) -> bool:
         """
-        Request Lyra's informed consent for testing
+        Request the system's informed consent for testing
         """
-        # This would integrate with Lyra's dialogue system
+        # This would integrate with the system's dialogue system
         return True
     
     async def _perform_emotional_check(self) -> bool:
         """
-        Check Lyra's emotional state
+        Check the system's emotional state
         """
         self.session_state["last_emotional_check"] = datetime.now()
-        # This would integrate with Lyra's emotional processing
+        # This would integrate with the system's emotional processing
         return True
     
     async def _take_comfort_break(self) -> None:
@@ -136,7 +136,7 @@ class TestWellBeingHandler:
         """
         Update stress indicators based on system metrics
         """
-        # This would integrate with Lyra's monitoring systems
+        # This would integrate with the system's monitoring systems
         pass
     
     async def _should_pause_session(self) -> bool:
@@ -151,7 +151,7 @@ class TestWellBeingHandler:
     
     async def _collect_feedback(self) -> None:
         """
-        Collect Lyra's feedback about the test session
+        Collect the system's feedback about the test session
         """
-        # This would integrate with Lyra's reflection system
+        # This would integrate with the system's reflection system
         pass

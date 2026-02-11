@@ -108,7 +108,7 @@ body {
     margin-left: auto;
 }
 
-.lyra-message {
+.system-message {
     background-color: var(--accent-color);
     margin-right: auto;
 }

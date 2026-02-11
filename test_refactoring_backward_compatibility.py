@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.abspath('.'))
 def test_import_cognitive_core():
     """Test that CognitiveCore can be imported from the expected location."""
     try:
-        from emergence_core.lyra.cognitive_core import CognitiveCore
+        from sanctuary.mind.cognitive_core import CognitiveCore
         print("✅ CognitiveCore import successful")
         return True
     except Exception as e:
@@ -26,7 +26,7 @@ def test_import_cognitive_core():
 def test_cognitive_core_attributes():
     """Test that CognitiveCore has all expected public attributes."""
     try:
-        from emergence_core.lyra.cognitive_core import CognitiveCore
+        from sanctuary.mind.cognitive_core import CognitiveCore
         
         # Test key public methods exist
         expected_methods = [
@@ -78,7 +78,7 @@ def test_cognitive_core_attributes():
 def test_cognitive_core_instantiation():
     """Test that CognitiveCore can be instantiated."""
     try:
-        from emergence_core.lyra.cognitive_core import CognitiveCore
+        from sanctuary.mind.cognitive_core import CognitiveCore
         
         # Create instance with default config
         core = CognitiveCore()
@@ -114,14 +114,14 @@ def test_module_structure():
     """Test that the core module structure is correct."""
     try:
         # Test individual module imports
-        from emergence_core.lyra.cognitive_core.core import CognitiveCore
-        from emergence_core.lyra.cognitive_core.core.subsystem_coordinator import SubsystemCoordinator
-        from emergence_core.lyra.cognitive_core.core.state_manager import StateManager
-        from emergence_core.lyra.cognitive_core.core.timing import TimingManager
-        from emergence_core.lyra.cognitive_core.core.lifecycle import LifecycleManager
-        from emergence_core.lyra.cognitive_core.core.cycle_executor import CycleExecutor
-        from emergence_core.lyra.cognitive_core.core.cognitive_loop import CognitiveLoop
-        from emergence_core.lyra.cognitive_core.core.action_executor import ActionExecutor
+        from sanctuary.mind.cognitive_core.core import CognitiveCore
+        from sanctuary.mind.cognitive_core.core.subsystem_coordinator import SubsystemCoordinator
+        from sanctuary.mind.cognitive_core.core.state_manager import StateManager
+        from sanctuary.mind.cognitive_core.core.timing import TimingManager
+        from sanctuary.mind.cognitive_core.core.lifecycle import LifecycleManager
+        from sanctuary.mind.cognitive_core.core.cycle_executor import CycleExecutor
+        from sanctuary.mind.cognitive_core.core.cognitive_loop import CognitiveLoop
+        from sanctuary.mind.cognitive_core.core.action_executor import ActionExecutor
         
         print("✅ All core submodules importable")
         print("✅ Module structure is correct")

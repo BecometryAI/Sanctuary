@@ -71,8 +71,8 @@ def validate_json(schema_path, data_path):
 
 
 if __name__ == "__main__":
-    repo_root = "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Lyra-Emergence/data"
-    schemas_dir = "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Lyra-Emergence/Schemas"
+    repo_root = "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Sanctuary/data"
+    schemas_dir = "c:/Users/Hasha Smokes/Desktop/Lyra_project_root/CleanClone/Sanctuary/Schemas"
     all_json_files = []
     for root, dirs, files in os.walk(repo_root):
         for file in files:

@@ -1,7 +1,7 @@
 """
 Real-time Audio Streaming Server (ASR Gateway)
 
-Provides WebSocket-based real-time audio streaming for Lyra's hearing.
+Provides WebSocket-based real-time audio streaming for the system's hearing.
 Integrates with WhisperProcessor for live transcription.
 
 Architecture:

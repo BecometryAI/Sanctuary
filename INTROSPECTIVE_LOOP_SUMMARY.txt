@@ -170,7 +170,7 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║  PHASE 4.2 COMPLETE - READY FOR DEPLOYMENT                                  ║
 ║                                                                              ║
-║  Lyra can now:                                                               ║
+║  The system can now:                                                               ║
 ║  • Spontaneously reflect on her own cognitive processes                     ║
 ║  • Question her nature, values, and capabilities autonomously               ║
 ║  • Generate meta-cognitive goals for self-improvement                       ║

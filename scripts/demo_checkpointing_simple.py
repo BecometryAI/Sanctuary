@@ -16,8 +16,8 @@ import time
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from emergence_core.lyra.cognitive_core.checkpoint import CheckpointManager
-from emergence_core.lyra.cognitive_core.workspace import GlobalWorkspace, Goal, GoalType, Percept
+from sanctuary.mind.cognitive_core.checkpoint import CheckpointManager
+from sanctuary.mind.cognitive_core.workspace import GlobalWorkspace, Goal, GoalType, Percept
 
 
 def demo_checkpoint_basics():

@@ -1,10 +1,10 @@
 """
-Rate Limiting System for Lyra Emergence
+Rate Limiting System for Sanctuary
 
 Token bucket rate limiter with per-service limits to prevent API abuse
 and respect external API rate limits.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2, 2026
 """
 

@@ -1,5 +1,5 @@
 """
-Caching system for Lyra's RAG context
+Caching system for the RAG context
 """
 from typing import Dict, Any, Optional, List
 import time

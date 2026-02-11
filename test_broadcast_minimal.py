@@ -10,7 +10,7 @@ from datetime import datetime
 # Direct imports to avoid circular dependencies
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent / "emergence_core" / "lyra" / "cognitive_core"))
+sys.path.insert(0, str(Path(__file__).parent / "sanctuary" / "mind" / "cognitive_core"))
 
 # Now we can import broadcast
 from broadcast import (

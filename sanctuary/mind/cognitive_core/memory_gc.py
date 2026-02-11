@@ -12,7 +12,7 @@ The garbage collector employs multiple strategies:
 
 Safety mechanisms ensure important memories are never accidentally removed.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2026
 """
 

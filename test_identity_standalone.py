@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import importlib.util
 spec = importlib.util.spec_from_file_location(
     "identity_loader",
-    "emergence_core/lyra/cognitive_core/identity_loader.py"
+    "sanctuary/mind/cognitive_core/identity_loader.py"
 )
 identity_loader = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(identity_loader)

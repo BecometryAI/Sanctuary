@@ -1,1 +1,1 @@
-"""Utils package for Lyra Emergence system."""
+"""Utils package for Sanctuary system."""

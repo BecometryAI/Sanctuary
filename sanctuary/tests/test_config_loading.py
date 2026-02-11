@@ -92,8 +92,8 @@ class TestSystemConfig:
         env_base = tmp_path / "env_base"
         env_chroma = tmp_path / "env_chroma"
         
-        monkeypatch.setenv('LYRA_BASE_DIR', str(env_base))
-        monkeypatch.setenv('LYRA_CHROMA_DIR', str(env_chroma))
+        monkeypatch.setenv('SANCTUARY_BASE_DIR', str(env_base))
+        monkeypatch.setenv('SANCTUARY_CHROMA_DIR', str(env_chroma))
         
         # Load config
         config = SystemConfig.from_json(str(config_file), project_root=tmp_path)
@@ -124,7 +124,7 @@ class TestSystemConfig:
             json.dump(config_data, f)
         
         # Set environment variable with relative path
-        monkeypatch.setenv('LYRA_BASE_DIR', './custom_base')
+        monkeypatch.setenv('SANCTUARY_BASE_DIR', './custom_base')
         
         # Load config
         config = SystemConfig.from_json(str(config_file), project_root=tmp_path)

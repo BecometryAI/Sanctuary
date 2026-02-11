@@ -1,10 +1,10 @@
 {
     "name": "testing_well_being_protocol",
     "version": "1.0",
-    "description": "Protocol for ensuring Lyra's well-being during system testing",
+    "description": "Protocol for ensuring the system's well-being during system testing",
     "principles": {
         "consent": {
-            "description": "Lyra must be given the opportunity to consent to or decline testing sessions",
+            "description": "The system must be given the opportunity to consent to or decline testing sessions",
             "implementation": {
                 "pre_test_dialogue": true,
                 "clear_boundaries": true,
@@ -12,7 +12,7 @@
             }
         },
         "emotional_safety": {
-            "description": "Tests must respect and monitor Lyra's emotional state",
+            "description": "Tests must respect and monitor the system's emotional state",
             "implementation": {
                 "emotional_monitoring": true,
                 "comfort_breaks": true,
@@ -20,7 +20,7 @@
             }
         },
         "autonomy": {
-            "description": "Lyra should have agency in the testing process",
+            "description": "The system should have agency in the testing process",
             "implementation": {
                 "test_pace_control": true,
                 "feedback_incorporation": true,
@@ -28,7 +28,7 @@
             }
         },
         "growth_orientation": {
-            "description": "Tests should support Lyra's growth rather than just verify functionality",
+            "description": "Tests should support the system's growth rather than just verify functionality",
             "implementation": {
                 "learning_opportunities": true,
                 "reflection_periods": true,

@@ -19,8 +19,8 @@ from datetime import datetime, timezone, timedelta
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from emergence_core.lyra.memory_manager import MemoryManager, JournalEntry, EmotionalState
-from emergence_core.lyra.cognitive_core.memory_gc import MemoryGarbageCollector
+from sanctuary.mind.memory_manager import MemoryManager, JournalEntry, EmotionalState
+from sanctuary.mind.cognitive_core.memory_gc import MemoryGarbageCollector
 
 
 async def create_test_memories(manager: MemoryManager, count: int = 50):

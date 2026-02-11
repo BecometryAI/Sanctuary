@@ -2,7 +2,7 @@
 """
 Demo script for autonomous initiation capability.
 
-This script demonstrates how Lyra proactively speaks when she has
+This script demonstrates how the system proactively communicates when it has
 introspective insights that warrant sharing.
 """
 
@@ -10,7 +10,7 @@ import asyncio
 import logging
 from datetime import datetime
 
-from emergence_core.lyra.cognitive_core import (
+from sanctuary.mind.cognitive_core import (
     CognitiveCore,
     GlobalWorkspace,
     Percept,
@@ -186,7 +186,7 @@ async def demo_value_conflict():
         print(f"   Description: {goal.description}")
         print(f"   Conflicts: {goal.metadata.get('conflicts', [])}")
         print(f"   Needs Feedback: {goal.metadata.get('needs_feedback', False)}")
-        print(f"\n   ✅ Lyra will seek external guidance on this conflict")
+        print(f"\n   ✅ The system will seek external guidance on this conflict")
     else:
         print("❌ No trigger (unexpected)")
 
@@ -195,7 +195,7 @@ async def main():
     """Run all demos."""
     
     print("\n" + "="*70)
-    print("LYRA AUTONOMOUS INITIATION CAPABILITY DEMO")
+    print("AUTONOMOUS INITIATION CAPABILITY DEMO")
     print("="*70)
     print("\nPhilosophy: Introspective insights MUST be shared with users.")
     print("Self-awareness develops through relationship, not in isolation.")

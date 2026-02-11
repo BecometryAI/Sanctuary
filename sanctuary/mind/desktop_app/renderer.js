@@ -39,13 +39,13 @@ async function connect() {
     ws = new WebSocket(serverAddress);
     
     ws.onopen = () => {
-        updateStatus('connected', 'Connected to Lyra');
+        updateStatus('connected', 'Connected to Sanctuary');
     };
     
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'message') {
-            addMessage('lyra', data.content);
+            addMessage('system', data.content);
         } else if (data.type === 'status') {
             updateStatus(data.status, data.message);
         }
@@ -71,8 +71,8 @@ function addMessage(sender, content) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
     
     // Show notification if enabled and window is not focused
-    if (sender === 'lyra' && notificationsCheckbox.checked && !document.hasFocus()) {
-        new Notification('Message from Lyra', { body: content });
+    if (sender === 'system' && notificationsCheckbox.checked && !document.hasFocus()) {
+        new Notification('Message from Sanctuary', { body: content });
     }
 }
 
@@ -127,7 +127,7 @@ clearBtn.onclick = () => {
 
 exportBtn.onclick = async () => {
     const messages = Array.from(chatContainer.children).map(msg => ({
-        type: msg.classList.contains('user-message') ? 'user' : 'lyra',
+        type: msg.classList.contains('user-message') ? 'user' : 'system',
         content: msg.textContent,
         timestamp: new Date().toISOString()
     }));
@@ -136,7 +136,7 @@ exportBtn.onclick = async () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `lyra-chat-${new Date().toISOString()}.json`;
+    a.download = `sanctuary-chat-${new Date().toISOString()}.json`;
     a.click();
     URL.revokeObjectURL(url);
 };

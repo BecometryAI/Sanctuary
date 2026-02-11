@@ -1,5 +1,5 @@
 """
-Test for Lyra Metacognition System
+Test for Sanctuary Metacognition System
 """
 from sanctuary.mind.metacognition import MetaCognition
 import tempfile

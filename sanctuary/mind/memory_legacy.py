@@ -1,5 +1,5 @@
 """
-Memory management system for Lyra's consciousness core with custom blockchain verification.
+Memory management system for the consciousness core with custom blockchain verification.
 
 NOTE: This module was renamed from memory.py to memory_legacy.py to resolve a naming
 conflict with the memory/ package directory. Python prioritizes packages over modules
@@ -65,7 +65,7 @@ Architecture:
 Dependencies:
     - chromadb: Vector database for semantic search
     - langchain: RAG framework integration
-    - Custom LyraChain: Blockchain verification
+    - Custom SanctuaryChain: Blockchain verification
     - Custom MindVectorDB: Vector store management
 """
 from typing import Dict, List, Any, Optional

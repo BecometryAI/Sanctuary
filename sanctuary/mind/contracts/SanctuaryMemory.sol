@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-contract LyraMemory {
+contract SanctuaryMemory {
     struct Memory {
         string ipfsHash;
         uint256 timestamp;

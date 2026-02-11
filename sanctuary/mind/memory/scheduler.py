@@ -4,7 +4,7 @@ Consolidation Scheduler Module
 Manages background memory consolidation during idle periods.
 Coordinates consolidation operations based on system activity.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import asyncio
 import logging

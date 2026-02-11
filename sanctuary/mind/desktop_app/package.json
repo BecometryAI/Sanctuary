@@ -1,7 +1,7 @@
 {
-  "name": "lyra-desktop",
+  "name": "sanctuary-desktop",
   "version": "1.0.0",
-  "description": "Lyra Desktop Application",
+  "description": "Sanctuary Desktop Application",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -14,8 +14,8 @@
     "electron-builder": "^24.9.1"
   },
   "build": {
-    "appId": "com.lyra.desktop",
-    "productName": "Lyra",
+    "appId": "com.sanctuary.desktop",
+    "productName": "Sanctuary",
     "directories": {
       "output": "dist"
     },

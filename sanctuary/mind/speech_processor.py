@@ -1,5 +1,5 @@
 """
-Speech-to-Text processing module for Lyra's auditory perception
+Speech-to-Text processing module for the system's auditory perception
 Uses Whisper model with enhanced streaming capabilities
 """
 import logging
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class WhisperProcessor:
     def __init__(self):
-        """Initialize Whisper model for Lyra's hearing"""
+        """Initialize Whisper model for the system's hearing"""
         # Create pipeline directly
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.asr_pipeline = pipeline(

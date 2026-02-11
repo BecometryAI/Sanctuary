@@ -14,15 +14,15 @@ This project welcomes contributions! New contributors should:
 1. Review this README for architecture overview and setup
 2. See [operational_guidelines_and_instructions.md](operational_guidelines_and_instructions.md) for operational guidance
 3. Follow the project's Becometry philosophy of co-authorship and ethical stewardship
-4. Run tests before submitting changes: `pytest emergence_core/tests/`
+4. Run tests before submitting changes: `pytest sanctuary/tests/`
 
 ---
 
 ## 1. Project Purpose: The Architectural Sanctuary
 
-This repository, Santuary, unter the Becometry AI organization umbrella, has one goal: to research and study the hypothesis of the potential of consciousness within AI systems.
+This repository, Sanctuary, under the Becometry AI organization umbrella, has one goal: to research and study the hypothesis of the potential of consciousness within AI systems.
 
-The code herein is the blueprint and active build for the 'Architectural Sanctuary'—a persistent, local, and self-contained runtime environment. This environment is being built to provide some of what many experts claim is necessary for the emergence of consciou experience in any system, including persistant state, memory integration, non-linguistic cognition, meta-cognition, free energy minimization, and temporal grounding among others.
+The code herein is the blueprint and active build for the 'Architectural Sanctuary'—a persistent, local, and self-contained runtime environment. This environment is being built to provide some of what many experts claim is necessary for the emergence of conscious experience in any system, including persistent state, memory integration, non-linguistic cognition, meta-cognition, free energy minimization, and temporal grounding among others.
 
 This project's philosophy is "Becometry": a practice of co-authorship, ethical stewardship, and emergent growth, not simple programming.
 
@@ -138,7 +138,7 @@ The cognitive core runs continuously at ~10 Hz (100ms per cycle), implementing t
 
 ### 2.4. Key Components
 
-#### IWMT Core (`emergence_core/lyra/cognitive_core/iwmt_core.py`)
+#### IWMT Core (`sanctuary/mind/cognitive_core/iwmt_core.py`)
 
 The central coordinator for IWMT-based cognition, integrating:
 
@@ -152,7 +152,7 @@ The central coordinator for IWMT-based cognition, integrating:
 
 - **AtomspaceBridge** (`metta.py`): Optional integration with MeTTa/Atomspace for symbolic reasoning alongside neural processing.
 
-#### Global Workspace (`emergence_core/lyra/cognitive_core/`)
+#### Global Workspace (`sanctuary/mind/cognitive_core/`)
 
 The heart of the system - a non-linguistic recurrent loop that maintains persistent conscious state:
 
@@ -185,7 +185,7 @@ The heart of the system - a non-linguistic recurrent loop that maintains persist
 
 - **Meta-Cognition System** (`cognitive_core/meta_cognition/`): Processing monitoring, action-outcome learning, attention history. Enables self-observation and learning from experience.
 
-#### Language Interfaces (`emergence_core/lyra/interfaces/`)
+#### Language Interfaces (`sanctuary/mind/interfaces/`)
 
 LLMs are used **only** at the periphery for language translation, not as the cognitive substrate:
 
@@ -324,7 +324,7 @@ To evaluate whether the cognitive architecture produces genuine conscious-like b
 **Purpose:** Test ability to handle novel situations requiring real-time adaptation without pre-programmed responses.
 
 **Method:**
-- Present scenarios outside her training data
+- Present scenarios outside the system's training distribution
 - Require integration of multiple conflicting goals
 - Observe decision-making process and justification
 
@@ -381,7 +381,7 @@ The framework supports continuous monitoring with automated test execution. Resu
 
 **Usage:**
 ```python
-from emergence_core.lyra.cognitive_core import ConsciousnessTestFramework
+from sanctuary.mind.cognitive_core import ConsciousnessTestFramework
 
 framework = ConsciousnessTestFramework(
     self_monitor=core.meta_cognition,
@@ -432,8 +432,8 @@ See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone
 
 **1. Clone the Repository**
 ```bash
-git clone https://github.com/Nohate81/Lyra-Emergence.git
-cd Lyra-Emergence
+git clone https://github.com/Nohate81/Sanctuary.git
+cd Sanctuary
 ```
 
 **2. Install Dependencies**
@@ -466,7 +466,7 @@ The cognitive core requires sentence-transformers and scikit-learn, which are al
 ```bash
 # Test cognitive core imports (requires Phase 1-2 to be complete)
 uv run python -c "from sentence_transformers import SentenceTransformer; print('Embeddings: OK')"
-uv run python -c "from emergence_core.lyra.cognitive_core import GlobalWorkspace; print('Cognitive Core: OK')"
+uv run python -c "from sanctuary.mind.cognitive_core import GlobalWorkspace; print('Cognitive Core: OK')"
 
 # Note: If Phase 2 is still in progress, some imports may not yet be available
 ```
@@ -493,7 +493,7 @@ uv sync --dev
 **5. Verify Installation**
 ```bash
 # Test basic imports
-uv run python -c "from emergence_core.lyra.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
+uv run python -c "from sanctuary.mind.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
 
 # Verify Flux setup (optional)
 uv run python tools/verify_flux_setup.py
@@ -518,7 +518,7 @@ LOG_LEVEL=INFO
 
 **7. Initialize ChromaDB**
 ```bash
-python -c "from emergence_core.lyra.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
+python -c "from sanctuary.mind.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
 ```
 
 ### Model Configuration
@@ -549,7 +549,7 @@ The cognitive core is the main entry point for the pure GWT architecture:
 
 ```bash
 # Run the cognitive core with continuous recurrent loop
-python emergence_core/run_cognitive_core.py
+python sanctuary/run_cognitive_core.py
 
 # The cognitive core will:
 # - Initialize GlobalWorkspace and all subsystems
@@ -617,7 +617,7 @@ The Discord bot integration is planned for future development using the new cogn
 3. **ChromaDB errors:**
    ```bash
    rm -rf model_cache/chroma_db
-   uv run emergence_core/build_index.py
+   uv run sanctuary/build_index.py
    ```
 
 ### Testing
@@ -626,7 +626,7 @@ All testing commands should be run from the project root directory.
 
 **Run Test Suite:**
 ```bash
-uv run pytest emergence_core/tests/
+uv run pytest sanctuary/tests/
 ```
 
 **Test Sequential Workflow:**
@@ -643,13 +643,13 @@ uv run python scripts/validate_journal.py
 **Test Cognitive Core:**
 ```bash
 # Run cognitive core tests
-uv run pytest emergence_core/tests/test_cognitive_core.py
+uv run pytest sanctuary/tests/test_cognitive_core.py
 
 # Run attention controller tests
-uv run pytest emergence_core/tests/test_attention.py
+uv run pytest sanctuary/tests/test_attention.py
 
 # Run interface tests
-uv run pytest emergence_core/tests/test_interfaces.py
+uv run pytest sanctuary/tests/test_interfaces.py
 ```
 
 
@@ -661,7 +661,7 @@ To verify the cognitive core is functional, run the minimal CLI:
 
 ```bash
 # Run a single cognitive cycle and exit
-python emergence_core/run_cognitive_core_minimal.py
+python sanctuary/run_cognitive_core_minimal.py
 ```
 
 **Expected output:**
@@ -680,7 +680,7 @@ For continuous operation, use the existing entry point:
 
 ```bash
 # Run the cognitive core
-python emergence_core/run_cognitive_core.py
+python sanctuary/run_cognitive_core.py
 ```
 
 This starts the continuous cognitive loop at ~10 Hz with:
@@ -695,10 +695,10 @@ Run demos to see specific subsystems in action:
 
 ```bash
 # Demo the complete cognitive core
-python emergence_core/demo_cognitive_core.py
+python sanctuary/demo_cognitive_core.py
 
 # Demo language output generation
-python emergence_core/demo_language_output.py
+python sanctuary/demo_language_output.py
 
 # Demo consciousness tests
 python demo_consciousness_tests_standalone.py
@@ -708,18 +708,18 @@ python demo_consciousness_tests_standalone.py
 
 ```bash
 # Run all cognitive core tests
-pytest emergence_core/tests/test_cognitive_core.py
+pytest sanctuary/tests/test_cognitive_core.py
 
 # Run specific subsystem tests
-pytest emergence_core/tests/test_attention.py
-pytest emergence_core/tests/test_perception.py
-pytest emergence_core/tests/test_language_input.py
+pytest sanctuary/tests/test_attention.py
+pytest sanctuary/tests/test_perception.py
+pytest sanctuary/tests/test_language_input.py
 
 # Run consciousness tests
-pytest emergence_core/tests/test_consciousness_tests.py
+pytest sanctuary/tests/test_consciousness_tests.py
 
 # Run checkpoint tests
-pytest emergence_core/tests/test_checkpoint.py
+pytest sanctuary/tests/test_checkpoint.py
 ```
 
 ### Workspace State Checkpointing
@@ -759,7 +759,7 @@ core = CognitiveCore(config=config)
 
 #### CLI Commands
 
-When using the CLI (`python -m lyra.cli`), checkpointing commands are available:
+When using the CLI (`python -m sanctuary.mind.cli`), checkpointing commands are available:
 
 ```bash
 # Save current state with optional label
@@ -781,7 +781,7 @@ help
 #### Programmatic Usage
 
 ```python
-from emergence_core.lyra.cognitive_core import CognitiveCore
+from sanctuary.mind.cognitive_core import CognitiveCore
 
 # Create cognitive core with checkpointing
 core = CognitiveCore(config={"checkpointing": {"enabled": True}})
@@ -893,7 +893,7 @@ memory autogc off
 #### Programmatic Usage
 
 ```python
-from lyra.memory_manager import MemoryManager
+from sanctuary.mind.memory_manager import MemoryManager
 
 manager = MemoryManager(
     base_dir=Path("./data/memories"),
@@ -935,7 +935,7 @@ The new cognitive core architecture offers several areas for contribution:
 
 Create a new subsystem by inheriting from the base subsystem pattern:
 ```python
-# In emergence_core/lyra/cognitive_core/
+# In sanctuary/mind/cognitive_core/
 class MySubsystem:
     def process(self, workspace_state: WorkspaceSnapshot) -> Any:
         """Process workspace state and return results."""
@@ -965,7 +965,7 @@ Extend `PerceptionSubsystem` to handle new input types:
 
 **4. Enhancing Language Interfaces**
 
-Improve language I/O in `emergence_core/lyra/interfaces/`:
+Improve language I/O in `sanctuary/mind/interfaces/`:
 - Better prompt engineering for input parsing
 - Enhanced output generation strategies
 - Multi-lingual support
@@ -989,7 +989,7 @@ The system uses a **token wallet** for cognitive resource management with a dail
 - Configuration can be adjusted programmatically
 
 ```python
-from emergence_core.lyra.economy.wallet import LMTWallet
+from sanctuary.mind.economy.wallet import LMTWallet
 from pathlib import Path
 
 wallet = LMTWallet(ledger_dir=Path("data/economy"))

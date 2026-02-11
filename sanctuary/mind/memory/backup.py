@@ -3,7 +3,7 @@ Memory Backup System
 
 Automated daily backups with retention policy for ChromaDB and memory files.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2, 2026
 """
 
@@ -85,7 +85,7 @@ class BackupManager:
     
     async def create_backup(
         self,
-        name_prefix: str = "lyra_memory",
+        name_prefix: str = "sanctuary_memory",
         metadata: Optional[Dict[str, Any]] = None
     ) -> Path:
         """
@@ -292,7 +292,7 @@ class BackupManager:
         def _extract_tar():
             with tarfile.open(backup_path, "r:gz") as tar:
                 # Extract to temporary directory first (using secure temp directory)
-                temp_dir = Path(tempfile.mkdtemp(prefix="lyra_restore_"))
+                temp_dir = Path(tempfile.mkdtemp(prefix="sanctuary_restore_"))
                 try:
                     tar.extractall(temp_dir)
                     

@@ -1,10 +1,10 @@
 """
-Enhanced Logging Configuration for Lyra Emergence System
+Enhanced Logging Configuration for Sanctuary Emergence System
 
 Provides structured logging with JSON output, context tracking, and log rotation.
 Designed for debugging, monitoring, and error tracking in production environments.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2, 2026
 """
 
@@ -137,7 +137,7 @@ def setup_logging(
     backup_count: int = 7
 ) -> logging.Logger:
     """
-    Configure logging for Lyra system.
+    Configure logging for the Sanctuary system.
     
     Args:
         log_dir: Directory for log files (default: ./logs)
@@ -178,7 +178,7 @@ def setup_logging(
     # File handler with rotation
     if enable_file:
         # Main log file
-        log_file = log_dir / "lyra.log"
+        log_file = log_dir / "sanctuary.log"
         file_handler = logging.handlers.RotatingFileHandler(
             log_file,
             maxBytes=max_bytes,
@@ -198,7 +198,7 @@ def setup_logging(
         root_logger.addHandler(file_handler)
         
         # Error-only log file
-        error_file = log_dir / "lyra_errors.log"
+        error_file = log_dir / "sanctuary_errors.log"
         error_handler = logging.handlers.RotatingFileHandler(
             error_file,
             maxBytes=max_bytes,

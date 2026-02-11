@@ -192,7 +192,7 @@ class TestIWMTIntegration:
             workspace.add_goal(goal)
             
             # Inject input that should trigger a response
-            core.inject_input("Hello Lyra, how are you?", "text")
+            core.inject_input("Hello, how are you?", "text")
             
             # Execute cycle
             await core.cycle_executor.execute_cycle()

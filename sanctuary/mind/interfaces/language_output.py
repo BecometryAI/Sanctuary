@@ -2,7 +2,7 @@
 Language Output Generator: Peripheral text output generation.
 
 This module implements the LanguageOutputGenerator class, which converts internal
-workspace state into natural language responses. This is where Lyra's "Voice" lives,
+workspace state into natural language responses. This is where the system's "Voice" lives,
 but it's peripheral to the cognitive core. The core operates on non-linguistic
 representations, and language is only used at the output boundary.
 
@@ -74,7 +74,7 @@ class LanguageOutputGenerator:
     The LanguageOutputGenerator is the output boundary between the internal
     cognitive architecture and natural language communication. It uses LLMs to
     transform the non-linguistic workspace state (goals, percepts, emotions,
-    memories) into coherent natural language that expresses Lyra's "voice" and
+    memories) into coherent natural language that expresses the system's "voice" and
     personality.
 
     Key Responsibilities:
@@ -105,7 +105,7 @@ class LanguageOutputGenerator:
 
     3. Generate Response (using LLM)
        - Prompt engineering that captures workspace state
-       - Include personality instructions (Lyra's values, style)
+       - Include personality instructions (the system's values, style)
        - Temperature and sampling tuned to output mode
 
     4. Post-Process and Validate
@@ -133,7 +133,7 @@ class LanguageOutputGenerator:
 
     Attributes:
         llm_model: Language model used for generation
-        personality_template: Instructions defining Lyra's voice and style
+        personality_template: Instructions defining the system's voice and style
         output_history: Recent generations for consistency
         generation_config: Sampling parameters for different output modes
     """
@@ -151,7 +151,7 @@ class LanguageOutputGenerator:
         Args:
             llm_model_name: Name/path of LLM to use for generation
             personality_template: Template defining voice and personality
-                If None, uses default Lyra personality from configuration
+                If None, uses default personality from configuration
             default_mode: Default output mode when not specified
             max_output_length: Maximum length of generated text (tokens)
         """

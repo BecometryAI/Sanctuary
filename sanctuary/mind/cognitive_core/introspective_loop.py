@@ -20,7 +20,7 @@ Integration:
 The introspective loop runs within the idle cognitive loop (0.1Hz) established
 in PR #43, triggered by specific conditions rather than running constantly.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Phase: 4.2
 """
 

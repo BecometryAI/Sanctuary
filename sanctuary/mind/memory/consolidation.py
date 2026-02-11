@@ -5,7 +5,7 @@ Handles memory strengthening, decay, and reorganization.
 Transfers memories from episodic to semantic storage.
 Implements biologically-inspired memory consolidation that runs during idle periods.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import json
 import logging

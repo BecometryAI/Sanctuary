@@ -4,7 +4,7 @@ GPU Memory Management and Monitoring System
 Implements automatic model unloading when GPU memory exceeds thresholds,
 prevents OOM crashes, and provides graceful degradation mechanisms.
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2, 2026
 """
 

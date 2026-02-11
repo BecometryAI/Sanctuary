@@ -103,7 +103,7 @@ class ActionExecutor:
                 "emotion": snapshot.emotions,
                 "timestamp": datetime.now()
             })
-            logger.info(f"🗣️ Lyra: {response[:100]}...")
+            logger.info(f"🗣️ Response: {response[:100]}...")
             
             # Record output time if temporal grounding available
             if self._has_temporal_grounding():
@@ -146,7 +146,7 @@ class ActionExecutor:
                 "emotion": snapshot.emotions,
                 "timestamp": datetime.now()
             })
-            logger.info(f"🗣️💭 Lyra (autonomous): {response[:100]}...")
+            logger.info(f"🗣️💭 Autonomous response: {response[:100]}...")
             
             # Record output time if temporal grounding available
             if self._has_temporal_grounding():

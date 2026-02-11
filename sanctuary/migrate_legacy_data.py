@@ -7,7 +7,7 @@ to the new Sovereign Memory Architecture.
 Usage:
     python migrate_legacy_data.py [--dry-run] [--journal-dir PATH] [--memory-dir PATH]
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: November 23, 2025
 """
 

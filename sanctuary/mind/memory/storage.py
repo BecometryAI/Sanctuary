@@ -6,7 +6,7 @@ Handles raw storage operations for memory data:
 - Blockchain interface for immutable memories
 - CRUD operations without retrieval logic
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 """
 import chromadb
 from chromadb.config import Settings
@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-from ..sanctuary_chain import LyraChain
+from ..sanctuary_chain import SanctuaryChain
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ class MemoryStorage:
         
         # Initialize blockchain for memory verification
         logger.info("Initializing blockchain verification system...")
-        self.chain = LyraChain(str(self.chain_dir))
+        self.chain = SanctuaryChain(str(self.chain_dir))
         
         # Setup mind state directory and file
         mind_state_dir = self.persistence_dir / "mind_state"

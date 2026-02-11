@@ -2,7 +2,7 @@ import shutil
 import os
 import pytest
 """
-Test for Lyra Persistent Memory System
+Test for Persistent Memory System
 """
 
 # Import from memory_legacy.py (renamed from memory.py)

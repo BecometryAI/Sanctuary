@@ -3,7 +3,7 @@ ConversationManager: Orchestrates dialogue flow between user and cognitive core.
 
 This module implements the ConversationManager class, which manages turn-taking,
 dialogue state tracking, conversation history, and provides a cohesive conversational
-interface for multi-turn interactions with Lyra's cognitive core.
+interface for multi-turn interactions with the system's cognitive core.
 
 The ConversationManager is responsible for:
 - Turn-taking coordination
@@ -37,16 +37,16 @@ class ConversationTurn:
     """
     Represents a single conversation turn.
     
-    A turn contains the user's input, Lyra's response, timing information,
+    A turn contains the user's input, the system's response, timing information,
     and emotional state during the interaction. This provides a complete
     record of one conversational exchange.
     
     Attributes:
         user_input: The text input from the user
-        system_response: Lyra's text response
+        system_response: the system's text response
         timestamp: When the turn occurred
         response_time: How long it took to generate the response (seconds)
-        emotional_state: Lyra's emotional state during the turn
+        emotional_state: the system's emotional state during the turn
         metadata: Additional turn-specific information
     """
     user_input: str
@@ -63,7 +63,7 @@ class ConversationManager:
     
     The ConversationManager provides a high-level conversational interface,
     handling turn-taking, dialogue state management, and multi-turn coherence.
-    It bridges between raw user input and Lyra's cognitive processing.
+    It bridges between raw user input and the system's cognitive processing.
     
     Key Features:
     - Turn-based conversation flow
@@ -136,7 +136,7 @@ class ConversationManager:
                 "conversation_history": [
                     {
                         "user": turn.user_input,
-                        "lyra": turn.system_response,
+                        "system": turn.system_response,
                         "timestamp": turn.timestamp.isoformat()
                     }
                     for turn in list(self.conversation_history)[-3:]
@@ -204,7 +204,7 @@ class ConversationManager:
         """
         Wait for cognitive core to produce response.
         
-        Polls the output queue with a timeout to retrieve Lyra's response.
+        Polls the output queue with a timeout to retrieve the system's response.
         Only returns SPEAK actions as valid responses.
         
         Args:
@@ -241,7 +241,7 @@ class ConversationManager:
         
         Args:
             user_input: User's text input
-            response: Lyra's response text
+            response: the system's response text
         """
         # Extract topics from user input (simple keyword extraction)
         topics = self._extract_topics(user_input)
@@ -301,10 +301,10 @@ class ConversationManager:
     
     async def listen_for_autonomous(self, timeout: Optional[float] = None):
         """
-        Generator that yields autonomous messages from Lyra.
+        Generator that yields autonomous messages from the system.
         
         Use this to listen for unprompted speech between user turns. This allows
-        Lyra to proactively share introspective insights, emotional states, or
+        the system to proactively share introspective insights, emotional states, or
         other significant observations that warrant expression.
         
         Args:
@@ -320,7 +320,7 @@ class ConversationManager:
                 
         Example:
             async for message in conversation.listen_for_autonomous(timeout=5.0):
-                print(f"Lyra says: {message['text']}")
+                print(f"System says: {message['text']}")
                 print(f"Trigger: {message['trigger']}")
         """
         try:

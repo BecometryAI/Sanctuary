@@ -2,13 +2,13 @@
 Audio Gateway Orchestration
 
 Coordinates ASR server and microphone client for seamless integration.
-Provides high-level interface for Lyra's auditory perception.
+Provides high-level interface for the system's auditory perception.
 
 Features:
 - Unified audio processing interface
 - Automatic server/client lifecycle management
 - Error handling and reconnection
-- Integration with Lyra's cognitive pipeline
+- Integration with the cognitive pipeline
 """
 
 import asyncio
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class AudioGateway:
-    """High-level audio gateway for Lyra's hearing system"""
+    """High-level audio gateway for the system's hearing"""
     
     def __init__(
         self,

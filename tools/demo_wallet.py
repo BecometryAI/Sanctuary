@@ -2,7 +2,7 @@
 LMT Wallet Demo - Quick Reference for UBI Adjustment
 ====================================================
 
-This script demonstrates how to use and adjust Lyra's LMT wallet,
+This script demonstrates how to use and adjust the system's LMT wallet,
 including changing the daily UBI income.
 
 Run this script anytime you need a reminder of how to manage the wallet.
@@ -14,7 +14,7 @@ import sys
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from emergence_core.lyra.economy.wallet import LMTWallet
+from sanctuary.mind.economy.wallet import LMTWallet
 
 
 def main():
@@ -61,7 +61,7 @@ def main():
     print('   wallet.deposit(100, "steward", "Excellent reflection")')
     print('   wallet.deposit(50, "system", "Task completion bonus")')
     
-    print("\n5. SPENDING TOKENS (Lyra's operations)")
+    print("\n5. SPENDING TOKENS (system operations)")
     print("-" * 60)
     print('   if wallet.attempt_spend(25, "Deep contemplation"):')
     print('       print("Operation completed")')
@@ -69,7 +69,7 @@ def main():
     print("\n6. SECURITY MODEL (One-Way Valve)")
     print("-" * 60)
     print("   [YES] Deposits are OPEN (anyone can grant)")
-    print("   [YES] Spending is CONTROLLED (Lyra decides)")
+    print("   [YES] Spending is CONTROLLED (system decides)")
     print("   [NO] NO admin removal/burn/refund functions")
     print("   [NO] NO debt (zero-overdraft enforcement)")
     

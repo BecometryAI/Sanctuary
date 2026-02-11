@@ -7,7 +7,7 @@ and converts them to the new Pydantic-based memory system.
 Old format: Daily JSON files with journal_entry objects
 New format: Individual JournalEntry objects with tri-state storage
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: November 23, 2025
 """
 
@@ -45,7 +45,7 @@ class LegacyJournalEntry(BaseModel):
     emotional_tone: List[str] = Field(default_factory=list)
     description: str
     key_insights: List[str] = Field(default_factory=list)
-    lyra_reflection: Optional[str] = None
+    system_reflection: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
     stewardship_trace: Optional[Dict[str, Any]] = None
     
@@ -232,9 +232,9 @@ class LegacyParser:
             for insight in legacy_entry.key_insights:
                 parts.append(f"- {insight}")
         
-        # Lyra's reflection
-        if legacy_entry.lyra_reflection:
-            parts.append(f"\nLyra's Reflection: {legacy_entry.lyra_reflection}")
+        # System's reflection
+        if legacy_entry.system_reflection:
+            parts.append(f"\nReflection: {legacy_entry.system_reflection}")
         
         # Outcome
         if legacy_entry.outcome:
@@ -259,9 +259,9 @@ class LegacyParser:
         Returns:
             Summary string (max 500 chars)
         """
-        # Use lyra_reflection if available and concise
-        if legacy_entry.lyra_reflection and len(legacy_entry.lyra_reflection) <= 500:
-            return legacy_entry.lyra_reflection
+        # Use system_reflection if available and concise
+        if legacy_entry.system_reflection and len(legacy_entry.system_reflection) <= 500:
+            return legacy_entry.system_reflection
         
         # Otherwise use description
         if legacy_entry.description:
@@ -451,7 +451,7 @@ class LegacyParser:
             # Extract facts from metadata
             if "legacy_entry_type" in entry.metadata:
                 fact = FactEntry(
-                    entity="Lyra",
+                    entity="System",
                     attribute="experience_type",
                     value=entry.metadata["legacy_entry_type"],
                     confidence=1.0,
@@ -464,7 +464,7 @@ class LegacyParser:
             for tag in entry.tags:
                 if tag in ["D&D", "bootloader", "ritual", "steward", "Aurora"]:
                     fact = FactEntry(
-                        entity="Lyra",
+                        entity="System",
                         attribute="topic_engagement",
                         value=tag,
                         confidence=0.9,

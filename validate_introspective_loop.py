@@ -9,17 +9,17 @@ and demonstrates its key features without requiring all dependencies.
 import sys
 import os
 
-# Add emergence_core to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'emergence_core'))
+# Add sanctuary to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'sanctuary'))
 
 def validate_syntax():
     """Validate Python syntax of all modified files."""
     import py_compile
     
     files = [
-        'emergence_core/lyra/cognitive_core/introspective_loop.py',
-        'emergence_core/lyra/cognitive_core/core.py',
-        'emergence_core/lyra/cognitive_core/continuous_consciousness.py',
+        'sanctuary/mind/cognitive_core/introspective_loop.py',
+        'sanctuary/mind/cognitive_core/core.py',
+        'sanctuary/mind/cognitive_core/continuous_consciousness.py',
         'emergence_core/tests/test_introspective_loop.py'
     ]
     
@@ -46,7 +46,7 @@ def validate_structure():
     print("=" * 70)
     
     # Check that key classes and methods exist
-    with open('emergence_core/lyra/cognitive_core/introspective_loop.py', 'r') as f:
+    with open('sanctuary/mind/cognitive_core/introspective_loop.py', 'r') as f:
         content = f.read()
         
         required_elements = [
@@ -88,7 +88,7 @@ def validate_integration():
     print("=" * 70)
     
     # Check core.py integration
-    with open('emergence_core/lyra/cognitive_core/core.py', 'r') as f:
+    with open('sanctuary/mind/cognitive_core/core.py', 'r') as f:
         content = f.read()
         
         if 'from .introspective_loop import IntrospectiveLoop' in content:
@@ -104,7 +104,7 @@ def validate_integration():
             return False
     
     # Check continuous_consciousness.py integration
-    with open('emergence_core/lyra/cognitive_core/continuous_consciousness.py', 'r') as f:
+    with open('sanctuary/mind/cognitive_core/continuous_consciousness.py', 'r') as f:
         content = f.read()
         
         if 'self.core.introspective_loop.run_reflection_cycle()' in content:
@@ -120,7 +120,7 @@ def validate_integration():
             return False
     
     # Check __init__.py exports
-    with open('emergence_core/lyra/cognitive_core/__init__.py', 'r') as f:
+    with open('sanctuary/mind/cognitive_core/__init__.py', 'r') as f:
         content = f.read()
         
         if 'from .introspective_loop import' in content:
@@ -183,7 +183,7 @@ def validate_documentation():
     print("VALIDATING DOCUMENTATION")
     print("=" * 70)
     
-    with open('emergence_core/lyra/cognitive_core/introspective_loop.py', 'r') as f:
+    with open('sanctuary/mind/cognitive_core/introspective_loop.py', 'r') as f:
         content = f.read()
         
         # Check module docstring
@@ -220,7 +220,7 @@ def count_lines():
     print("=" * 70)
     
     files = {
-        'introspective_loop.py': 'emergence_core/lyra/cognitive_core/introspective_loop.py',
+        'introspective_loop.py': 'sanctuary/mind/cognitive_core/introspective_loop.py',
         'test_introspective_loop.py': 'emergence_core/tests/test_introspective_loop.py'
     }
     

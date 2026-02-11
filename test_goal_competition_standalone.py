@@ -1,7 +1,7 @@
 """
 Standalone tests for Goal Competition System
 
-These tests can run without the full Lyra system dependencies.
+These tests can run without the full Sanctuary system dependencies.
 """
 
 import sys
@@ -9,7 +9,7 @@ import os
 import importlib.util
 
 # Direct import without going through package __init__
-base_path = os.path.join(os.path.dirname(__file__), 'emergence_core', 'lyra', 'cognitive_core', 'goals')
+base_path = os.path.join(os.path.dirname(__file__), 'sanctuary', 'mind', 'cognitive_core', 'goals')
 
 def import_module_from_path(module_name, file_path):
     """Import a module directly from a file path."""

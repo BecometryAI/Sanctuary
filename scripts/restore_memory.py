@@ -9,7 +9,7 @@ Usage:
     python scripts/restore_memory.py restore <backup_name> [--target <dir>] [--dry-run]
     python scripts/restore_memory.py validate <backup_name>
 
-Author: Lyra Emergence Team
+Author: Sanctuary Team
 Date: January 2, 2026
 """
 
@@ -22,8 +22,8 @@ from datetime import datetime
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from emergence_core.lyra.memory.backup import BackupManager
-from emergence_core.lyra.logging_config import setup_logging, get_logger
+from sanctuary.mind.memory.backup import BackupManager
+from sanctuary.mind.logging_config import setup_logging, get_logger
 
 logger = get_logger(__name__)
 
@@ -127,7 +127,7 @@ async def validate_backup(manager: BackupManager, backup_name: str):
 async def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Memory restore tool for Lyra Emergence",
+        description="Memory restore tool for Sanctuary",
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     

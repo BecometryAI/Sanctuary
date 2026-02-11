@@ -1,5 +1,5 @@
 """
-Memory subsystem for Lyra Emergence.
+Memory subsystem for Sanctuary.
 
 This module provides a modular memory system with:
 - Storage backend (ChromaDB + blockchain)

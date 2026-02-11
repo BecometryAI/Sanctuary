@@ -200,7 +200,7 @@ def demo_usage_patterns():
     print("Basic Usage:")
     print("-" * 70)
     print("""
-from emergence_core.lyra.cognitive_core import (
+from sanctuary.mind.cognitive_core import (
     ConsciousnessTestFramework,
     ConsciousnessReportGenerator
 )

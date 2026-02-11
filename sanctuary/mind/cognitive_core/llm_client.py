@@ -2,12 +2,14 @@
 LLM Client: Unified interface for language model interactions.
 
 This module provides abstract and concrete implementations for interacting
-with large language models. It supports both local models (via transformers)
-and API providers, with proper resource management and error handling.
+with large language models. It supports both local models (via transformers),
+Ollama (local HTTP API), and API providers, with proper resource management
+and error handling.
 
 The LLM client layer provides:
 - Abstract interface for model-agnostic code
 - Concrete implementations for specific models (Gemma, Llama)
+- Ollama integration for local model serving
 - Mock implementation for testing
 - Connection pooling and rate limiting
 - Proper error handling and retry logic
@@ -522,6 +524,194 @@ class LlamaClient(LLMClient):
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse JSON from Llama output: {e}")
+            logger.debug(f"Raw output: {response_text}")
+            raise LLMError(f"JSON parsing failed: {e}")
+
+
+class OllamaClient(LLMClient):
+    """
+    Ollama client for local model serving.
+
+    Connects to a locally running Ollama instance via its HTTP API.
+    Works with any model Ollama supports (llama3.2, gemma2, mistral, etc.)
+
+    Requires:
+        - Ollama installed and running (https://ollama.com)
+        - A model pulled: e.g. `ollama pull gemma2:12b`
+
+    Config example:
+        {
+            "backend": "ollama",
+            "model_name": "gemma2:12b",
+            "base_url": "http://localhost:11434",
+            "temperature": 0.7,
+            "max_tokens": 500,
+        }
+    """
+
+    DEFAULT_BASE_URL = "http://localhost:11434"
+
+    def __init__(self, config: Optional[Dict] = None):
+        config = config or {}
+        config.setdefault("model_name", "llama3.2")
+        config.setdefault("temperature", 0.7)
+        config.setdefault("max_tokens", 500)
+        super().__init__(config)
+
+        self.base_url = self.config.get("base_url", self.DEFAULT_BASE_URL).rstrip("/")
+        self._initialized = False
+        self._verify_connection()
+
+    def _verify_connection(self):
+        """Check that Ollama is running and the model is available."""
+        import urllib.request
+        import urllib.error
+
+        try:
+            # Check Ollama is running
+            req = urllib.request.Request(f"{self.base_url}/api/tags")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode())
+
+            available_models = [m.get("name", "") for m in data.get("models", [])]
+
+            # Check if requested model is available (handle tag variants)
+            model_found = False
+            for m in available_models:
+                if m == self.model_name or m.startswith(f"{self.model_name}:") or self.model_name.startswith(m.split(":")[0]):
+                    model_found = True
+                    break
+
+            if model_found:
+                logger.info(f"✅ OllamaClient connected: model={self.model_name}, url={self.base_url}")
+                self._initialized = True
+            else:
+                logger.warning(
+                    f"Model '{self.model_name}' not found in Ollama. "
+                    f"Available: {available_models}. "
+                    f"Pull it with: ollama pull {self.model_name}"
+                )
+                # Still mark as initialized — Ollama will pull on first use or give a clear error
+                self._initialized = True
+
+        except urllib.error.URLError as e:
+            logger.error(
+                f"Cannot connect to Ollama at {self.base_url}: {e}. "
+                "Make sure Ollama is running (start it with: ollama serve)"
+            )
+            self._initialized = False
+        except Exception as e:
+            logger.error(f"Ollama connection check failed: {e}")
+            self._initialized = False
+
+    async def generate(
+        self,
+        prompt: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        **kwargs
+    ) -> str:
+        """Generate text using Ollama's /api/generate endpoint."""
+        if not self._initialized:
+            logger.warning("Ollama not connected, using mock response")
+            return await MockLLMClient().generate(prompt, temperature, max_tokens)
+
+        await self._check_rate_limit()
+
+        start_time = time.time()
+        temp = temperature if temperature is not None else self.temperature
+        max_tok = max_tokens if max_tokens is not None else self.max_tokens
+
+        payload = json.dumps({
+            "model": self.model_name,
+            "prompt": prompt,
+            "stream": False,
+            "options": {
+                "temperature": temp,
+                "num_predict": max_tok,
+            }
+        }).encode("utf-8")
+
+        try:
+            response_text = await asyncio.wait_for(
+                asyncio.to_thread(self._do_generate_request, payload),
+                timeout=self.timeout
+            )
+
+            latency = time.time() - start_time
+            self._update_metrics(latency, tokens=len(response_text.split()))
+            logger.debug(f"Ollama generated {len(response_text)} chars in {latency:.2f}s")
+
+            return response_text
+
+        except asyncio.TimeoutError:
+            logger.error(f"Ollama generation timed out after {self.timeout}s")
+            self._update_metrics(time.time() - start_time, error=True)
+            raise LLMError(f"Ollama generation timeout after {self.timeout}s")
+        except LLMError:
+            raise
+        except Exception as e:
+            logger.error(f"Ollama generation failed: {e}")
+            self._update_metrics(time.time() - start_time, error=True)
+            raise LLMError(f"Ollama generation failed: {e}")
+
+    def _do_generate_request(self, payload: bytes) -> str:
+        """Synchronous HTTP request to Ollama (run in thread)."""
+        import urllib.request
+        import urllib.error
+
+        req = urllib.request.Request(
+            f"{self.base_url}/api/generate",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
+        try:
+            with urllib.request.urlopen(req, timeout=int(self.timeout)) as resp:
+                data = json.loads(resp.read().decode())
+                return data.get("response", "")
+        except urllib.error.HTTPError as e:
+            body = e.read().decode() if e.fp else ""
+            raise LLMError(f"Ollama HTTP {e.code}: {body}")
+        except urllib.error.URLError as e:
+            raise LLMError(f"Cannot reach Ollama at {self.base_url}: {e}")
+
+    async def generate_structured(
+        self,
+        prompt: str,
+        schema: Dict,
+        temperature: Optional[float] = None,
+        **kwargs
+    ) -> Dict:
+        """Generate structured JSON output using Ollama."""
+        structured_prompt = (
+            f"{prompt}\n\n"
+            f"Respond with ONLY valid JSON matching this schema:\n"
+            f"{json.dumps(schema, indent=2)}\n\n"
+            f"JSON Response:"
+        )
+
+        response_text = await self.generate(
+            structured_prompt,
+            temperature=temperature or 0.3  # Lower temp for structured output
+        )
+
+        try:
+            json_text = response_text.strip()
+            # Strip markdown code fences if present
+            if json_text.startswith("```json"):
+                json_text = json_text[7:]
+            if json_text.startswith("```"):
+                json_text = json_text[3:]
+            if json_text.endswith("```"):
+                json_text = json_text[:-3]
+            json_text = json_text.strip()
+
+            return json.loads(json_text)
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse JSON from Ollama output: {e}")
             logger.debug(f"Raw output: {response_text}")
             raise LLMError(f"JSON parsing failed: {e}")
 

@@ -277,40 +277,63 @@ class SubsystemCoordinator:
     def _initialize_llm_clients(self) -> None:
         """
         Initialize LLM clients for language interfaces.
-        
+
         Note: LLM clients are imported here (not at module level) because they
         may not be available in all environments. This allows the module to be
         imported without requiring the LLM dependencies, and only fails at
         runtime if LLM functionality is actually used.
+
+        Supported backends (set via "backend" key in config):
+            - "ollama": Local Ollama server (recommended for local use)
+            - "gemma" / "llama": HuggingFace transformers (requires GPU + torch)
+            - None / missing: Mock client (development mode)
         """
-        from ..llm_client import MockLLMClient, GemmaClient, LlamaClient
-        
+        from ..llm_client import MockLLMClient, GemmaClient, LlamaClient, OllamaClient
+
         input_llm_config = self.config.get("input_llm", {})
         output_llm_config = self.config.get("output_llm", {})
-        
-        # Determine which LLM clients to use for input
-        if input_llm_config.get("use_real_model", False):
+
+        self.llm_input_client = self._create_llm_client(
+            input_llm_config, "input", MockLLMClient, GemmaClient, LlamaClient, OllamaClient
+        )
+        self.llm_output_client = self._create_llm_client(
+            output_llm_config, "output", MockLLMClient, GemmaClient, LlamaClient, OllamaClient
+        )
+
+    def _create_llm_client(self, config, role, MockLLMClient, GemmaClient, LlamaClient, OllamaClient):
+        """Create an LLM client based on config. Falls back to mock on failure."""
+        if not config.get("use_real_model", False):
+            logger.info(f"✅ Using mock LLM client for {role} (development mode)")
+            return MockLLMClient(config)
+
+        backend = config.get("backend", "").lower()
+
+        if backend == "ollama":
             try:
-                self.llm_input_client = GemmaClient(input_llm_config)
-                logger.info("✅ Using real Gemma client for input parsing")
+                client = OllamaClient(config)
+                logger.info(f"✅ Using Ollama client for {role}: model={config.get('model_name', 'default')}")
+                return client
             except Exception as e:
-                logger.warning(f"Failed to load Gemma client: {e}, using mock")
-                self.llm_input_client = MockLLMClient(input_llm_config)
-        else:
-            self.llm_input_client = MockLLMClient(input_llm_config)
-            logger.info("✅ Using mock LLM client for input parsing (development mode)")
-        
-        # Determine which LLM clients to use for output
-        if output_llm_config.get("use_real_model", False):
+                logger.warning(f"Failed to load Ollama client for {role}: {e}, using mock")
+                return MockLLMClient(config)
+
+        # Legacy HuggingFace backends
+        if role == "input" or backend == "gemma":
             try:
-                self.llm_output_client = LlamaClient(output_llm_config)
-                logger.info("✅ Using real Llama client for output generation")
+                client = GemmaClient(config)
+                logger.info(f"✅ Using real Gemma client for {role}")
+                return client
             except Exception as e:
-                logger.warning(f"Failed to load Llama client: {e}, using mock")
-                self.llm_output_client = MockLLMClient(output_llm_config)
+                logger.warning(f"Failed to load Gemma client for {role}: {e}, using mock")
+                return MockLLMClient(config)
         else:
-            self.llm_output_client = MockLLMClient(output_llm_config)
-            logger.info("✅ Using mock LLM client for output generation (development mode)")
+            try:
+                client = LlamaClient(config)
+                logger.info(f"✅ Using real Llama client for {role}")
+                return client
+            except Exception as e:
+                logger.warning(f"Failed to load Llama client for {role}: {e}, using mock")
+                return MockLLMClient(config)
     
     def initialize_continuous_consciousness(self, cognitive_core) -> ContinuousConsciousnessController:
         """

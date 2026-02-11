@@ -1,0 +1,228 @@
+#!/usr/bin/env python3
+"""
+Run Sanctuary with Ollama - Interactive Chat
+
+This script boots the full Sanctuary cognitive architecture with a real
+LLM (via Ollama) for language processing. It connects to your locally
+running Ollama instance and uses whichever model you have pulled.
+
+Prerequisites:
+    1. Install Python dependencies:
+       pip install chromadb sentence-transformers torch pydantic numpy scikit-learn
+
+    2. Install and start Ollama (https://ollama.com):
+       ollama serve
+
+    3. Pull a model:
+       ollama pull gemma2:12b
+
+Usage:
+    python run_with_ollama.py                    # uses gemma2:12b by default
+    python run_with_ollama.py --model llama3.2   # use a different model
+    python run_with_ollama.py --mock-perception   # skip sentence-transformers
+
+Then just type and talk. Press Ctrl+C to quit.
+"""
+
+import argparse
+import asyncio
+import logging
+import signal
+import sys
+from pathlib import Path
+
+# Add the sanctuary package to the path
+sys.path.insert(0, str(Path(__file__).parent / "sanctuary"))
+
+from mind.client import SanctuaryAPI
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Run Sanctuary with Ollama",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python run_with_ollama.py
+  python run_with_ollama.py --model llama3.2
+  python run_with_ollama.py --model gemma2:12b --ollama-url http://localhost:11434
+  python run_with_ollama.py --mock-perception  (skip sentence-transformers requirement)
+        """
+    )
+    parser.add_argument(
+        "--model", default="gemma2:12b",
+        help="Ollama model name (default: gemma2:12b)"
+    )
+    parser.add_argument(
+        "--ollama-url", default="http://localhost:11434",
+        help="Ollama server URL (default: http://localhost:11434)"
+    )
+    parser.add_argument(
+        "--mock-perception", action="store_true",
+        help="Use mock perception (skips sentence-transformers/torch requirement)"
+    )
+    parser.add_argument(
+        "--input-model", default=None,
+        help="Separate Ollama model for input parsing (default: same as --model)"
+    )
+    parser.add_argument(
+        "--cycle-rate", type=float, default=10.0,
+        help="Cognitive cycle rate in Hz (default: 10.0)"
+    )
+    parser.add_argument(
+        "--timeout", type=float, default=120.0,
+        help="LLM generation timeout in seconds (default: 120)"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true",
+        help="Enable verbose logging"
+    )
+    return parser.parse_args()
+
+
+def build_config(args):
+    """Build the CognitiveCore config from command-line arguments."""
+    input_model = args.input_model or args.model
+
+    config = {
+        "cognitive_core": {
+            "cycle_rate_hz": args.cycle_rate,
+            "attention_budget": 100,
+            "max_queue_size": 100,
+            "log_interval_cycles": 50,
+
+            # Perception — real embeddings by default, mock if requested
+            "perception": {
+                "mock_mode": args.mock_perception,
+                "mock_embedding_dim": 384,
+            },
+
+            # LLM — both input and output go through Ollama
+            "input_llm": {
+                "use_real_model": True,
+                "backend": "ollama",
+                "model_name": input_model,
+                "base_url": args.ollama_url,
+                "temperature": 0.3,
+                "max_tokens": 512,
+                "timeout": args.timeout,
+            },
+            "output_llm": {
+                "use_real_model": True,
+                "backend": "ollama",
+                "model_name": args.model,
+                "base_url": args.ollama_url,
+                "temperature": 0.7,
+                "max_tokens": 500,
+                "timeout": args.timeout,
+            },
+
+            # Checkpointing
+            "checkpointing": {
+                "enabled": True,
+                "auto_save": False,
+                "checkpoint_on_shutdown": False,
+            },
+        }
+    }
+
+    return config
+
+
+async def interactive_chat(api: SanctuaryAPI, model_name: str):
+    """Run the interactive chat loop."""
+    print()
+    print("=" * 60)
+    print("  SANCTUARY - Interactive Chat")
+    print(f"  Model: {model_name} (via Ollama)")
+    print("=" * 60)
+    print()
+    print("  Type a message and press Enter to chat.")
+    print("  Type 'quit' or press Ctrl+C to exit.")
+    print("  Type 'status' to see cognitive metrics.")
+    print()
+
+    while True:
+        try:
+            user_input = await asyncio.to_thread(input, "You: ")
+        except (EOFError, KeyboardInterrupt):
+            break
+
+        user_input = user_input.strip()
+        if not user_input:
+            continue
+
+        if user_input.lower() in ("quit", "exit", "q"):
+            break
+
+        if user_input.lower() == "status":
+            metrics = api.get_metrics()
+            cog = metrics.get("cognitive_core", {})
+            conv = metrics.get("conversation", {})
+            print()
+            print(f"  Cycles run:       {cog.get('total_cycles', '?')}")
+            print(f"  Avg cycle time:   {cog.get('avg_cycle_time_ms', 0):.1f} ms")
+            print(f"  Conversation turns: {conv.get('total_turns', '?')}")
+            print()
+            continue
+
+        try:
+            print()
+            print("  (thinking...)")
+            turn = await api.chat(user_input)
+            print(f"\nSanctuary: {turn.system_response}")
+
+            # Show emotional state if present
+            if turn.emotional_state:
+                emotions = turn.emotional_state
+                valence = emotions.get("valence", 0)
+                arousal = emotions.get("arousal", 0)
+                mood = "positive" if valence > 0.2 else "negative" if valence < -0.2 else "neutral"
+                energy = "high" if arousal > 0.5 else "low" if arousal < -0.2 else "moderate"
+                print(f"  [mood: {mood}, energy: {energy}]")
+            print()
+
+        except Exception as e:
+            print(f"\n  Error: {e}\n")
+
+
+async def main():
+    args = parse_args()
+
+    # Configure logging
+    log_level = logging.DEBUG if args.verbose else logging.WARNING
+    logging.basicConfig(
+        level=log_level,
+        format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+    )
+    # Always show important startup messages
+    logging.getLogger("sanctuary.mind.cognitive_core.llm_client").setLevel(logging.INFO)
+    logging.getLogger("sanctuary.mind.cognitive_core.core.subsystem_coordinator").setLevel(logging.INFO)
+
+    config = build_config(args)
+
+    print()
+    print("Starting Sanctuary...")
+    print(f"  Ollama URL:  {args.ollama_url}")
+    print(f"  Model:       {args.model}")
+    if args.input_model:
+        print(f"  Input model: {args.input_model}")
+    print(f"  Perception:  {'mock' if args.mock_perception else 'real (sentence-transformers)'}")
+    print()
+
+    api = SanctuaryAPI(config)
+
+    try:
+        await api.start()
+        print("Sanctuary is running.")
+        await interactive_chat(api, args.model)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print("\nShutting down Sanctuary...")
+        await api.stop()
+        print("Goodbye.")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

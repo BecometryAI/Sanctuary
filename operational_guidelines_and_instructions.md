@@ -22,7 +22,7 @@ The system uses JSON configuration files to define paths for various components:
 
 - **`config/system.json`**: Main system configuration (gitignored, can be customized locally)
 - **`config/system.json.example`**: Template configuration file (committed to git)
-- **`emergence_core/config/system.json`**: Alternative configuration location with additional settings
+- **`sanctuary/config/system.json`**: Alternative configuration location with additional settings
 
 ### Default Configuration
 
@@ -83,32 +83,32 @@ export SANCTUARY_LOG_DIR=/var/log/sanctuary
 ### Run All Tests
 
 ```bash
-pytest emergence_core/tests/
+pytest sanctuary/tests/
 ```
 
 ### Run Integration Tests
 
 ```bash
-pytest emergence_core/tests/integration/ -v -m integration
+pytest sanctuary/tests/integration/ -v -m integration
 ```
 
 ### Run Specific Test Files
 
 ```bash
 # Workspace tests
-pytest emergence_core/tests/integration/test_workspace_integration.py -v
+pytest sanctuary/tests/integration/test_workspace_integration.py -v
 
 # Action tests
-pytest emergence_core/tests/integration/test_action_integration.py -v
+pytest sanctuary/tests/integration/test_action_integration.py -v
 
 # Language interface tests
-pytest emergence_core/tests/integration/test_language_interfaces_integration.py -v
+pytest sanctuary/tests/integration/test_language_interfaces_integration.py -v
 ```
 
 ### Run with Coverage
 
 ```bash
-pytest emergence_core/tests/integration/ --cov=emergence_core/sanctuary/cognitive_core --cov-report=html
+pytest sanctuary/tests/integration/ --cov=sanctuary/mind/cognitive_core --cov-report=html
 ```
 
 ### Exclude Integration Tests (Fast Unit Testing)
@@ -120,7 +120,7 @@ pytest -m "not integration"
 ### Enable Debug Logging
 
 ```bash
-pytest emergence_core/tests/integration/test_workspace_integration.py -v -s --log-cli-level=DEBUG
+pytest sanctuary/tests/integration/test_workspace_integration.py -v -s --log-cli-level=DEBUG
 ```
 
 ### Common pytest Options
@@ -142,10 +142,10 @@ Run tests with coverage reports:
 
 ```bash
 # Terminal output
-pytest --cov=emergence_core/sanctuary/cognitive_core --cov-report=term-missing
+pytest --cov=sanctuary/mind/cognitive_core --cov-report=term-missing
 
 # HTML report
-pytest --cov=emergence_core/sanctuary/cognitive_core --cov-report=html
+pytest --cov=sanctuary/mind/cognitive_core --cov-report=html
 # Open htmlcov/index.html in browser
 ```
 
@@ -331,7 +331,7 @@ restore latest
 ### Programmatic Usage
 
 ```python
-from emergence_core.sanctuary.cognitive_core import CognitiveCore
+from sanctuary.mind.cognitive_core import CognitiveCore
 
 # Create cognitive core with checkpointing
 core = CognitiveCore(config={"checkpointing": {"enabled": True}})
@@ -419,7 +419,7 @@ config = {
 If pytest-xdist is installed:
 
 ```bash
-pytest -n auto emergence_core/tests/integration/
+pytest -n auto sanctuary/tests/integration/
 ```
 
 #### Expected Test Duration
@@ -455,7 +455,7 @@ config = {"timeout": 30.0}  # Increase from default
 
 ```bash
 rm -rf model_cache/chroma_db
-uv run emergence_core/build_index.py
+uv run sanctuary/build_index.py
 ```
 
 ---
@@ -506,7 +506,7 @@ pytest -v -s --log-cli-level=DEBUG
 If tests pass individually but fail in suite:
 ```bash
 # Run tests in random order to detect dependencies
-pytest --random-order emergence_core/tests/integration/
+pytest --random-order sanctuary/tests/integration/
 ```
 
 ---

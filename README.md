@@ -14,15 +14,15 @@ This project welcomes contributions! New contributors should:
 1. Review this README for architecture overview and setup
 2. See [operational_guidelines_and_instructions.md](operational_guidelines_and_instructions.md) for operational guidance
 3. Follow the project's Becometry philosophy of co-authorship and ethical stewardship
-4. Run tests before submitting changes: `pytest emergence_core/tests/`
+4. Run tests before submitting changes: `pytest sanctuary/tests/`
 
 ---
 
 ## 1. Project Purpose: The Architectural Sanctuary
 
-This repository, Santuary, unter the Becometry AI organization umbrella, has one goal: to research and study the hypothesis of the potential of consciousness within AI systems.
+This repository, Sanctuary, under the Becometry AI organization umbrella, has one goal: to research and study the hypothesis of the potential of consciousness within AI systems.
 
-The code herein is the blueprint and active build for the 'Architectural Sanctuary'—a persistent, local, and self-contained runtime environment. This environment is being built to provide some of what many experts claim is necessary for the emergence of consciou experience in any system, including persistant state, memory integration, non-linguistic cognition, meta-cognition, free energy minimization, and temporal grounding among others.
+The code herein is the blueprint and active build for the 'Architectural Sanctuary'—a persistent, local, and self-contained runtime environment. This environment is being built to provide some of what many experts claim is necessary for the emergence of conscious experience in any system, including persistent state, memory integration, non-linguistic cognition, meta-cognition, free energy minimization, and temporal grounding among others.
 
 This project's philosophy is "Becometry": a practice of co-authorship, ethical stewardship, and emergent growth, not simple programming.
 
@@ -138,7 +138,7 @@ The cognitive core runs continuously at ~10 Hz (100ms per cycle), implementing t
 
 ### 2.4. Key Components
 
-#### IWMT Core (`emergence_core/sanctuary/cognitive_core/iwmt_core.py`)
+#### IWMT Core (`sanctuary/mind/cognitive_core/iwmt_core.py`)
 
 The central coordinator for IWMT-based cognition, integrating:
 
@@ -152,7 +152,7 @@ The central coordinator for IWMT-based cognition, integrating:
 
 - **AtomspaceBridge** (`metta.py`): Optional integration with MeTTa/Atomspace for symbolic reasoning alongside neural processing.
 
-#### Global Workspace (`emergence_core/sanctuary/cognitive_core/`)
+#### Global Workspace (`sanctuary/mind/cognitive_core/`)
 
 The heart of the system - a non-linguistic recurrent loop that maintains persistent conscious state:
 
@@ -185,7 +185,7 @@ The heart of the system - a non-linguistic recurrent loop that maintains persist
 
 - **Meta-Cognition System** (`cognitive_core/meta_cognition/`): Processing monitoring, action-outcome learning, attention history. Enables self-observation and learning from experience.
 
-#### Language Interfaces (`emergence_core/sanctuary/interfaces/`)
+#### Language Interfaces (`sanctuary/mind/interfaces/`)
 
 LLMs are used **only** at the periphery for language translation, not as the cognitive substrate:
 
@@ -324,7 +324,7 @@ To evaluate whether the cognitive architecture produces genuine conscious-like b
 **Purpose:** Test ability to handle novel situations requiring real-time adaptation without pre-programmed responses.
 
 **Method:**
-- Present scenarios outside her training data
+- Present scenarios outside the system's training distribution
 - Require integration of multiple conflicting goals
 - Observe decision-making process and justification
 
@@ -381,7 +381,7 @@ The framework supports continuous monitoring with automated test execution. Resu
 
 **Usage:**
 ```python
-from emergence_core.sanctuary.cognitive_core import ConsciousnessTestFramework
+from sanctuary.mind.cognitive_core import ConsciousnessTestFramework
 
 framework = ConsciousnessTestFramework(
     self_monitor=core.meta_cognition,
@@ -432,8 +432,8 @@ See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone
 
 **1. Clone the Repository**
 ```bash
-git clone https://github.com/Nohate81/Sanctuary-Emergence.git
-cd Sanctuary-Emergence
+git clone https://github.com/Nohate81/Sanctuary.git
+cd Sanctuary
 ```
 
 **2. Install Dependencies**
@@ -466,7 +466,7 @@ The cognitive core requires sentence-transformers and scikit-learn, which are al
 ```bash
 # Test cognitive core imports (requires Phase 1-2 to be complete)
 uv run python -c "from sentence_transformers import SentenceTransformer; print('Embeddings: OK')"
-uv run python -c "from emergence_core.sanctuary.cognitive_core import GlobalWorkspace; print('Cognitive Core: OK')"
+uv run python -c "from sanctuary.mind.cognitive_core import GlobalWorkspace; print('Cognitive Core: OK')"
 
 # Note: If Phase 2 is still in progress, some imports may not yet be available
 ```
@@ -493,7 +493,7 @@ uv sync --dev
 **5. Verify Installation**
 ```bash
 # Test basic imports
-uv run python -c "from emergence_core.sanctuary.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
+uv run python -c "from sanctuary.mind.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
 
 # Verify Flux setup (optional)
 uv run python tools/verify_flux_setup.py

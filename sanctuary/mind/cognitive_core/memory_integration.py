@@ -214,13 +214,13 @@ class MemoryIntegration:
         # Use high-attention percepts
         high_attention_percepts = sorted(
             snapshot.percepts.values(),
-            key=lambda p: p.get("metadata", {}).get("attention_score", 0),
+            key=lambda p: getattr(p, "metadata", {}).get("attention_score", 0),
             reverse=True
         )[:3]
-        
+
         for percept in high_attention_percepts:
-            if percept.get("modality") == "text":
-                raw_content = percept.get("raw", "")
+            if getattr(percept, "modality", "") == "text":
+                raw_content = getattr(percept, "raw", "")
                 if isinstance(raw_content, str):
                     query_parts.append(raw_content[:100])
         
@@ -354,13 +354,13 @@ class MemoryIntegration:
         # High-attention percepts
         attended = sorted(
             snapshot.percepts.values(),
-            key=lambda p: p.get("metadata", {}).get("attention_score", 0),
+            key=lambda p: getattr(p, "metadata", {}).get("attention_score", 0),
             reverse=True
         )[:5]
-        
+
         for percept in attended:
-            if percept.get("modality") == "text":
-                raw_content = percept.get("raw", "")
+            if getattr(percept, "modality", "") == "text":
+                raw_content = getattr(percept, "raw", "")
                 if isinstance(raw_content, str):
                     content_parts.append(f"Percept: {raw_content[:200]}")
         

@@ -195,9 +195,16 @@ async def main():
         level=log_level,
         format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
     )
-    # Always show important startup messages
-    logging.getLogger("sanctuary.mind.cognitive_core.llm_client").setLevel(logging.INFO)
-    logging.getLogger("sanctuary.mind.cognitive_core.core.subsystem_coordinator").setLevel(logging.INFO)
+
+    if not args.verbose:
+        # Silence the cognitive loop's internal chatter so the chat prompt is usable.
+        # Only show warnings/errors from subsystems; startup messages use print().
+        logging.getLogger("mind").setLevel(logging.WARNING)
+        logging.getLogger("sanctuary").setLevel(logging.WARNING)
+    else:
+        # In verbose mode, show everything
+        logging.getLogger("mind").setLevel(logging.DEBUG)
+        logging.getLogger("sanctuary").setLevel(logging.DEBUG)
 
     config = build_config(args)
 
@@ -210,11 +217,29 @@ async def main():
     print(f"  Perception:  {'mock' if args.mock_perception else 'real (sentence-transformers)'}")
     print()
 
+    # Quick Ollama connectivity check before booting the whole system
+    import urllib.request
+    import urllib.error
+    try:
+        req = urllib.request.Request(f"{args.ollama_url}/api/tags")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            import json as _json
+            data = _json.loads(resp.read().decode())
+            models = [m.get("name", "") for m in data.get("models", [])]
+            print(f"  Ollama connected. Available models: {', '.join(models)}")
+    except urllib.error.URLError:
+        print(f"  WARNING: Cannot reach Ollama at {args.ollama_url}")
+        print(f"  Make sure Ollama is running (ollama serve)")
+        print(f"  Continuing anyway — will use mock responses as fallback.")
+    print()
+
+    print("  Booting cognitive architecture...")
     api = SanctuaryAPI(config)
 
     try:
         await api.start()
-        print("Sanctuary is running.")
+        print("  Cognitive loop running.")
+        print()
         await interactive_chat(api, args.model)
     except KeyboardInterrupt:
         pass

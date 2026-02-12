@@ -209,9 +209,9 @@ async def main():
 
     if not args.verbose:
         # Silence the cognitive loop's internal chatter so the chat prompt is usable.
-        # Only show warnings/errors from subsystems; startup messages use print().
-        logging.getLogger("mind").setLevel(logging.WARNING)
-        logging.getLogger("sanctuary").setLevel(logging.WARNING)
+        # Only show errors from subsystems; startup messages use print().
+        logging.getLogger("mind").setLevel(logging.ERROR)
+        logging.getLogger("sanctuary").setLevel(logging.ERROR)
     else:
         # In verbose mode, show everything
         logging.getLogger("mind").setLevel(logging.DEBUG)

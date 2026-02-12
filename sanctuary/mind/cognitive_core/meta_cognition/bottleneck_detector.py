@@ -98,6 +98,7 @@ class BottleneckDetector:
         self._baseline_dirty = True  # Track if baselines need recomputation
 
         self._current_state = BottleneckState()
+        self._last_warning_time = 0.0  # Rate-limit warning logs
 
         logger.info("BottleneckDetector initialized")
 
@@ -146,9 +147,13 @@ class BottleneckDetector:
         )
 
         if is_bottlenecked:
-            logger.warning(
-                f"Bottleneck: load={overall_load:.0%}, count={len(bottlenecks)}, action={recommendation}"
-            )
+            import time as _time
+            now = _time.time()
+            if now - self._last_warning_time >= 30.0:
+                logger.warning(
+                    f"Bottleneck: load={overall_load:.0%}, count={len(bottlenecks)}, action={recommendation}"
+                )
+                self._last_warning_time = now
 
         return self._current_state
 

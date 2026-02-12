@@ -250,9 +250,9 @@ class ExistentialReflection:
         base_observation = observations.get(theme, "I notice something about my state")
         
         # Add context from emotional state if available
-        if snapshot.emotion:
-            valence = snapshot.emotion.get("valence", 0)
-            arousal = snapshot.emotion.get("arousal", 0)
+        if snapshot.emotions:
+            valence = snapshot.emotions.get("valence", 0)
+            arousal = snapshot.emotions.get("arousal", 0)
             
             if arousal > 0.6:
                 base_observation += ". This feels particularly significant right now"
@@ -326,8 +326,8 @@ class ExistentialReflection:
         base_salience = 0.5 + (uncertainty * 0.3)
         
         # Modulate based on emotional state
-        if snapshot.emotion:
-            arousal = snapshot.emotion.get("arousal", 0)
+        if snapshot.emotions:
+            arousal = snapshot.emotions.get("arousal", 0)
             # Higher arousal makes existential thoughts more salient
             base_salience += arousal * 0.2
         

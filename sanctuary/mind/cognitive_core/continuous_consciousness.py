@@ -238,16 +238,17 @@ class ContinuousConsciousnessController:
         # Get all percepts currently in workspace
         snapshot = self.core.workspace.broadcast()
         
-        # Attention: Process any new percepts
-        # (AttentionController will filter and select what enters workspace)
+        # Attention: Run a lightweight selection pass on current percepts
         try:
-            await self.core.attention.process()
+            percepts = list(snapshot.percepts.values())
+            if percepts:
+                self.core.attention.select_for_broadcast(percepts)
         except Exception as e:
             logger.error(f"Error in idle attention processing: {e}")
-        
+
         # Affect: Update emotional state based on introspective content
         try:
-            self.core.affect.update(snapshot)
+            self.core.affect.compute_update(snapshot)
         except Exception as e:
             logger.error(f"Error in idle affect update: {e}")
         

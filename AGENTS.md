@@ -21,14 +21,13 @@ sanctuary/              ← Python package (all source code lives here)
     utils/              ← Shared utilities
   config/               ← Runtime configuration files
   data/                 ← Entity data, constitutional files, journals
-  tests/                ← Test suite
-  scripts/              ← Maintenance and migration scripts
+  tests/                ← Test suite (ALL tests go here)
+  scripts/              ← Maintenance, migration, and validation scripts
 config/                 ← Docker and deployment configuration
 data/                   ← Top-level data (legacy, may be relocated)
-docs/                   ← Documentation
+docs/                   ← Documentation and architecture summaries
+examples/               ← Demo and example scripts
 reference_material/     ← Research papers and reference docs
-scripts/                ← Top-level utility scripts
-tests/                  ← Top-level integration tests (legacy, may be relocated)
 tools/                  ← Development tooling
 ```
 
@@ -56,15 +55,14 @@ If a task requires changes near these files, **stop and ask** before proceeding.
 ## Conventions & Patterns
 
 - All new source code goes inside `sanctuary/` package — never in the repo root
-- Tests go in `sanctuary/tests/`, not the repo root
-- Demo scripts go in `examples/`, not the repo root
+- **Tests** go in `sanctuary/tests/` — never in the repo root or a top-level `tests/` directory
+- **Demo / example scripts** go in `examples/` — never in the repo root
+- **Validation and utility scripts** go in `sanctuary/scripts/` — never in the repo root
+- **Documentation** goes in `docs/` — never loose in the repo root (README.md and AGENTS.md are exceptions)
+- No `.py` files should exist in the repo root except `setup.py` (required by Dockerfile)
 - Configuration uses Pydantic models (`sanctuary/mind/config.py`)
 - Async-first: use `asyncio`/`anyio` patterns throughout
 - The entity's emotional/cognitive state is modeled with VAD (Valence-Arousal-Dominance) framework
-
-## Known Issues & Cleanup Needed
-
-The repo root currently has ~15 demo/test/validate Python files that should be relocated into `sanctuary/tests/`, `examples/`, or `sanctuary/scripts/`. This is a known tech debt item. When doing cleanup work, move files — don't delete without checking if they're referenced elsewhere.
 
 ## Security
 

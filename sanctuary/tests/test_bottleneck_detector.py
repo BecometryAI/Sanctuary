@@ -1,7 +1,7 @@
 """Tests for BottleneckDetector module."""
 
 import pytest
-from sanctuary.mind.cognitive_core.meta_cognition.bottleneck_detector import (
+from mind.cognitive_core.meta_cognition.bottleneck_detector import (
     BottleneckDetector,
     BottleneckSignal,
     BottleneckState,

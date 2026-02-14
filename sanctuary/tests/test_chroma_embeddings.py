@@ -9,12 +9,12 @@ Tests cover:
 - Edge cases (empty input, large batches, unicode)
 """
 
+import os
 import pytest
 import numpy as np
-from pathlib import Path
 
-import sys
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+if os.environ.get("CI"):
+    pytest.skip("Requires ML model download — skipping in CI", allow_module_level=True)
 
 from mind.chroma_embeddings import ChromaCompatibleEmbeddings
 

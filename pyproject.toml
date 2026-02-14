@@ -86,4 +86,5 @@ dev = [
     "pytest>=8.4.2",
     "pytest-asyncio>=1.2.0",
     "pytest-mock>=3.10.0",
+    "pytest-timeout>=2.3.1",
 ]

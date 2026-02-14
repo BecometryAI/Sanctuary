@@ -6,14 +6,9 @@ existing cognitive subsystems without requiring the full stack.
 """
 
 import asyncio
-import sys
-from pathlib import Path
 from datetime import datetime
 
-# Setup path
-sys.path.insert(0, str(Path(__file__).parent / "emergence_core" / "sanctuary" / "cognitive_core"))
-
-from broadcast import (
+from mind.cognitive_core.broadcast import (
     GlobalBroadcaster,
     WorkspaceContent,
     ContentType,

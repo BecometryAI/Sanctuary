@@ -24,7 +24,14 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Run tests
-        run: uv run pytest sanctuary/tests/ -q --tb=short -x
+      - name: Run unit tests
+        run: >
+          uv run pytest sanctuary/tests/ -q --tb=short
+          --timeout=30
+          -m "not benchmark and not integration and not property"
+          --ignore=sanctuary/tests/integration
+          --ignore=sanctuary/tests/benchmarks
+          --ignore=sanctuary/tests/property_tests
         env:
+          CI: "true"
           PYTHONPATH: ${{ github.workspace }}

@@ -14,7 +14,7 @@ import pytest
 import time
 from datetime import datetime
 
-from emergence_core.sanctuary.cognitive_core.broadcast import (
+from mind.cognitive_core.broadcast import (
     BroadcastEvent,
     WorkspaceContent,
     ContentType,

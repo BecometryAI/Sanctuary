@@ -1,7 +1,7 @@
 """
 Test for Sanctuary Metacognition System
 """
-from sanctuary.mind.metacognition import MetaCognition
+from mind.metacognition import MetaCognition
 import tempfile
 
 def test_metacognition():

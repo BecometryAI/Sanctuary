@@ -1,6 +1,12 @@
 """
 Test the voice processing functionality
 """
+import os
+import pytest
+
+if os.environ.get("CI"):
+    pytest.skip("Requires ML models — skipping in CI", allow_module_level=True)
+
 import asyncio
 import numpy as np
 from pathlib import Path

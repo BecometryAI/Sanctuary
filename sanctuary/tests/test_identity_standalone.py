@@ -4,24 +4,9 @@ Standalone test script for identity loader.
 Tests the identity loader without requiring full framework dependencies.
 """
 
-import sys
 from pathlib import Path
 
-# Add to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-# Import only what we need (avoiding full framework import)
-import importlib.util
-spec = importlib.util.spec_from_file_location(
-    "identity_loader",
-    "sanctuary/mind/cognitive_core/identity_loader.py"
-)
-identity_loader = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(identity_loader)
-
-IdentityLoader = identity_loader.IdentityLoader
-CharterDocument = identity_loader.CharterDocument
-ProtocolDocument = identity_loader.ProtocolDocument
+from mind.cognitive_core.identity_loader import IdentityLoader, CharterDocument, ProtocolDocument
 
 
 def test_identity_loader():

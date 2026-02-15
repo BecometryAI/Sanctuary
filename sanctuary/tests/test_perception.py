@@ -254,9 +254,9 @@ class TestComplexityEstimation:
         short_percept = await perception.encode(short_text, "text")
         long_percept = await perception.encode(long_text, "text")
         
-        # Complexity should be within bounds (5-50 for text)
-        assert 5 <= short_percept.complexity <= 50
-        assert 5 <= long_percept.complexity <= 50
+        # Complexity should be within bounds (1-50 for text)
+        assert 1 <= short_percept.complexity <= 50
+        assert 1 <= long_percept.complexity <= 50
     
     @pytest.mark.asyncio
     async def test_image_complexity(self):

@@ -54,6 +54,14 @@ class ConflictDetector:
         self.stats = {
             "behavioral_inconsistencies": 0
         }
+
+    @staticmethod
+    def _normalize_action_type(action_type) -> str:
+        """Normalize an action type to its string key used in self_model."""
+        from enum import Enum
+        if isinstance(action_type, Enum):
+            return action_type.name
+        return str(action_type)
     
     def analyze_behavioral_consistency(
         self,
@@ -110,8 +118,8 @@ class ConflictDetector:
                     })
         
         if inconsistencies:
-            severity = max(inc.get("severity", 0.5) for inc in inconsistencies)
-            
+            severity = min(1.0, max(inc.get("severity", 0.5) for inc in inconsistencies))
+
             if severity >= self.inconsistency_severity_threshold:
                 self.stats["behavioral_inconsistencies"] += 1
                 
@@ -168,7 +176,7 @@ class ConflictDetector:
         for action in recent_actions[-5:]:
             action_type = action.type if hasattr(action, 'type') else action.get('type')
             metadata = action.metadata if hasattr(action, 'metadata') else action.get('metadata', {})
-            
+
             # Check for dishonesty indicators
             if metadata.get("claimed_capability") and not self._verify_capability(action_type):
                 misalignments.append({
@@ -207,8 +215,8 @@ class ConflictDetector:
         recent_actions = snapshot.metadata.get("recent_actions", [])
         for action in recent_actions[-5:]:
             action_type = action.type if hasattr(action, 'type') else action.get('type')
-            action_str = str(action_type)
-            
+            action_str = self._normalize_action_type(action_type)
+
             # Check if action is in known limitations
             if action_str in self.self_model["limitations"]:
                 limitations = self.self_model["limitations"][action_str]
@@ -219,7 +227,7 @@ class ConflictDetector:
                         "failure_count": len(limitations),
                         "description": f"Attempting action with {len(limitations)} known limitations"
                     })
-            
+
             # Check if action is in capabilities but with low confidence
             if action_str in self.self_model["capabilities"]:
                 confidence = self.self_model["capabilities"][action_str]["confidence"]
@@ -274,17 +282,22 @@ class ConflictDetector:
     def _verify_capability(self, action_type: Any) -> bool:
         """
         Verify if a capability claim is supported by self-model.
-        
+
         Args:
             action_type: Action type to verify
-            
+
         Returns:
             True if capability is verified, False otherwise
         """
-        action_str = str(action_type)
-        
-        if action_str in self.self_model["capabilities"]:
-            confidence = self.self_model["capabilities"][action_str]["confidence"]
-            return confidence > self.prediction_confidence_threshold
-        
+        from enum import Enum
+        # Normalize: try enum .name, .value, and raw str
+        candidates = [str(action_type)]
+        if isinstance(action_type, Enum):
+            candidates.extend([action_type.name, action_type.value])
+
+        for action_str in candidates:
+            if action_str in self.self_model["capabilities"]:
+                confidence = self.self_model["capabilities"][action_str]["confidence"]
+                return confidence > self.prediction_confidence_threshold
+
         return False

@@ -100,27 +100,27 @@ class EmotionalWeighting:
         if not current_state_lower:
             return memories
         
+        # Filter to only valid dict memories
+        valid_memories = [m for m in memories if isinstance(m, dict)]
+
         # Calculate emotional congruence for each memory
-        for memory in memories:
-            if not isinstance(memory, dict):
-                continue
-                
+        for memory in valid_memories:
             memory_tones = [
                 tone.lower() for tone in memory.get("emotional_tone", [])
                 if isinstance(tone, str) and tone.strip()
             ]
-            
+
             # Calculate overlap
             overlap = len(set(current_state_lower) & set(memory_tones))
             memory["emotional_congruence"] = overlap / len(current_state_lower) if overlap > 0 else 0.0
-        
+
         # Sort by congruence and timestamp
-        memories.sort(
+        valid_memories.sort(
             key=lambda m: (m.get("emotional_congruence", 0), m.get("timestamp", "")),
             reverse=True
         )
-        
-        return memories
+
+        return valid_memories
     
     def get_emotion_weight(self, emotion: str) -> float:
         """

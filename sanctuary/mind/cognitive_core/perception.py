@@ -1140,8 +1140,8 @@ class PerceptionSubsystem:
         """
         if modality == "text":
             text_length = len(str(raw_input))
-            # 1 unit per ~20 characters, min 5, max 50
-            return min(max(text_length // 20, 5), 50)
+            # 1 unit per ~10 characters, min 1, max 50
+            return min(max(text_length // 10, 1), 50)
         
         elif modality == "image":
             # Images are expensive

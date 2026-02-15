@@ -35,9 +35,9 @@ async def test_slow_cycle_warning():
     
     # Add test goal
     test_goal = Goal(
-        type=GoalType.RESPOND,
+        type=GoalType.RESPOND_TO_USER,
         description="Test goal",
-        priority=5,
+        priority=0.5,
         context={"test": True}
     )
     workspace.add_goal(test_goal)

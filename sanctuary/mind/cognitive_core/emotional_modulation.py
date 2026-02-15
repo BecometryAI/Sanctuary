@@ -455,7 +455,7 @@ class EmotionalModulation:
             self.metrics.negative_valence_avoidance_bias += 1
         
         # Track dominance effects (categorize into high/low)
-        if dominance > 0.7:
+        if dominance >= 0.7:
             self.metrics.high_dominance_assertive += 1
         elif dominance < 0.3:
             self.metrics.low_dominance_cautious += 1

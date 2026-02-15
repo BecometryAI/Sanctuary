@@ -3,8 +3,12 @@ Test Suite for GPU Monitor
 
 Tests GPU memory monitoring, threshold alerts, and automatic model unloading.
 """
-
+import os
 import pytest
+
+if os.environ.get("CI"):
+    pytest.skip("Requires GPU/torch — skipping in CI", allow_module_level=True)
+
 import torch
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path

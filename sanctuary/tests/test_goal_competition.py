@@ -122,8 +122,8 @@ class TestResourcePool:
         granted = pool.allocate("goal2", request)
         
         # Should only get what's available (0.1)
-        assert granted.attention_budget == 0.1
-        assert pool.resources.attention_budget == 0.0
+        assert abs(granted.attention_budget - 0.1) < 1e-9
+        assert abs(pool.resources.attention_budget) < 1e-9
     
     def test_allocate_duplicate_goal(self):
         """Test that allocating to same goal twice raises error."""

@@ -18,15 +18,18 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import numpy as np
 import pytest
 
-from sanctuary.mind.devices import (
-    DeviceCapabilities,
-    DeviceDataPacket,
-    DeviceInfo,
-    DeviceProtocol,
-    DeviceRegistry,
-    DeviceState,
-    DeviceType,
-)
+try:
+    from mind.devices import (
+        DeviceCapabilities,
+        DeviceDataPacket,
+        DeviceInfo,
+        DeviceProtocol,
+        DeviceRegistry,
+        DeviceState,
+        DeviceType,
+    )
+except OSError:
+    pytest.skip("PortAudio library not available", allow_module_level=True)
 
 
 # ============================================================================

@@ -195,17 +195,17 @@ class TestTypeHints:
         """Test LanguageInputParser has type hints"""
         import inspect
         sig = inspect.signature(LanguageInputParser.__init__)
-        # Check that parameters have annotations
-        assert sig.parameters['llm_model_name'].annotation == str
-        assert sig.parameters['context_window_size'].annotation == int
-        assert sig.parameters['max_input_length'].annotation == int
+        # Check that parameters have annotations (may be str or 'str' with __future__ annotations)
+        assert sig.parameters['llm_model_name'].annotation in (str, 'str')
+        assert sig.parameters['context_window_size'].annotation in (int, 'int')
+        assert sig.parameters['max_input_length'].annotation in (int, 'int')
         assert sig.return_annotation is None or sig.return_annotation == 'None'
-    
+
     def test_language_output_generator_type_hints(self):
         """Test LanguageOutputGenerator has type hints"""
         import inspect
         sig = inspect.signature(LanguageOutputGenerator.__init__)
-        # Check that parameters have annotations
-        assert sig.parameters['llm_model_name'].annotation == str
-        assert sig.parameters['max_output_length'].annotation == int
+        # Check that parameters have annotations (may be str or 'str' with __future__ annotations)
+        assert sig.parameters['llm_model_name'].annotation in (str, 'str')
+        assert sig.parameters['max_output_length'].annotation in (int, 'int')
         assert sig.return_annotation is None or sig.return_annotation == 'None'

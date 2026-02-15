@@ -4,45 +4,10 @@ Standalone test for computed identity system.
 Tests identity modules without requiring full framework dependencies.
 """
 
-import sys
-from pathlib import Path
-
-# Add to path
-sys.path.insert(0, str(Path(__file__).parent))
-
-# Direct imports avoiding full package initialization
-import importlib.util
-
-def load_module(module_name, file_path):
-    """Load a module directly from file."""
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-# Load identity modules directly
-computed = load_module(
-    "computed",
-    "sanctuary/mind/cognitive_core/identity/computed.py"
-)
-behavior_logger = load_module(
-    "behavior_logger",
-    "sanctuary/mind/cognitive_core/identity/behavior_logger.py"
-)
-continuity = load_module(
-    "continuity",
-    "sanctuary/mind/cognitive_core/identity/continuity.py"
-)
-manager = load_module(
-    "manager",
-    "sanctuary/mind/cognitive_core/identity/manager.py"
-)
-
-Identity = computed.Identity
-BehaviorLogger = behavior_logger.BehaviorLogger
-IdentityContinuity = continuity.IdentityContinuity
-IdentityManager = manager.IdentityManager
+from mind.cognitive_core.identity.computed import Identity
+from mind.cognitive_core.identity.behavior_logger import BehaviorLogger
+from mind.cognitive_core.identity.continuity import IdentityContinuity
+from mind.cognitive_core.identity.manager import IdentityManager
 
 def test_identity_creation():
     """Test creating an Identity object."""

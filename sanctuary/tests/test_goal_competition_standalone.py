@@ -4,34 +4,10 @@ Standalone tests for Goal Competition System
 These tests can run without the full Sanctuary system dependencies.
 """
 
-import sys
-import os
-import importlib.util
-
-# Direct import without going through package __init__
-base_path = os.path.join(os.path.dirname(__file__), 'emergence_core', 'sanctuary', 'cognitive_core', 'goals')
-
-def import_module_from_path(module_name, file_path):
-    """Import a module directly from a file path."""
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-# Import modules directly
-resources = import_module_from_path('resources', os.path.join(base_path, 'resources.py'))
-competition = import_module_from_path('competition', os.path.join(base_path, 'competition.py'))
-interactions = import_module_from_path('interactions', os.path.join(base_path, 'interactions.py'))
-metrics = import_module_from_path('metrics', os.path.join(base_path, 'metrics.py'))
-
-CognitiveResources = resources.CognitiveResources
-ResourcePool = resources.ResourcePool
-GoalCompetition = competition.GoalCompetition
-ActiveGoal = competition.ActiveGoal
-GoalInteraction = interactions.GoalInteraction
-GoalCompetitionMetrics = metrics.GoalCompetitionMetrics
-MetricsTracker = metrics.MetricsTracker
+from mind.cognitive_core.goals.resources import CognitiveResources, ResourcePool
+from mind.cognitive_core.goals.competition import GoalCompetition, ActiveGoal
+from mind.cognitive_core.goals.interactions import GoalInteraction
+from mind.cognitive_core.goals.metrics import GoalCompetitionMetrics, MetricsTracker
 
 import pytest
 from datetime import datetime, timedelta

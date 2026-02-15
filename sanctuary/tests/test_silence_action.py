@@ -359,8 +359,9 @@ class TestSilenceTracker:
     
     def test_silence_pressure_long_duration(self):
         """Test silence pressure increases with duration."""
-        tracker = SilenceTracker({"silence_pressure_threshold": 1})  # 1 second threshold
-        
+        # Min threshold is 10s; use that and simulate enough time to build pressure
+        tracker = SilenceTracker({"silence_pressure_threshold": 10})
+
         decision_result = DecisionResult(
             decision=CommunicationDecision.SILENCE,
             reason="Test silence",
@@ -371,14 +372,15 @@ class TestSilenceTracker:
             inhibitions=[],
             urges=[]
         )
-        
+
         silence_action = tracker.record_silence(decision_result)
-        # Simulate time passing
-        silence_action.timestamp = datetime.now() - timedelta(seconds=5)
-        
+        # Simulate time passing well beyond threshold (max_duration = 10*3 = 30s)
+        silence_action.timestamp = datetime.now() - timedelta(seconds=30)
+
         pressure = tracker.get_silence_pressure()
-        
-        # After 5 seconds with 1 second threshold, pressure should be significant
+
+        # After 30 seconds with 10s threshold (max_duration=30s), duration_pressure=1.0
+        # streak_pressure = 1/5 = 0.2, total = 1.0*0.6 + 0.2*0.4 = 0.68
         assert pressure > 0.5
     
     def test_silence_pressure_streak(self):

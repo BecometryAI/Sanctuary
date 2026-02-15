@@ -34,6 +34,7 @@ class GoalType(str, Enum):
     INTROSPECT = "introspect"
     LEARN = "learn"
     CREATE = "create"
+    MAINTAIN_VALUE = "maintain_value"
     SPEAK_AUTONOMOUS = "speak_autonomous"  # Unprompted speech initiated by Sanctuary
 
 

@@ -234,39 +234,57 @@ class IdentityLoader:
     
     def _extract_section(self, text: str, section_name: str) -> List[str]:
         """
-        Extract bullet points from a markdown section.
-        
+        Extract content from a markdown section.
+
+        Extracts bullet points and plain text paragraphs.
+
         Args:
             text: Markdown text to parse
             section_name: Name of the section to extract
-            
+
         Returns:
-            List of bullet point items from the section
+            List of items from the section (bullet points or paragraphs)
         """
         lines = text.split('\n')
         in_section = False
         items = []
-        current_indent = 0
-        
+        current_paragraph = []
+
         for line in lines:
             # Check if we're entering the target section
             if f"## {section_name}" in line or f"# {section_name}" in line:
                 in_section = True
                 continue
-            
+
             if in_section:
                 # Stop at next section header
                 if line.strip().startswith('#') and section_name not in line:
                     break
-                
-                # Extract bullet points (including nested ones)
+
                 stripped = line.strip()
+
+                # Extract bullet points
                 if stripped.startswith('-') or stripped.startswith('*'):
-                    # Remove bullet marker and extra whitespace
+                    # Flush any pending paragraph
+                    if current_paragraph:
+                        items.append(' '.join(current_paragraph))
+                        current_paragraph = []
                     item = stripped.lstrip('-*').strip()
                     if item:
                         items.append(item)
-        
+                elif stripped:
+                    # Plain text line — accumulate as paragraph
+                    current_paragraph.append(stripped)
+                else:
+                    # Empty line — flush paragraph
+                    if current_paragraph:
+                        items.append(' '.join(current_paragraph))
+                        current_paragraph = []
+
+        # Flush any remaining paragraph
+        if current_paragraph:
+            items.append(' '.join(current_paragraph))
+
         return items
     
     def _extract_yaml_block(self, text: str) -> Optional[str]:

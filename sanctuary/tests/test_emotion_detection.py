@@ -1,7 +1,11 @@
 """
 Test the emotion detection functionality
 """
+import os
 import pytest
+
+if os.environ.get("CI"):
+    pytest.skip("Requires ML models — skipping in CI", allow_module_level=True)
 import numpy as np
 from pathlib import Path
 import tempfile

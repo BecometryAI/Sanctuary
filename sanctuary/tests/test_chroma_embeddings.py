@@ -59,9 +59,9 @@ class TestChromaCompatibleEmbeddings:
         
         assert isinstance(result, list)
         assert len(result) == 1
-        assert isinstance(result[0], list)
+        assert hasattr(result[0], '__len__')  # list or numpy array
         assert len(result[0]) > 0  # Should have embedding dimensions
-        assert all(isinstance(x, float) for x in result[0])
+        assert all(isinstance(x, (float, np.floating)) for x in result[0])
     
     def test_call_multiple_documents(self):
         """Test encoding multiple documents."""
@@ -83,26 +83,25 @@ class TestChromaCompatibleEmbeddings:
         assert len(set(dimensions)) == 1  # All same size
     
     def test_call_empty_input(self):
-        """Test encoding empty input list."""
+        """Test encoding empty input list raises ValueError from ChromaDB validator."""
         embeddings = ChromaCompatibleEmbeddings()
-        
-        result = embeddings([])
-        
-        assert isinstance(result, list)
-        assert len(result) == 0
+
+        # ChromaDB's EmbeddingFunction base class validates that results are non-empty
+        with pytest.raises((ValueError, TypeError)):
+            embeddings([])
     
     def test_call_invalid_input_type(self):
         """Test encoding with invalid input type."""
         embeddings = ChromaCompatibleEmbeddings()
         
         # Not a list
-        with pytest.raises(TypeError, match="Input must be a list"):
+        with pytest.raises(TypeError, match="Input must be list or tuple"):
             embeddings("not a list")
         
-        with pytest.raises(TypeError, match="Input must be a list"):
+        with pytest.raises(TypeError, match="Input must be list or tuple"):
             embeddings(123)
         
-        with pytest.raises(TypeError, match="Input must be a list"):
+        with pytest.raises(TypeError, match="Input must be list or tuple"):
             embeddings(None)
     
     def test_call_invalid_document_type(self):
@@ -145,7 +144,7 @@ class TestChromaCompatibleEmbeddings:
         result = embeddings(documents)
         
         assert len(result) == 100
-        assert all(isinstance(emb, list) for emb in result)
+        assert all(hasattr(emb, '__len__') for emb in result)
     
     def test_call_very_long_document(self):
         """Test encoding very long documents."""
@@ -179,17 +178,17 @@ class TestChromaCompatibleEmbeddings:
         
         assert isinstance(result, list)
         assert len(result) == 3
-        assert all(isinstance(emb, list) for emb in result)
+        assert all(hasattr(emb, '__len__') for emb in result)
     
     def test_embed_query_compatibility(self):
         """Test embed_query() for LangChain compatibility."""
         embeddings = ChromaCompatibleEmbeddings()
         
         result = embeddings.embed_query("test query")
-        
-        assert isinstance(result, list)
+
+        assert hasattr(result, '__len__')  # list or numpy array
         assert len(result) > 0
-        assert all(isinstance(x, float) for x in result)
+        assert all(isinstance(x, (float, np.floating)) for x in result)
     
     def test_embedding_consistency(self):
         """Test that same input produces same embedding."""

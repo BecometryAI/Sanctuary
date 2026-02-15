@@ -103,7 +103,7 @@ class GoalInteraction:
             shared = g1_subgoals & g2_subgoals
             total_unique = len(g1_subgoals | g2_subgoals)
             if total_unique > 0:
-                facilitation += (len(shared) / total_unique) * 0.5
+                facilitation += (len(shared) / total_unique) * 0.8
         
         # Explicit facilitation in metadata
         if hasattr(g1, 'metadata') and isinstance(g1.metadata, dict):
@@ -118,7 +118,7 @@ class GoalInteraction:
     
     def _compute_interference(self, g1: Any, g2: Any) -> float:
         """Calculate interference strength between goals (0.0 to 1.0)."""
-        interference = self._resource_overlap(g1, g2) * 0.4
+        interference = self._resource_overlap(g1, g2) * 0.3
         
         # Outcome conflicts create strong interference
         if self._outcomes_conflict(g1, g2):

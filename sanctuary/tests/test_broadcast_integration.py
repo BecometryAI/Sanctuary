@@ -5,8 +5,11 @@ This test demonstrates how the broadcast system integrates with
 existing cognitive subsystems without requiring the full stack.
 """
 
+import pytest
 import asyncio
 from datetime import datetime
+
+pytestmark = pytest.mark.asyncio
 
 from mind.cognitive_core.broadcast import (
     GlobalBroadcaster,

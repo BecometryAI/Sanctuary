@@ -79,7 +79,7 @@ class Percept:
 
 class PerceptionSubsystem:
     """
-    Converts raw multimodal inputs into internal vector representations.
+    Perception subsystem that converts raw multimodal inputs into internal vector representations.
 
     Uses encoding models (not generative LLMs) to transform sensory inputs
     into a common vector space for attention and workspace systems.

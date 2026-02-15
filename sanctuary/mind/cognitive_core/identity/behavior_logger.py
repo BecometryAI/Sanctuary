@@ -56,13 +56,11 @@ class BehaviorLogger:
         Args:
             action: Action object or dictionary
         """
-        if action is None:
-            logger.debug("Skipping None action")
-            return
-        
         # Convert action to dict if needed
         try:
-            if hasattr(action, 'model_dump'):
+            if action is None:
+                action_dict = {'action': 'None'}
+            elif hasattr(action, 'model_dump'):
                 action_dict = action.model_dump()
             elif hasattr(action, '__dict__'):
                 action_dict = action.__dict__.copy()

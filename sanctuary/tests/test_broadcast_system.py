@@ -416,7 +416,7 @@ class TestGlobalBroadcaster:
         
         assert metrics.total_broadcasts == 5
         assert metrics.avg_consumers_per_broadcast == 2.0
-        assert metrics.avg_actions_triggered == 1.0  # Each consumer triggers 1 action
+        assert metrics.avg_actions_triggered == 2.0  # 2 consumers x 1 action each = 2 per broadcast
         assert "consumer1" in metrics.consumer_response_rates
         assert "consumer2" in metrics.consumer_response_rates
         assert metrics.consumer_response_rates["consumer1"] == 1.0  # 100% success

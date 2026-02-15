@@ -77,12 +77,12 @@ class ChromaCompatibleEmbeddings(EmbeddingFunction):
             ValueError: If input is empty or contains invalid types
             RuntimeError: If encoding fails
         """
-        if not input:
-            logger.warning("Empty input provided to embedding function")
-            return []  # Return empty list for empty input
-        
         if not isinstance(input, (list, tuple)):
             raise TypeError(f"Input must be list or tuple, got {type(input).__name__}")
+
+        if len(input) == 0:
+            logger.warning("Empty input provided to embedding function")
+            return []  # Return empty list for empty input
         
         # Validate all inputs are strings
         for i, doc in enumerate(input):
@@ -99,8 +99,8 @@ class ChromaCompatibleEmbeddings(EmbeddingFunction):
                 batch_size=self.batch_size  # Prevent OOM on large batches
             )
             
-            # Convert to list of lists (ChromaDB expects this format)
-            return embeddings.tolist()
+            # ChromaDB Embeddings type is List[np.ndarray]
+            return list(embeddings)
             
         except Exception as e:
             logger.error(f"Failed to encode {len(input)} documents: {e}")

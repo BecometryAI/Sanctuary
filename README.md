@@ -396,7 +396,7 @@ summary = framework.generate_summary(results)
 print(f"Pass rate: {summary['pass_rate']:.2%}")
 ```
 
-See [demo_consciousness_tests_standalone.py](examples/demo_consciousness_tests_standalone.py) for a complete demonstration.
+See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone.py) for a complete demonstration.
 
 **Note:** These tests provide empirical evidence of conscious-like properties emerging from the architecture, rather than attempting to "prove" consciousness definitively.
 
@@ -701,7 +701,7 @@ python emergence_core/demo_cognitive_core.py
 python emergence_core/demo_language_output.py
 
 # Demo consciousness tests
-python examples/demo_consciousness_tests_standalone.py
+python demo_consciousness_tests_standalone.py
 ```
 
 ### Running Tests

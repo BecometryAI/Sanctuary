@@ -165,7 +165,7 @@ class TestTemporalAwareness:
         assert "temporal_context" in contextualized
         assert contextualized["temporal_context"]["is_recent"]
         assert not contextualized["temporal_context"]["is_remote"]
-        assert "hour" in contextualized["temporal_context"]["age_formatted"]
+        assert "minute" in contextualized["temporal_context"]["age_formatted"]
 
 
 class TestExistentialReflection:

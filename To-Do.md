@@ -68,10 +68,11 @@ Make the existing architecture production-grade. This is the immediate priority.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Remove *.backup.py files | P1 | Pending | Clean up backup files from codebase |
-| Consolidate duplicate implementations | P1 | Pending | Merge similar code (e.g., identity loading paths) |
-| Update README.md paths and examples | P2 | Pending | README still references `emergence_core/` in some places — should be `sanctuary/` |
-| Review and prune orphaned test files | P2 | Pending | Ensure all tests correspond to existing code |
+| Remove dead backup/deprecated files | P1 | **Done** | Removed `meta_cognition_old.py.bak` (101K) and `voice_tools.py` (deprecated) |
+| Update README.md paths and examples | P2 | **Done** | Replaced all 15+ `emergence_core/` references with `sanctuary/` paths |
+| Add root conftest.py for test collection | P2 | **Done** | 11 legacy/hardware-dep test files excluded from collection |
+| Consolidate duplicate implementations | P1 | Deferred | `memory_legacy.py` still used by consciousness.py — needs migration plan |
+| Review and prune orphaned test files | P2 | Deferred | Depends on memory consolidation above |
 
 ---
 
@@ -265,4 +266,4 @@ Everything below is done and merged. Kept for historical reference.
 
 ---
 
-**Next Action**: Phase 1.3 — Tech Debt Cleanup
+**Next Action**: Phase 2.1 — New Cognitive Capabilities

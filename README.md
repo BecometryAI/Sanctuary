@@ -518,7 +518,7 @@ LOG_LEVEL=INFO
 
 **7. Initialize ChromaDB**
 ```bash
-python -c "from emergence_core.sanctuary.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
+python -c "from sanctuary.mind.cognitive_core.core import CognitiveCore; print('Cognitive Core OK')"
 ```
 
 ### Model Configuration
@@ -549,7 +549,7 @@ The cognitive core is the main entry point for the pure GWT architecture:
 
 ```bash
 # Run the cognitive core with continuous recurrent loop
-python emergence_core/run_cognitive_core.py
+python sanctuary/run_cognitive_core.py
 
 # The cognitive core will:
 # - Initialize GlobalWorkspace and all subsystems
@@ -617,7 +617,7 @@ The Discord bot integration is planned for future development using the new cogn
 3. **ChromaDB errors:**
    ```bash
    rm -rf model_cache/chroma_db
-   uv run emergence_core/build_index.py
+   uv run sanctuary/build_index.py
    ```
 
 ### Testing
@@ -626,7 +626,7 @@ All testing commands should be run from the project root directory.
 
 **Run Test Suite:**
 ```bash
-uv run pytest emergence_core/tests/
+uv run pytest sanctuary/tests/
 ```
 
 **Test Sequential Workflow:**
@@ -643,13 +643,13 @@ uv run python scripts/validate_journal.py
 **Test Cognitive Core:**
 ```bash
 # Run cognitive core tests
-uv run pytest emergence_core/tests/test_cognitive_core.py
+uv run pytest sanctuary/tests/test_cognitive_core.py
 
 # Run attention controller tests
-uv run pytest emergence_core/tests/test_attention.py
+uv run pytest sanctuary/tests/test_attention.py
 
 # Run interface tests
-uv run pytest emergence_core/tests/test_interfaces.py
+uv run pytest sanctuary/tests/test_interfaces.py
 ```
 
 
@@ -661,7 +661,7 @@ To verify the cognitive core is functional, run the minimal CLI:
 
 ```bash
 # Run a single cognitive cycle and exit
-python emergence_core/run_cognitive_core_minimal.py
+python sanctuary/run_cognitive_core_minimal.py
 ```
 
 **Expected output:**
@@ -680,7 +680,7 @@ For continuous operation, use the existing entry point:
 
 ```bash
 # Run the cognitive core
-python emergence_core/run_cognitive_core.py
+python sanctuary/run_cognitive_core.py
 ```
 
 This starts the continuous cognitive loop at ~10 Hz with:
@@ -695,10 +695,10 @@ Run demos to see specific subsystems in action:
 
 ```bash
 # Demo the complete cognitive core
-python emergence_core/demo_cognitive_core.py
+python sanctuary/demo_cognitive_core.py
 
 # Demo language output generation
-python emergence_core/demo_language_output.py
+python sanctuary/demo_language_output.py
 
 # Demo consciousness tests
 python demo_consciousness_tests_standalone.py
@@ -708,18 +708,18 @@ python demo_consciousness_tests_standalone.py
 
 ```bash
 # Run all cognitive core tests
-pytest emergence_core/tests/test_cognitive_core.py
+pytest sanctuary/tests/test_cognitive_core.py
 
 # Run specific subsystem tests
-pytest emergence_core/tests/test_attention.py
-pytest emergence_core/tests/test_perception.py
-pytest emergence_core/tests/test_language_input.py
+pytest sanctuary/tests/test_attention.py
+pytest sanctuary/tests/test_perception.py
+pytest sanctuary/tests/test_language_input.py
 
 # Run consciousness tests
-pytest emergence_core/tests/test_consciousness_tests.py
+pytest sanctuary/tests/test_consciousness_tests.py
 
 # Run checkpoint tests
-pytest emergence_core/tests/test_checkpoint.py
+pytest sanctuary/tests/test_checkpoint.py
 ```
 
 ### Workspace State Checkpointing
@@ -781,7 +781,7 @@ help
 #### Programmatic Usage
 
 ```python
-from emergence_core.sanctuary.cognitive_core import CognitiveCore
+from sanctuary.mind.cognitive_core.core import CognitiveCore
 
 # Create cognitive core with checkpointing
 core = CognitiveCore(config={"checkpointing": {"enabled": True}})
@@ -935,7 +935,7 @@ The new cognitive core architecture offers several areas for contribution:
 
 Create a new subsystem by inheriting from the base subsystem pattern:
 ```python
-# In emergence_core/sanctuary/cognitive_core/
+# In sanctuary/mind/cognitive_core/
 class MySubsystem:
     def process(self, workspace_state: WorkspaceSnapshot) -> Any:
         """Process workspace state and return results."""
@@ -965,7 +965,7 @@ Extend `PerceptionSubsystem` to handle new input types:
 
 **4. Enhancing Language Interfaces**
 
-Improve language I/O in `emergence_core/sanctuary/interfaces/`:
+Improve language I/O in `sanctuary/mind/cognitive_core/`:
 - Better prompt engineering for input parsing
 - Enhanced output generation strategies
 - Multi-lingual support
@@ -989,7 +989,7 @@ The system uses a **token wallet** for cognitive resource management with a dail
 - Configuration can be adjusted programmatically
 
 ```python
-from emergence_core.sanctuary.economy.wallet import LMTWallet
+from sanctuary.mind.economy.wallet import LMTWallet
 from pathlib import Path
 
 wallet = LMTWallet(ledger_dir=Path("data/economy"))

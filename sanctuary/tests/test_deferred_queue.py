@@ -498,7 +498,7 @@ class TestDeferredQueue:
         
     def test_priority_ordering(self):
         """Test that priority ordering works correctly."""
-        queue = DeferredQueue()
+        queue = DeferredQueue({"max_defer_attempts": 1})
         
         # Add items with different priorities and intensities
         urge_low = CommunicationUrge(

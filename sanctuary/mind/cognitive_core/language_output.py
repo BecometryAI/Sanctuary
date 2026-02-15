@@ -456,13 +456,13 @@ Response:"""
             style_hints.append("Acknowledge difficulty or concern")
         
         # Arousal (energy/activation)
-        if arousal > 0.7:
+        if arousal >= 0.7:
             style_hints.append("Be energetic and engaged; shorter, punchier sentences")
         elif arousal < 0.3:
             style_hints.append("Be calm and measured; thoughtful pacing")
-        
+
         # Dominance (control/agency)
-        if dominance > 0.7:
+        if dominance >= 0.7:
             style_hints.append("Be confident and assertive")
         elif dominance < 0.3:
             style_hints.append("Express uncertainty or humility where appropriate")

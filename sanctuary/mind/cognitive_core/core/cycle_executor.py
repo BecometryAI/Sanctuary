@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .subsystem_coordinator import SubsystemCoordinator
     from .state_manager import StateManager
     from .action_executor import ActionExecutor
+    from .timing import TimingManager
 
 logger = logging.getLogger(__name__)
 
@@ -38,18 +39,20 @@ class CycleExecutor:
     9. MEMORY CONSOLIDATION: Store significant states to long-term memory
     """
     
-    def __init__(self, subsystems: 'SubsystemCoordinator', state: 'StateManager', action_executor: 'ActionExecutor'):
+    def __init__(self, subsystems: 'SubsystemCoordinator', state: 'StateManager', action_executor: 'ActionExecutor', timing: 'TimingManager' = None):
         """
         Initialize cycle executor.
-        
+
         Args:
             subsystems: SubsystemCoordinator instance
             state: StateManager instance
             action_executor: ActionExecutor instance for handling actions
+            timing: Optional TimingManager instance for tracking cycle metrics
         """
         self.subsystems = subsystems
         self.state = state
         self.action_executor = action_executor
+        self.timing = timing
 
         # IWMT prediction tracking
         self._current_predictions = []
@@ -297,7 +300,13 @@ class CycleExecutor:
             except Exception as e:
                 logger.error(f"Identity update failed: {e}", exc_info=True)
                 subsystem_timings['identity_update'] = 0.0
-        
+
+        # Update timing metrics so total_cycles is tracked even when
+        # execute_cycle() is called directly (not through CognitiveLoop)
+        if self.timing is not None:
+            cycle_time = sum(subsystem_timings.values()) / 1000.0  # Convert ms back to seconds
+            self.timing.update_metrics(cycle_time, subsystem_timings)
+
         return subsystem_timings
     
     async def _retrieve_memories(self) -> list:

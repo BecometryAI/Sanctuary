@@ -180,7 +180,8 @@ class FallbackInputParser:
         confidence = 0.6  # Lower confidence for rule-based
         
         # Check high-priority specific patterns first
-        for priority_intent in ["memory_request", "introspection_request", "greeting"]:
+        # "request" before "question" so "can you..." matches REQUEST, not QUESTION
+        for priority_intent in ["memory_request", "introspection_request", "greeting", "request"]:
             if priority_intent in self.intent_patterns:
                 for pattern in self.intent_patterns[priority_intent]:
                     if re.search(pattern, text_lower):
@@ -193,7 +194,7 @@ class FallbackInputParser:
         # Check remaining patterns if no match yet
         if intent_type == "statement":
             for intent, patterns in self.intent_patterns.items():
-                if intent not in ["memory_request", "introspection_request", "greeting"]:
+                if intent not in ["memory_request", "introspection_request", "greeting", "request"]:
                     for pattern in patterns:
                         if re.search(pattern, text_lower):
                             intent_type = intent
@@ -202,10 +203,15 @@ class FallbackInputParser:
         
         # Extract entities
         entities = self._extract_entities(text)
-        
+
         # Generate goals
         goals = self._generate_goals(intent_type, text)
-        
+
+        # Build context updates from extracted entities
+        context_updates = {}
+        if entities.get("names"):
+            context_updates["user_name"] = entities["names"][0]
+
         return {
             "intent": {
                 "type": intent_type,
@@ -214,7 +220,7 @@ class FallbackInputParser:
             },
             "goals": goals,
             "entities": entities,
-            "context_updates": {},
+            "context_updates": context_updates,
             "confidence": confidence
         }
     
@@ -228,6 +234,19 @@ class FallbackInputParser:
             "other": {}
         }
         
+        # Extract names (capitalized words that aren't common words)
+        common_words = {
+            "hi", "hello", "hey", "i", "you", "the", "a", "an", "my", "me", "is", "am",
+            "what", "when", "where", "who", "why", "how", "can", "could", "would", "should",
+            "please", "tell", "show", "help", "give", "make", "do", "does", "did"
+        }
+        name_pattern = r'\b([A-Z][a-z]+)\b'
+        names = re.findall(name_pattern, text)
+        if names:
+            filtered_names = [n for n in names if n.lower() not in common_words and len(n) > 2]
+            if filtered_names:
+                entities["names"] = filtered_names
+
         # Extract temporal keywords
         temporal_keywords = ["today", "yesterday", "tomorrow", "earlier", "later", "now", "recently"]
         for kw in temporal_keywords:
@@ -239,6 +258,7 @@ class FallbackInputParser:
         topics = re.findall(topic_pattern, text.lower())
         if topics:
             entities["topics"] = [topics[0].strip()]
+            entities["topic"] = topics[0].strip()
         
         # Extract emotional keywords
         positive_words = ["happy", "excited", "joyful", "pleased", "grateful", "love"]

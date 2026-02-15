@@ -7,13 +7,11 @@ import asyncio
 import time
 from datetime import datetime
 
-# Direct imports to avoid circular dependencies
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent / "emergence_core" / "sanctuary" / "cognitive_core"))
+import pytest
 
-# Now we can import broadcast
-from broadcast import (
+pytestmark = pytest.mark.asyncio
+
+from mind.cognitive_core.broadcast import (
     BroadcastEvent,
     WorkspaceContent,
     ContentType,

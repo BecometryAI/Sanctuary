@@ -88,19 +88,17 @@ class CognitiveLoop:
         Execute one complete cognitive cycle with timing.
         """
         cycle_start = time.time()
-        
+
         try:
             # Execute the 9-step cognitive cycle
+            # Note: execute_cycle() updates timing.metrics internally
             subsystem_timings = await self.cycle_executor.execute_cycle()
-            
+
             # Calculate cycle time
             cycle_time = time.time() - cycle_start
-            
+
             # Check timing thresholds and log warnings if needed
-            self.timing.check_cycle_timing(cycle_time, self.timing.metrics['total_cycles'] + 1)
-            
-            # Update metrics
-            self.timing.update_metrics(cycle_time, subsystem_timings)
+            self.timing.check_cycle_timing(cycle_time, self.timing.metrics['total_cycles'])
             
             # Periodic accuracy snapshots (Phase 4.3)
             if self.timing.metrics['total_cycles'] % 100 == 0:

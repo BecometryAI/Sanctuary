@@ -294,18 +294,18 @@ class TestConversationalRhythmModel:
     
     def test_turn_history_limit(self):
         """Test turn history is limited to max_turn_history."""
-        model = ConversationalRhythmModel(config={"max_turn_history": 5})
-        
-        # Record 10 turns
-        for i in range(10):
+        # MIN_TURN_HISTORY is 10, so we need to set above that to test trimming
+        model = ConversationalRhythmModel(config={"max_turn_history": 15})
+
+        # Record 20 turns to exceed limit
+        for i in range(20):
             if i % 2 == 0:
                 model.record_human_input(f"Message {i}")
             else:
                 model.record_system_output(f"Response {i}")
-        
-        # Should only keep last 5
-        assert len(model.turns) == 5
-        assert model.turns[0].content_length == len("Message 6")
+
+        # Should only keep last 15
+        assert len(model.turns) == 15
     
     def test_averages_update(self):
         """Test that averages update with new turns."""

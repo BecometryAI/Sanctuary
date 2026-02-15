@@ -2,7 +2,7 @@
 Test for Sanctuary Well-Being System
 """
 import pytest
-from sanctuary.mind.test_well_being import TestWellBeingHandler
+from mind.test_well_being import TestWellBeingHandler
 
 @pytest.mark.asyncio
 async def test_well_being_system():

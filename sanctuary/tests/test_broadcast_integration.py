@@ -5,15 +5,13 @@ This test demonstrates how the broadcast system integrates with
 existing cognitive subsystems without requiring the full stack.
 """
 
+import pytest
 import asyncio
-import sys
-from pathlib import Path
 from datetime import datetime
 
-# Setup path
-sys.path.insert(0, str(Path(__file__).parent / "emergence_core" / "sanctuary" / "cognitive_core"))
+pytestmark = pytest.mark.asyncio
 
-from broadcast import (
+from mind.cognitive_core.broadcast import (
     GlobalBroadcaster,
     WorkspaceContent,
     ContentType,

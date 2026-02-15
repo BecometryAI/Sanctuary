@@ -1,9 +1,12 @@
-import shutil
-import os
-import pytest
 """
 Test for Sanctuary Persistent Memory System
 """
+import shutil
+import os
+import pytest
+
+if os.environ.get("CI"):
+    pytest.skip("Requires chromadb with models — skipping in CI", allow_module_level=True)
 
 # Import from memory_legacy.py (renamed from memory.py)
 from .memory_legacy import MemoryManager

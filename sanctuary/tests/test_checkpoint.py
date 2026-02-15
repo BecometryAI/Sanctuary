@@ -579,7 +579,7 @@ class TestCognitiveCoreIntegration:
             assert success is False
             
             # Simulate running state within async context
-            core.running = True
+            core.state.running = True
             
             # Enable auto-checkpoint
             success = core.enable_auto_checkpoint(interval=10.0)
@@ -666,7 +666,7 @@ class TestErrorHandling:
             path = core.save_state()
             
             # Simulate running state
-            core.running = True
+            core.state.running = True
             
             # Should fail to restore
             success = core.restore_state(path)

@@ -133,20 +133,20 @@ class DeferredQueue:
         """Get highest priority ready item that hasn't exceeded max attempts."""
         # Filter ready items with attempts remaining
         ready_items = [d for d in self.queue if d.is_ready() and d.attempts < self.max_defer_attempts]
-        
+
         if not ready_items:
             return None
-        
+
         # Get item with highest weighted priority
         best = max(ready_items, key=lambda d: d.priority * getattr(d.urge, 'get_current_intensity', lambda: 0.5)())
         best.increment_attempts()
-        
+
         # Remove and track if max attempts reached
         if best.attempts >= self.max_defer_attempts:
             self.queue.remove(best)
             self._add_to_history(self.released_history, best)
             logger.debug(f"Released after {best.attempts} attempts: {best.reason.value}")
-        
+
         return best
     
     def cleanup_expired(self) -> List[DeferredCommunication]:

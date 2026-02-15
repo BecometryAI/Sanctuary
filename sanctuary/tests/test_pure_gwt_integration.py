@@ -43,10 +43,26 @@ class TestPureGWTIntegration:
         temp_base = tempfile.mkdtemp()
         data_dir = Path(temp_base) / "data"
         chroma_dir = Path(temp_base) / "chroma"
+        identity_dir = Path(temp_base) / "identity"
         data_dir.mkdir(parents=True, exist_ok=True)
         chroma_dir.mkdir(parents=True, exist_ok=True)
+        identity_dir.mkdir(parents=True, exist_ok=True)
 
-        yield {"base_dir": str(data_dir), "chroma_dir": str(chroma_dir)}
+        # Create identity files so IdentityLoader doesn't hit fallback path
+        (identity_dir / "charter.md").write_text(
+            "# Core Values\n- Truthfulness\n- Helpfulness\n- Harmlessness\n\n"
+            "# Purpose Statement\nTo think, learn, and interact authentically.\n\n"
+            "# Behavioral Guidelines\n- Be honest\n- Be helpful\n- Be thoughtful\n"
+        )
+        (identity_dir / "protocols.md").write_text(
+            "```yaml\n- name: Uncertainty Acknowledgment\n"
+            "  description: When uncertain, acknowledge it\n"
+            "  trigger_conditions:\n    - Low confidence in response\n"
+            "  actions:\n    - Express uncertainty explicitly\n"
+            "  priority: 0.8\n```\n"
+        )
+
+        yield {"base_dir": str(data_dir), "chroma_dir": str(chroma_dir), "identity_dir": str(identity_dir)}
 
         # Cleanup with retry for Windows file locking
         gc.collect()
@@ -65,6 +81,8 @@ class TestPureGWTIntegration:
         """Create a cognitive core instance for testing."""
         workspace = GlobalWorkspace()
         config = {
+            "identity_dir": temp_dirs["identity_dir"],
+            "perception": {"mock_mode": True, "mock_embedding_dim": 384},
             "memory": {
                 "memory_config": {
                     "base_dir": temp_dirs["base_dir"],
@@ -99,6 +117,8 @@ class TestPureGWTIntegration:
         # Initialize core with mock LLMs using temp directories
         workspace = GlobalWorkspace()
         config = {
+            "identity_dir": temp_dirs["identity_dir"],
+            "perception": {"mock_mode": True, "mock_embedding_dim": 384},
             "memory": {
                 "memory_config": {
                     "base_dir": temp_dirs["base_dir"],
@@ -157,8 +177,8 @@ class TestPureGWTIntegration:
         # Start the core
         await cognitive_core.start()
         
-        # Let it run for 1 second (should complete ~10 cycles)
-        await asyncio.sleep(1.0)
+        # Let it run briefly (should complete a few cycles at ~10 Hz)
+        await asyncio.sleep(0.3)
         
         # Verify it's still running
         assert cognitive_core.running
@@ -205,6 +225,8 @@ class TestPureGWTIntegration:
 
         # CognitiveCore itself should NOT contain LLM clients
         config = {
+            "identity_dir": temp_dirs["identity_dir"],
+            "perception": {"mock_mode": True, "mock_embedding_dim": 384},
             "memory": {
                 "memory_config": {
                     "base_dir": temp_dirs["base_dir"],

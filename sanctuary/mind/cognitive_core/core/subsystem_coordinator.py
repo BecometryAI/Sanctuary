@@ -125,8 +125,13 @@ class SubsystemCoordinator:
             emotional_attention=self.affect.emotional_attention_system
         )
         
-        # Initialize perception subsystem
-        self.perception = PerceptionSubsystem(config=config.get("perception", {}))
+        # Initialize perception subsystem (mock mode avoids heavy torch/sentence-transformers)
+        perception_config = config.get("perception", {})
+        if perception_config.get("mock_mode", False):
+            from ..mock_perception import MockPerceptionSubsystem
+            self.perception = MockPerceptionSubsystem(config=perception_config)
+        else:
+            self.perception = PerceptionSubsystem(config=perception_config)
         
         # Initialize action subsystem with behavior logger
         self.action = ActionSubsystem(

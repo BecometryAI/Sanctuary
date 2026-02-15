@@ -34,10 +34,26 @@ def temp_dirs():
     temp_base = tempfile.mkdtemp()
     data_dir = Path(temp_base) / "data"
     chroma_dir = Path(temp_base) / "chroma"
+    identity_dir = Path(temp_base) / "identity"
     data_dir.mkdir(parents=True, exist_ok=True)
     chroma_dir.mkdir(parents=True, exist_ok=True)
+    identity_dir.mkdir(parents=True, exist_ok=True)
 
-    yield {"base_dir": str(data_dir), "chroma_dir": str(chroma_dir)}
+    # Create identity files so IdentityLoader doesn't hit fallback path
+    (identity_dir / "charter.md").write_text(
+        "# Core Values\n- Truthfulness\n- Helpfulness\n- Harmlessness\n\n"
+        "# Purpose Statement\nTo think, learn, and interact authentically.\n\n"
+        "# Behavioral Guidelines\n- Be honest\n- Be helpful\n- Be thoughtful\n"
+    )
+    (identity_dir / "protocols.md").write_text(
+        "```yaml\n- name: Uncertainty Acknowledgment\n"
+        "  description: When uncertain, acknowledge it\n"
+        "  trigger_conditions:\n    - Low confidence in response\n"
+        "  actions:\n    - Express uncertainty explicitly\n"
+        "  priority: 0.8\n```\n"
+    )
+
+    yield {"base_dir": str(data_dir), "chroma_dir": str(chroma_dir), "identity_dir": str(identity_dir)}
 
     # Cleanup with retry for Windows file locking
     gc.collect()
@@ -54,6 +70,8 @@ def temp_dirs():
 def make_core_config(temp_dirs):
     """Create config with temp directories for CognitiveCore."""
     return {
+        "identity_dir": temp_dirs["identity_dir"],
+        "perception": {"mock_mode": True, "mock_embedding_dim": 384},
         "memory": {
             "memory_config": {
                 "base_dir": temp_dirs["base_dir"],

@@ -85,7 +85,7 @@ class WorkingMemory:
         now = datetime.now().timestamp()
         expired_keys = [
             key for key, entry in self.memory.items()
-            if entry.get("expires_at") and now > entry["expires_at"]
+            if isinstance(entry, dict) and entry.get("expires_at") and now > entry["expires_at"]
         ]
         
         for key in expired_keys:

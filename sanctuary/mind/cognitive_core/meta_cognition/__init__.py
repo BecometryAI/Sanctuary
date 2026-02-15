@@ -166,11 +166,21 @@ class SelfMonitor:
         self.monitoring_frequency = self.config.get("monitoring_frequency", 10)
         self.cycle_count = 0
         self.self_model_version = 0
-        
+
+        # Config-driven thresholds (exposed for test access)
+        self.self_model_update_frequency = self.config.get("self_model_update_frequency", 10)
+        self.prediction_confidence_threshold = self.config.get("prediction_confidence_threshold", 0.6)
+        self.inconsistency_severity_threshold = self.config.get("inconsistency_severity_threshold", 0.5)
+        self._update_call_count = 0
+
         # Feature flags
         self.enable_existential_questions = self.config.get("enable_existential_questions", True)
         self.enable_capability_tracking = self.config.get("enable_capability_tracking", True)
         self.enable_value_alignment_tracking = self.config.get("enable_value_alignment_tracking", True)
+
+        # Identity text (exposed for backward compatibility)
+        self.charter_text = charter_text
+        self.protocols_text = protocols_text
 
         # Daily snapshots tracking
         self.daily_snapshots: Dict[str, Any] = {}
@@ -207,8 +217,43 @@ class SelfMonitor:
         """Sync stats between components."""
         # Monitor stats
         self.monitor.stats = self.stats
-        # Other components maintain their own partial stats
-        # that get merged into self.stats
+        # Merge regulator stats into shared stats
+        for key, value in self.regulator.stats.items():
+            if key in self.stats:
+                self.stats[key] = value
+        # Merge conflict detector stats
+        for key, value in self.conflict_detector.stats.items():
+            if key in self.stats:
+                self.stats[key] = value
+
+    # Backward-compatible delegation to Monitor private methods
+    def _check_value_alignment(self, snapshot: WorkspaceSnapshot):
+        """Delegate to Monitor component."""
+        return self.monitor._check_value_alignment(snapshot)
+
+    def _assess_performance(self, snapshot: WorkspaceSnapshot):
+        """Delegate to Monitor component."""
+        return self.monitor._assess_performance(snapshot)
+
+    def _detect_uncertainty(self, snapshot: WorkspaceSnapshot):
+        """Delegate to Monitor component."""
+        return self.monitor._detect_uncertainty(snapshot)
+
+    def _detect_goal_conflicts(self, goals):
+        """Delegate to Monitor component."""
+        return self.monitor._detect_goal_conflicts(goals)
+
+    def _observe_emotions(self, snapshot: WorkspaceSnapshot):
+        """Delegate to Monitor component."""
+        return self.monitor._observe_emotions(snapshot)
+
+    def _detect_patterns(self, snapshot: WorkspaceSnapshot):
+        """Delegate to Monitor component."""
+        return self.monitor._detect_patterns(snapshot)
+
+    def _verify_capability(self, action_type) -> bool:
+        """Delegate to ConflictDetector component."""
+        return self.conflict_detector._verify_capability(action_type)
     
     def observe(self, snapshot: WorkspaceSnapshot) -> List[Percept]:
         """
@@ -235,7 +280,9 @@ class SelfMonitor:
     # Prediction and confidence methods
     def predict_behavior(self, hypothetical_state: WorkspaceSnapshot) -> Dict[str, Any]:
         """Predict what I would do in a given state."""
-        return self.confidence_estimator.predict_behavior(hypothetical_state)
+        result = self.confidence_estimator.predict_behavior(hypothetical_state)
+        self.stats["predictions_made"] += 1
+        return result
     
     def record_prediction(
         self,
@@ -280,7 +327,22 @@ class SelfMonitor:
     # Regulation methods
     def update_self_model(self, snapshot: WorkspaceSnapshot, actual_outcome: Dict) -> None:
         """Update internal self-model based on observed behavior."""
-        self.regulator.update_self_model(snapshot, actual_outcome)
+        self._update_call_count += 1
+
+        # Always log the behavior
+        self.behavioral_log.append({
+            "snapshot": {
+                "emotions": snapshot.emotions if isinstance(snapshot.emotions, dict)
+                    else {"valence": 0.0, "arousal": 0.0, "dominance": 0.0},
+                "goal_count": len(snapshot.goals),
+            },
+            "outcome": actual_outcome,
+        })
+
+        # Respect update frequency gating for capability/limitation updates
+        if self._update_call_count % self.self_model_update_frequency == 0:
+            self.regulator.update_self_model(snapshot, actual_outcome)
+
         self._sync_stats()
     
     def refine_self_model_from_errors(self, prediction_records: List[PredictionRecord]) -> None:
@@ -315,21 +377,25 @@ class SelfMonitor:
     # Conflict detection methods
     def analyze_behavioral_consistency(self, snapshot: WorkspaceSnapshot) -> Optional[Percept]:
         """Check if current behavior aligns with past patterns and stated values."""
-        return self.conflict_detector.analyze_behavioral_consistency(
+        result = self.conflict_detector.analyze_behavioral_consistency(
             snapshot,
             self.monitor._compute_embedding
         )
-    
+        self._sync_stats()
+        return result
+
     def detect_value_action_misalignment(self, snapshot: WorkspaceSnapshot) -> List[Dict]:
         """Identify when actions don't match stated values."""
         return self.conflict_detector.detect_value_action_misalignment(snapshot)
-    
+
     def assess_capability_claims(self, snapshot: WorkspaceSnapshot) -> Optional[Percept]:
         """Compare claimed capabilities with actual performance."""
-        return self.conflict_detector.assess_capability_claims(
+        result = self.conflict_detector.assess_capability_claims(
             snapshot,
             self.monitor._compute_embedding
         )
+        self._sync_stats()
+        return result
     
     # Metrics and reporting methods
     def get_meta_cognitive_health(self) -> Dict[str, Any]:

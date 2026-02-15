@@ -7,6 +7,10 @@ import asyncio
 import time
 from datetime import datetime
 
+import pytest
+
+pytestmark = pytest.mark.asyncio
+
 from mind.cognitive_core.broadcast import (
     BroadcastEvent,
     WorkspaceContent,

@@ -42,11 +42,11 @@ Make the existing architecture production-grade. This is the immediate priority.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Add try/catch boundaries in CycleExecutor | P0 | Pending | Each cognitive step (perception, attention, affect, action, etc.) must be wrapped so a failure in one doesn't crash the loop |
-| Implement SubsystemHealth tracking | P0 | Pending | Track which subsystems are healthy/degraded/failed per cycle |
-| Add graceful degradation logic | P0 | Pending | If a subsystem fails N times consecutively, disable it temporarily and log a warning rather than retrying forever |
-| Add subsystem restart capability | P1 | Pending | Allow failed subsystems to be re-initialized without restarting the entire cognitive loop |
-| Add health endpoint / status reporting | P1 | Pending | Expose subsystem health for monitoring (internal API or log-based) |
+| Add try/catch boundaries in CycleExecutor | P0 | **Done** | All 13 cognitive steps wrapped; `_should_run()` / `_record_ok()` / `_record_err()` pattern |
+| Implement SubsystemHealth tracking | P0 | **Done** | 4-state machine (HEALTHY → DEGRADED → FAILED → RECOVERING) with per-subsystem tracking |
+| Add graceful degradation logic | P0 | **Done** | Circuit breaker with configurable thresholds (2→5), exponential backoff capped at 300s |
+| Add subsystem restart capability | P1 | **Done** | `register_reinitializer()` on supervisor; 12 reinit methods on SubsystemCoordinator; auto-called on FAILED→RECOVERING; failed reinit doubles backoff |
+| Add health endpoint / status reporting | P1 | **Done** | `get_health_report()` / `get_subsystem_health()` API + CLI visualization in minimal core runner |
 
 ### 1.2 Test Suite Stabilization
 
@@ -259,4 +259,4 @@ Everything below is done and merged. Kept for historical reference.
 
 ---
 
-**Next Action**: Phase 1.1 — Fault Isolation / Supervisor Pattern in CycleExecutor
+**Next Action**: Phase 1.2 — Test Suite Stabilization

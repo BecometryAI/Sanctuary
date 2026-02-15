@@ -19,7 +19,7 @@ import time
 import logging
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +125,7 @@ class SubsystemSupervisor:
 
         self._health: Dict[str, SubsystemHealthState] = {}
         self._recovery_backoff: Dict[str, float] = {}
+        self._reinitializers: Dict[str, Callable[[], None]] = {}
 
         logger.info(
             f"SubsystemSupervisor initialized: "
@@ -142,13 +143,32 @@ class SubsystemSupervisor:
             )
         return self._health[name]
 
+    def register_reinitializer(self, name: str, callback: Callable[[], None]) -> None:
+        """
+        Register a reinitializer callback for a subsystem.
+
+        When a subsystem transitions from FAILED to RECOVERING, its
+        reinitializer (if registered) is called first to reset internal
+        state before the recovery attempt.  If the reinitializer raises,
+        the subsystem stays FAILED and its backoff is doubled.
+
+        Args:
+            name: Subsystem identifier (must match the name used in
+                  record_success / record_failure / should_execute).
+            callback: Zero-argument callable that reinitializes the
+                      subsystem.  May raise on failure.
+        """
+        self._reinitializers[name] = callback
+        logger.debug(f"Registered reinitializer for subsystem '{name}'")
+
     def should_execute(self, name: str) -> bool:
         """
         Check whether a subsystem should be attempted this cycle.
 
         Returns True for HEALTHY, DEGRADED, and RECOVERING subsystems.
         Returns False for FAILED subsystems unless the recovery timeout
-        has elapsed, in which case it transitions to RECOVERING.
+        has elapsed, in which case the reinitializer (if any) is invoked
+        and the subsystem transitions to RECOVERING.
 
         Critical subsystems always return True.
         """
@@ -162,6 +182,23 @@ class SubsystemSupervisor:
 
         if health.status == SubsystemStatus.FAILED:
             if time.time() >= health.disabled_until:
+                # Attempt reinit before entering recovery
+                if name in self._reinitializers:
+                    try:
+                        self._reinitializers[name]()
+                        logger.info(f"Subsystem '{name}' reinitialized successfully")
+                    except Exception as e:
+                        # Reinit failed — double backoff and stay FAILED
+                        current_backoff = self._recovery_backoff.get(name, self.recovery_timeout)
+                        new_backoff = min(current_backoff * 2, self.max_recovery_timeout)
+                        self._recovery_backoff[name] = new_backoff
+                        health.disabled_until = time.time() + new_backoff
+                        logger.warning(
+                            f"Subsystem '{name}' reinit failed: {e} — "
+                            f"disabled for {new_backoff:.0f}s"
+                        )
+                        return False
+
                 health.status = SubsystemStatus.RECOVERING
                 logger.info(f"Subsystem '{name}' entering recovery test")
                 return True

@@ -535,3 +535,172 @@ class TestIsolation:
         assert supervisor.should_execute("perception") is True
         supervisor.record_success("perception")
         assert supervisor.get_health("perception").status == SubsystemStatus.HEALTHY
+
+
+# ============================================================
+# Reinitializer callbacks
+# ============================================================
+
+class TestReinitializer:
+    """Tests for automatic subsystem reinitialization on recovery."""
+
+    def test_register_reinitializer(self):
+        """Registering a reinitializer should store the callback."""
+        supervisor = SubsystemSupervisor()
+        called = []
+        supervisor.register_reinitializer("perception", lambda: called.append(True))
+        assert "perception" in supervisor._reinitializers
+
+    def test_reinitializer_called_on_recovery(self):
+        """When a FAILED subsystem's timeout elapses, its reinitializer is called."""
+        supervisor = SubsystemSupervisor({
+            "failure_threshold": 1,
+            "degraded_threshold": 1,
+            "recovery_timeout": 0.01,
+        })
+        called = []
+        supervisor.register_reinitializer("x", lambda: called.append(True))
+
+        # Drive to FAILED
+        supervisor.record_failure("x", RuntimeError("boom"))
+        assert supervisor.get_health("x").status == SubsystemStatus.FAILED
+
+        # Wait for recovery timeout, then check
+        time.sleep(0.02)
+        result = supervisor.should_execute("x")
+        assert result is True
+        assert len(called) == 1
+        assert supervisor.get_health("x").status == SubsystemStatus.RECOVERING
+
+    def test_reinitializer_not_called_for_healthy(self):
+        """Reinitializer should NOT be called for healthy subsystems."""
+        supervisor = SubsystemSupervisor()
+        called = []
+        supervisor.register_reinitializer("x", lambda: called.append(True))
+
+        supervisor.record_success("x")
+        supervisor.should_execute("x")
+        assert len(called) == 0
+
+    def test_reinitializer_failure_keeps_subsystem_failed(self):
+        """If reinit raises, subsystem stays FAILED with doubled backoff."""
+        supervisor = SubsystemSupervisor({
+            "failure_threshold": 1,
+            "degraded_threshold": 1,
+            "recovery_timeout": 0.01,
+        })
+
+        def bad_reinit():
+            raise RuntimeError("reinit exploded")
+
+        supervisor.register_reinitializer("x", bad_reinit)
+
+        # Drive to FAILED
+        supervisor.record_failure("x", RuntimeError("original"))
+        assert supervisor.get_health("x").status == SubsystemStatus.FAILED
+
+        # Wait for recovery timeout
+        time.sleep(0.02)
+        result = supervisor.should_execute("x")
+        # Reinit failed — should_execute returns False, stays FAILED
+        assert result is False
+        assert supervisor.get_health("x").status == SubsystemStatus.FAILED
+        # Backoff should have doubled
+        assert supervisor._recovery_backoff["x"] == pytest.approx(0.02)
+
+    def test_reinitializer_failure_backoff_is_capped(self):
+        """Repeated reinit failures should not exceed max_recovery_timeout."""
+        supervisor = SubsystemSupervisor({
+            "failure_threshold": 1,
+            "degraded_threshold": 1,
+            "recovery_timeout": 100.0,
+            "max_recovery_timeout": 200.0,
+        })
+        supervisor.register_reinitializer("x", lambda: (_ for _ in ()).throw(RuntimeError("nope")))
+
+        supervisor.record_failure("x", RuntimeError("1"))
+
+        # Force timeout elapsed
+        supervisor._health["x"].disabled_until = 0
+        supervisor.should_execute("x")
+        assert supervisor._recovery_backoff["x"] <= 200.0
+
+        # Try again
+        supervisor._health["x"].disabled_until = 0
+        supervisor.should_execute("x")
+        assert supervisor._recovery_backoff["x"] <= 200.0
+
+    def test_no_reinitializer_proceeds_normally(self):
+        """Without a registered reinitializer, recovery works as before."""
+        supervisor = SubsystemSupervisor({
+            "failure_threshold": 1,
+            "degraded_threshold": 1,
+            "recovery_timeout": 0.01,
+        })
+        # No reinitializer registered for "x"
+        supervisor.record_failure("x", RuntimeError("1"))
+        time.sleep(0.02)
+        result = supervisor.should_execute("x")
+        assert result is True
+        assert supervisor.get_health("x").status == SubsystemStatus.RECOVERING
+
+    def test_reinitializer_called_once_per_recovery_attempt(self):
+        """Reinitializer should only be called on FAILED→RECOVERING, not RECOVERING→RECOVERING."""
+        supervisor = SubsystemSupervisor({
+            "failure_threshold": 1,
+            "degraded_threshold": 1,
+            "recovery_timeout": 0.01,
+        })
+        called = []
+        supervisor.register_reinitializer("x", lambda: called.append(True))
+
+        # Drive to FAILED
+        supervisor.record_failure("x", RuntimeError("1"))
+        time.sleep(0.02)
+
+        # First should_execute triggers FAILED→RECOVERING (reinit called)
+        assert supervisor.should_execute("x") is True
+        assert len(called) == 1
+
+        # Second should_execute in RECOVERING state (reinit NOT called again)
+        assert supervisor.should_execute("x") is True
+        assert len(called) == 1
+
+    def test_successful_reinit_then_step_failure_tracks_correctly(self):
+        """Reinit succeeds but the step itself fails — should go back to FAILED."""
+        supervisor = SubsystemSupervisor({
+            "failure_threshold": 1,
+            "degraded_threshold": 1,
+            "recovery_timeout": 0.01,
+        })
+        reinit_count = []
+        supervisor.register_reinitializer("x", lambda: reinit_count.append(1))
+
+        # Drive to FAILED
+        supervisor.record_failure("x", RuntimeError("1"))
+        time.sleep(0.02)
+
+        # Recovery attempt — reinit succeeds
+        assert supervisor.should_execute("x") is True
+        assert len(reinit_count) == 1
+
+        # But the step itself fails
+        supervisor.record_failure("x", RuntimeError("still broken"))
+        assert supervisor.get_health("x").status == SubsystemStatus.FAILED
+
+    def test_critical_subsystem_skips_reinitializer(self):
+        """Critical subsystems are always executed — reinitializer is not called."""
+        supervisor = SubsystemSupervisor({
+            "failure_threshold": 1,
+            "degraded_threshold": 1,
+            "recovery_timeout": 9999.0,
+        })
+        called = []
+        supervisor.register_reinitializer("workspace_update", lambda: called.append(True))
+
+        # Fail the critical subsystem
+        supervisor.record_failure("workspace_update", RuntimeError("1"))
+        # Critical → always executed regardless
+        assert supervisor.should_execute("workspace_update") is True
+        # Reinitializer should NOT have been called (critical path bypasses recovery logic)
+        assert len(called) == 0

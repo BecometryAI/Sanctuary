@@ -413,6 +413,129 @@ class SubsystemCoordinator:
             logger.warning(f"📷 Failed to initialize device registry: {e}")
             return None
 
+    # ========== Subsystem reinitialization for recovery ==========
+
+    def reinitialize_perception(self) -> None:
+        """Reinitialize the perception subsystem (stateless — safe to recreate)."""
+        self.perception = PerceptionSubsystem(config=self.config.get("perception", {}))
+        self.workspace.perception = self.perception
+        # Re-wire language input parser's reference
+        if hasattr(self, 'language_input') and self.language_input is not None:
+            self.language_input.perception = self.perception
+        logger.info("Reinitialized perception subsystem")
+
+    def reinitialize_attention(self) -> None:
+        """Reinitialize the attention controller (stateless — safe to recreate)."""
+        self.attention = AttentionController(
+            attention_budget=self.config["attention_budget"],
+            workspace=self.workspace,
+            affect=self.affect,
+            precision_weighting=self.iwmt_core.precision if self.iwmt_core else None,
+            emotional_attention=self.affect.emotional_attention_system,
+        )
+        logger.info("Reinitialized attention subsystem")
+
+    def reinitialize_affect(self) -> None:
+        """Reinitialize affect subsystem (resets emotional state to baseline)."""
+        self.affect = AffectSubsystem(config=self.config.get("affect", {}))
+        self.workspace.affect = self.affect
+        # Downstream subsystems hold references that need updating
+        self.action.affect = self.affect
+        self.reinitialize_attention()  # attention depends on affect
+        logger.info("Reinitialized affect subsystem (emotional state reset to baseline)")
+
+    def reinitialize_action(self) -> None:
+        """Reinitialize the action subsystem."""
+        self.action = ActionSubsystem(
+            config=self.config.get("action", {}),
+            affect=self.affect,
+            identity=self.identity,
+            behavior_logger=self.identity_manager.behavior_log,
+        )
+        self.workspace.action_subsystem = self.action
+        logger.info("Reinitialized action subsystem")
+
+    def reinitialize_meta_cognition(self) -> None:
+        """Reinitialize meta-cognition (preserves journal, resets monitor)."""
+        self.meta_cognition = SelfMonitor(
+            workspace=self.workspace,
+            config=self.config.get("meta_cognition", {}),
+            identity=self.identity,
+            identity_manager=self.identity_manager,
+        )
+        # Re-wire introspective loop reference
+        if hasattr(self, 'introspective_loop') and self.introspective_loop is not None:
+            self.introspective_loop.self_monitor = self.meta_cognition
+        logger.info("Reinitialized meta-cognition subsystem")
+
+    def reinitialize_communication_drives(self) -> None:
+        """Reinitialize communication drive system."""
+        from ..communication import CommunicationDriveSystem
+        self.communication_drives = CommunicationDriveSystem(
+            config=self.config.get("communication", {}),
+        )
+        # Re-wire decision loop reference
+        if hasattr(self, 'communication_decision'):
+            self.communication_decision.drive_system = self.communication_drives
+        logger.info("Reinitialized communication drives")
+
+    def reinitialize_autonomous_initiation(self) -> None:
+        """Reinitialize autonomous initiation controller."""
+        self.autonomous = AutonomousInitiationController(
+            workspace=self.workspace,
+            config=self.config.get("autonomous_initiation", {}),
+        )
+        logger.info("Reinitialized autonomous initiation")
+
+    def reinitialize_bottleneck_detector(self) -> None:
+        """Reinitialize bottleneck detector (stateless — safe to recreate)."""
+        self.bottleneck_detector = BottleneckDetector(
+            config=self.config.get("bottleneck_detection", {}),
+        )
+        logger.info("Reinitialized bottleneck detector")
+
+    def reinitialize_temporal_grounding(self) -> None:
+        """Reinitialize temporal grounding (resets temporal context)."""
+        from ..temporal import TemporalGrounding
+        self.temporal_grounding = TemporalGrounding(
+            config=self.config.get("temporal_grounding", {}),
+            memory=self.memory,
+        )
+        logger.info("Reinitialized temporal grounding")
+
+    def reinitialize_memory(self) -> None:
+        """Reinitialize memory integration (preserves stored memories)."""
+        self.memory = MemoryIntegration(
+            workspace=self.workspace,
+            config=self.config.get("memory", {}),
+        )
+        # Re-wire downstream references
+        if hasattr(self, 'temporal_grounding'):
+            self.temporal_grounding.memory = self.memory
+        if hasattr(self, 'memory_review'):
+            self.memory_review.memory = self.memory
+        if hasattr(self, 'pattern_analysis'):
+            self.pattern_analysis.memory = self.memory
+        logger.info("Reinitialized memory integration")
+
+    def reinitialize_iwmt(self) -> None:
+        """Reinitialize IWMT core (resets world model and predictions)."""
+        iwmt_config = self.config.get("iwmt", {"enabled": True})
+        if iwmt_config.get("enabled", True):
+            from ..iwmt_core import IWMTCore
+            from ..meta_cognition import ActionOutcomeLearner
+
+            action_learner_config = self.config.get("meta_cognition", {}).get("action_learner", {})
+            action_learner = ActionOutcomeLearner(config=action_learner_config)
+            self.iwmt_core = IWMTCore(iwmt_config, action_learner=action_learner)
+            # Re-wire attention precision weighting
+            self.attention.precision_weighting = self.iwmt_core.precision
+            # Re-wire communication decision loop
+            if hasattr(self, 'communication_decision'):
+                self.communication_decision.free_energy_minimizer = self.iwmt_core.free_energy
+                self.communication_decision.world_model = self.iwmt_core.world_model
+            logger.info("Reinitialized IWMT core")
+
     def connect_device_registry_to_input(self, input_queue) -> bool:
         """
         Connect device registry to the input queue for data routing.

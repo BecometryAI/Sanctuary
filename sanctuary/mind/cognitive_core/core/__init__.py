@@ -117,6 +117,9 @@ class CognitiveCore:
             self.timing, self.supervisor
         )
         
+        # Register subsystem reinitializers for automatic recovery
+        self._register_reinitializers()
+
         # Initialize cognitive loop orchestrator
         self.loop = CognitiveLoop(self.subsystems, self.state, self.timing, self.cycle_executor)
         
@@ -125,6 +128,34 @@ class CognitiveCore:
         
         logger.info(f"🧠 CognitiveCore initialized: cycle_rate={self.config['cycle_rate_hz']}Hz, "
                    f"attention_budget={self.config['attention_budget']}")
+
+    def _register_reinitializers(self) -> None:
+        """Register subsystem reinitializers with the supervisor.
+
+        Maps each cognitive cycle step name to a callable that
+        reinitializes the corresponding subsystem.  When a subsystem
+        enters recovery after being FAILED, the supervisor calls
+        its reinitializer before attempting the step again.
+        """
+        mapping = {
+            "perception": self.subsystems.reinitialize_perception,
+            "attention": self.subsystems.reinitialize_attention,
+            "affect": self.subsystems.reinitialize_affect,
+            "action": self.subsystems.reinitialize_action,
+            "meta_cognition": self.subsystems.reinitialize_meta_cognition,
+            "communication_drives": self.subsystems.reinitialize_communication_drives,
+            "autonomous_initiation": self.subsystems.reinitialize_autonomous_initiation,
+            "bottleneck_detection": self.subsystems.reinitialize_bottleneck_detector,
+            "temporal_context": self.subsystems.reinitialize_temporal_grounding,
+            "memory_retrieval": self.subsystems.reinitialize_memory,
+            "memory_consolidation": self.subsystems.reinitialize_memory,
+            "iwmt_predict": self.subsystems.reinitialize_iwmt,
+            "iwmt_update": self.subsystems.reinitialize_iwmt,
+        }
+        for name, callback in mapping.items():
+            self.supervisor.register_reinitializer(name, callback)
+
+        logger.info(f"Registered {len(mapping)} subsystem reinitializers")
 
     # ========== Lifecycle Management (delegate to LifecycleManager) ==========
     

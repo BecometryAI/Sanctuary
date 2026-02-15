@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from .state_manager import StateManager
     from .action_executor import ActionExecutor
     from .timing import TimingManager
+    from .subsystem_health import SubsystemSupervisor
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ logger = logging.getLogger(__name__)
 class CycleExecutor:
     """
     Executes the complete 9-step cognitive cycle.
-    
+
     The cognitive cycle follows these steps:
     1. PERCEPTION: Gather new inputs (if any queued)
     2. MEMORY RETRIEVAL: Check for memory retrieval goals and fetch relevant memories
@@ -37,9 +38,12 @@ class CycleExecutor:
     7. AUTONOMOUS INITIATION: Check for autonomous speech triggers
     8. WORKSPACE UPDATE: Integrate all subsystem outputs
     9. MEMORY CONSOLIDATION: Store significant states to long-term memory
+
+    Each step is monitored by a SubsystemSupervisor that tracks health per
+    subsystem and disables failing subsystems via circuit breaker pattern.
     """
-    
-    def __init__(self, subsystems: 'SubsystemCoordinator', state: 'StateManager', action_executor: 'ActionExecutor', timing: 'TimingManager' = None):
+
+    def __init__(self, subsystems: 'SubsystemCoordinator', state: 'StateManager', action_executor: 'ActionExecutor', timing: 'TimingManager' = None, supervisor: 'SubsystemSupervisor' = None):
         """
         Initialize cycle executor.
 
@@ -48,11 +52,13 @@ class CycleExecutor:
             state: StateManager instance
             action_executor: ActionExecutor instance for handling actions
             timing: Optional TimingManager instance for tracking cycle metrics
+            supervisor: Optional SubsystemSupervisor for fault isolation
         """
         self.subsystems = subsystems
         self.state = state
         self.action_executor = action_executor
         self.timing = timing
+        self.supervisor = supervisor
 
         # IWMT prediction tracking
         self._current_predictions = []
@@ -62,243 +68,339 @@ class CycleExecutor:
         """Check if temporal grounding subsystem is available."""
         return hasattr(self.subsystems, 'temporal_grounding') and self.subsystems.temporal_grounding is not None
     
+    def _should_run(self, name: str) -> bool:
+        """Check if a subsystem step should be executed this cycle."""
+        if self.supervisor is None:
+            return True
+        return self.supervisor.should_execute(name)
+
+    def _record_ok(self, name: str) -> None:
+        """Record a successful subsystem step."""
+        if self.supervisor is not None:
+            self.supervisor.record_success(name)
+
+    def _record_err(self, name: str, error: Exception) -> None:
+        """Record a failed subsystem step."""
+        if self.supervisor is not None:
+            self.supervisor.record_failure(name, error)
+
     async def execute_cycle(self) -> Dict[str, float]:
         """
         Execute one complete cognitive cycle with error handling.
-        
+
         Each step is wrapped in error handling to prevent cascade failures.
-        If a step fails, it's logged but the cycle continues to maintain system stability.
-        
+        If a step fails, it's logged but the cycle continues to maintain
+        system stability. The SubsystemSupervisor tracks health per step
+        and disables persistently failing subsystems via circuit breaker.
+
         Returns:
             Dict of subsystem timings in milliseconds
         """
         subsystem_timings = {}
 
         # 0a. TEMPORAL CONTEXT: Fetch temporal awareness at cycle start
-        try:
-            step_start = time.time()
-            if self._has_temporal_grounding():
-                temporal_context = self.subsystems.temporal_grounding.get_temporal_context()
-                self.state.workspace.set_temporal_context(temporal_context)
-            subsystem_timings['temporal_context'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Temporal context step failed: {e}", exc_info=True)
+        if self._should_run('temporal_context'):
+            try:
+                step_start = time.time()
+                if self._has_temporal_grounding():
+                    temporal_context = self.subsystems.temporal_grounding.get_temporal_context()
+                    self.state.workspace.set_temporal_context(temporal_context)
+                subsystem_timings['temporal_context'] = (time.time() - step_start) * 1000
+                self._record_ok('temporal_context')
+            except Exception as e:
+                logger.error(f"Temporal context step failed: {e}", exc_info=True)
+                subsystem_timings['temporal_context'] = 0.0
+                self._record_err('temporal_context', e)
+        else:
             subsystem_timings['temporal_context'] = 0.0
 
         # 0. IWMT PREDICTION: Generate predictions before perception
-        try:
-            step_start = time.time()
-            if hasattr(self.subsystems, 'iwmt_core') and self.subsystems.iwmt_core:
-                context = {
-                    "goals": list(self.state.workspace.current_goals),
-                    "emotional_state": self.subsystems.affect.get_state(),
-                    "cycle_count": self.state.workspace.cycle_count
-                }
-                self._current_predictions = self.subsystems.iwmt_core.world_model.predict(
-                    time_horizon=1.0,
-                    context=context
-                )
-                self._current_prediction_errors = self.subsystems.iwmt_core.world_model.prediction_errors[-10:]
-                logger.debug(f"🔮 IWMT: Generated {len(self._current_predictions)} predictions")
-            else:
+        if self._should_run('iwmt_predict'):
+            try:
+                step_start = time.time()
+                if hasattr(self.subsystems, 'iwmt_core') and self.subsystems.iwmt_core:
+                    context = {
+                        "goals": list(self.state.workspace.current_goals),
+                        "emotional_state": self.subsystems.affect.get_state(),
+                        "cycle_count": self.state.workspace.cycle_count
+                    }
+                    self._current_predictions = self.subsystems.iwmt_core.world_model.predict(
+                        time_horizon=1.0,
+                        context=context
+                    )
+                    self._current_prediction_errors = self.subsystems.iwmt_core.world_model.prediction_errors[-10:]
+                    logger.debug(f"🔮 IWMT: Generated {len(self._current_predictions)} predictions")
+                else:
+                    self._current_predictions = []
+                    self._current_prediction_errors = []
+                subsystem_timings['iwmt_predict'] = (time.time() - step_start) * 1000
+                self._record_ok('iwmt_predict')
+            except Exception as e:
+                logger.error(f"IWMT prediction step failed: {e}", exc_info=True)
                 self._current_predictions = []
                 self._current_prediction_errors = []
-            subsystem_timings['iwmt_predict'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"IWMT prediction step failed: {e}", exc_info=True)
+                subsystem_timings['iwmt_predict'] = 0.0
+                self._record_err('iwmt_predict', e)
+        else:
             self._current_predictions = []
             self._current_prediction_errors = []
             subsystem_timings['iwmt_predict'] = 0.0
 
         # 1. PERCEPTION: Process queued inputs
-        try:
-            step_start = time.time()
-            new_percepts = await self.state.gather_percepts(self.subsystems.perception)
-            
-            # Record input time if we got new percepts
-            if new_percepts and self._has_temporal_grounding():
-                self.subsystems.temporal_grounding.record_input()
-            
-            subsystem_timings['perception'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Perception step failed: {e}", exc_info=True)
+        if self._should_run('perception'):
+            try:
+                step_start = time.time()
+                new_percepts = await self.state.gather_percepts(self.subsystems.perception)
+
+                # Record input time if we got new percepts
+                if new_percepts and self._has_temporal_grounding():
+                    self.subsystems.temporal_grounding.record_input()
+
+                subsystem_timings['perception'] = (time.time() - step_start) * 1000
+                self._record_ok('perception')
+            except Exception as e:
+                logger.error(f"Perception step failed: {e}", exc_info=True)
+                new_percepts = []
+                subsystem_timings['perception'] = 0.0
+                self._record_err('perception', e)
+        else:
             new_percepts = []
             subsystem_timings['perception'] = 0.0
 
         # 1.5. IWMT UPDATE: Update world model with new percepts
-        try:
-            if hasattr(self.subsystems, 'iwmt_core') and self.subsystems.iwmt_core and new_percepts:
-                step_start = time.time()
-                for percept in new_percepts:
-                    error = self.subsystems.iwmt_core.world_model.update_on_percept(percept)
-                    if error:
-                        self._current_prediction_errors.append(error)
-                subsystem_timings['iwmt_update'] = (time.time() - step_start) * 1000
-                if self._current_prediction_errors:
-                    logger.debug(f"🔮 IWMT: {len(self._current_prediction_errors)} prediction errors detected")
-        except Exception as e:
-            logger.error(f"IWMT update step failed: {e}", exc_info=True)
+        if self._should_run('iwmt_update'):
+            try:
+                if hasattr(self.subsystems, 'iwmt_core') and self.subsystems.iwmt_core and new_percepts:
+                    step_start = time.time()
+                    for percept in new_percepts:
+                        error = self.subsystems.iwmt_core.world_model.update_on_percept(percept)
+                        if error:
+                            self._current_prediction_errors.append(error)
+                    subsystem_timings['iwmt_update'] = (time.time() - step_start) * 1000
+                    if self._current_prediction_errors:
+                        logger.debug(f"🔮 IWMT: {len(self._current_prediction_errors)} prediction errors detected")
+                self._record_ok('iwmt_update')
+            except Exception as e:
+                logger.error(f"IWMT update step failed: {e}", exc_info=True)
+                subsystem_timings['iwmt_update'] = 0.0
+                self._record_err('iwmt_update', e)
+        else:
             subsystem_timings['iwmt_update'] = 0.0
 
         # 2. MEMORY RETRIEVAL: Check for memory retrieval goals
-        try:
-            step_start = time.time()
-            new_percepts.extend(await self._retrieve_memories())
-            subsystem_timings['memory_retrieval'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Memory retrieval step failed: {e}", exc_info=True)
+        if self._should_run('memory_retrieval'):
+            try:
+                step_start = time.time()
+                new_percepts.extend(await self._retrieve_memories())
+                subsystem_timings['memory_retrieval'] = (time.time() - step_start) * 1000
+                self._record_ok('memory_retrieval')
+            except Exception as e:
+                logger.error(f"Memory retrieval step failed: {e}", exc_info=True)
+                subsystem_timings['memory_retrieval'] = 0.0
+                self._record_err('memory_retrieval', e)
+        else:
             subsystem_timings['memory_retrieval'] = 0.0
-        
+
         # 3. ATTENTION: Select for conscious awareness (with IWMT precision weighting)
-        try:
-            step_start = time.time()
-            # Get emotional state for precision weighting
-            emotional_state = self.subsystems.affect.get_state()
-            # Pass prediction context for IWMT precision-weighted attention
-            attended = self.subsystems.attention.select_for_broadcast(
-                new_percepts,
-                emotional_state=emotional_state,
-                prediction_errors=self._current_prediction_errors
-            )
-            subsystem_timings['attention'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Attention step failed: {e}", exc_info=True)
+        if self._should_run('attention'):
+            try:
+                step_start = time.time()
+                # Get emotional state for precision weighting
+                emotional_state = self.subsystems.affect.get_state()
+                # Pass prediction context for IWMT precision-weighted attention
+                attended = self.subsystems.attention.select_for_broadcast(
+                    new_percepts,
+                    emotional_state=emotional_state,
+                    prediction_errors=self._current_prediction_errors
+                )
+                subsystem_timings['attention'] = (time.time() - step_start) * 1000
+                self._record_ok('attention')
+            except Exception as e:
+                logger.error(f"Attention step failed: {e}", exc_info=True)
+                attended = []
+                subsystem_timings['attention'] = 0.0
+                self._record_err('attention', e)
+        else:
             attended = []
             subsystem_timings['attention'] = 0.0
-        
+
         # 4. AFFECT: Update emotional state and get processing parameters
-        try:
-            step_start = time.time()
-            
-            # Apply time passage effects if temporal grounding is available
-            if hasattr(self.subsystems, 'temporal_grounding'):
-                # Get current cognitive state
-                cognitive_state = {
-                    "emotions": {
-                        "valence": self.subsystems.affect.valence,
-                        "arousal": self.subsystems.affect.arousal,
-                        "dominance": self.subsystems.affect.dominance
-                    },
-                    "goals": list(self.state.workspace.current_goals),
-                    "working_memory": list(self.state.workspace.active_percepts.values())
-                }
-                
-                # Apply temporal effects
-                updated_state = self.subsystems.temporal_grounding.apply_time_passage_effects(
-                    cognitive_state
-                )
-                
-                # Update affect subsystem with decayed emotions
-                if "emotions" in updated_state:
-                    self.subsystems.affect.valence = updated_state["emotions"]["valence"]
-                    self.subsystems.affect.arousal = updated_state["emotions"]["arousal"]
-                    self.subsystems.affect.dominance = updated_state["emotions"]["dominance"]
-            
-            affect_update = self.subsystems.affect.compute_update(self.state.workspace.broadcast())
-            
-            # Log emotional modulation parameters for tracking
-            if hasattr(self.subsystems.affect, 'get_processing_params'):
-                processing_params = self.subsystems.affect.get_processing_params()
-                logger.debug(
-                    f"Emotional modulation active: "
-                    f"V={processing_params.valence_level:.2f} "
-                    f"A={processing_params.arousal_level:.2f} "
-                    f"D={processing_params.dominance_level:.2f} → "
-                    f"iters={processing_params.attention_iterations} "
-                    f"thresh={processing_params.ignition_threshold:.2f} "
-                    f"decision={processing_params.decision_threshold:.2f}"
-                )
-            
-            subsystem_timings['affect'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Affect step failed: {e}", exc_info=True)
+        if self._should_run('affect'):
+            try:
+                step_start = time.time()
+
+                # Apply time passage effects if temporal grounding is available
+                if hasattr(self.subsystems, 'temporal_grounding'):
+                    # Get current cognitive state
+                    cognitive_state = {
+                        "emotions": {
+                            "valence": self.subsystems.affect.valence,
+                            "arousal": self.subsystems.affect.arousal,
+                            "dominance": self.subsystems.affect.dominance
+                        },
+                        "goals": list(self.state.workspace.current_goals),
+                        "working_memory": list(self.state.workspace.active_percepts.values())
+                    }
+
+                    # Apply temporal effects
+                    updated_state = self.subsystems.temporal_grounding.apply_time_passage_effects(
+                        cognitive_state
+                    )
+
+                    # Update affect subsystem with decayed emotions
+                    if "emotions" in updated_state:
+                        self.subsystems.affect.valence = updated_state["emotions"]["valence"]
+                        self.subsystems.affect.arousal = updated_state["emotions"]["arousal"]
+                        self.subsystems.affect.dominance = updated_state["emotions"]["dominance"]
+
+                affect_update = self.subsystems.affect.compute_update(self.state.workspace.broadcast())
+
+                # Log emotional modulation parameters for tracking
+                if hasattr(self.subsystems.affect, 'get_processing_params'):
+                    processing_params = self.subsystems.affect.get_processing_params()
+                    logger.debug(
+                        f"Emotional modulation active: "
+                        f"V={processing_params.valence_level:.2f} "
+                        f"A={processing_params.arousal_level:.2f} "
+                        f"D={processing_params.dominance_level:.2f} → "
+                        f"iters={processing_params.attention_iterations} "
+                        f"thresh={processing_params.ignition_threshold:.2f} "
+                        f"decision={processing_params.decision_threshold:.2f}"
+                    )
+
+                subsystem_timings['affect'] = (time.time() - step_start) * 1000
+                self._record_ok('affect')
+            except Exception as e:
+                logger.error(f"Affect step failed: {e}", exc_info=True)
+                affect_update = {}
+                subsystem_timings['affect'] = 0.0
+                self._record_err('affect', e)
+        else:
             affect_update = {}
             subsystem_timings['affect'] = 0.0
-        
+
         # 5. ACTION: Decide what to do and execute
-        try:
-            step_start = time.time()
-            await self._execute_actions()
-            
-            # Record action time if we have temporal grounding
-            if self._has_temporal_grounding():
-                self.subsystems.temporal_grounding.record_action()
-            
-            subsystem_timings['action'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Action step failed: {e}", exc_info=True)
+        if self._should_run('action'):
+            try:
+                step_start = time.time()
+                await self._execute_actions()
+
+                # Record action time if we have temporal grounding
+                if self._has_temporal_grounding():
+                    self.subsystems.temporal_grounding.record_action()
+
+                subsystem_timings['action'] = (time.time() - step_start) * 1000
+                self._record_ok('action')
+            except Exception as e:
+                logger.error(f"Action step failed: {e}", exc_info=True)
+                subsystem_timings['action'] = 0.0
+                self._record_err('action', e)
+        else:
             subsystem_timings['action'] = 0.0
-        
+
         # 6. META-COGNITION: Introspect
-        try:
-            step_start = time.time()
-            meta_percepts = await self._run_meta_cognition()
-            subsystem_timings['meta_cognition'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Meta-cognition step failed: {e}", exc_info=True)
+        if self._should_run('meta_cognition'):
+            try:
+                step_start = time.time()
+                meta_percepts = await self._run_meta_cognition()
+                subsystem_timings['meta_cognition'] = (time.time() - step_start) * 1000
+                self._record_ok('meta_cognition')
+            except Exception as e:
+                logger.error(f"Meta-cognition step failed: {e}", exc_info=True)
+                meta_percepts = []
+                subsystem_timings['meta_cognition'] = 0.0
+                self._record_err('meta_cognition', e)
+        else:
             meta_percepts = []
             subsystem_timings['meta_cognition'] = 0.0
-        
+
         # 6.5 COMMUNICATION DRIVES: Compute internal urges to communicate
-        try:
-            step_start = time.time()
-            await self._compute_communication_drives()
-            subsystem_timings['communication_drives'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Communication drives step failed: {e}", exc_info=True)
+        if self._should_run('communication_drives'):
+            try:
+                step_start = time.time()
+                await self._compute_communication_drives()
+                subsystem_timings['communication_drives'] = (time.time() - step_start) * 1000
+                self._record_ok('communication_drives')
+            except Exception as e:
+                logger.error(f"Communication drives step failed: {e}", exc_info=True)
+                subsystem_timings['communication_drives'] = 0.0
+                self._record_err('communication_drives', e)
+        else:
             subsystem_timings['communication_drives'] = 0.0
-        
+
         # 7. AUTONOMOUS INITIATION: Check for autonomous speech triggers
-        try:
-            step_start = time.time()
-            await self._check_autonomous_triggers()
-            subsystem_timings['autonomous_initiation'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Autonomous initiation step failed: {e}", exc_info=True)
+        if self._should_run('autonomous_initiation'):
+            try:
+                step_start = time.time()
+                await self._check_autonomous_triggers()
+                subsystem_timings['autonomous_initiation'] = (time.time() - step_start) * 1000
+                self._record_ok('autonomous_initiation')
+            except Exception as e:
+                logger.error(f"Autonomous initiation step failed: {e}", exc_info=True)
+                subsystem_timings['autonomous_initiation'] = 0.0
+                self._record_err('autonomous_initiation', e)
+        else:
             subsystem_timings['autonomous_initiation'] = 0.0
-        
-        # 8. WORKSPACE UPDATE: Integrate everything
+
+        # 8. WORKSPACE UPDATE: Integrate everything (CRITICAL — always attempted)
         try:
             step_start = time.time()
             self._update_workspace(attended, affect_update, meta_percepts)
             subsystem_timings['workspace_update'] = (time.time() - step_start) * 1000
+            self._record_ok('workspace_update')
         except Exception as e:
             logger.error(f"Workspace update step failed: {e}", exc_info=True)
             subsystem_timings['workspace_update'] = 0.0
-        
+            self._record_err('workspace_update', e)
+
         # 9. MEMORY CONSOLIDATION: Commit workspace to long-term memory
-        try:
-            step_start = time.time()
-            await self.subsystems.memory.consolidate(self.state.workspace.broadcast())
-            subsystem_timings['memory_consolidation'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Memory consolidation step failed: {e}", exc_info=True)
+        if self._should_run('memory_consolidation'):
+            try:
+                step_start = time.time()
+                await self.subsystems.memory.consolidate(self.state.workspace.broadcast())
+                subsystem_timings['memory_consolidation'] = (time.time() - step_start) * 1000
+                self._record_ok('memory_consolidation')
+            except Exception as e:
+                logger.error(f"Memory consolidation step failed: {e}", exc_info=True)
+                subsystem_timings['memory_consolidation'] = 0.0
+                self._record_err('memory_consolidation', e)
+        else:
             subsystem_timings['memory_consolidation'] = 0.0
 
         # 9.5. BOTTLENECK DETECTION: Monitor cognitive load
-        try:
-            step_start = time.time()
-            await self._update_bottleneck_detection(subsystem_timings)
-            subsystem_timings['bottleneck_detection'] = (time.time() - step_start) * 1000
-        except Exception as e:
-            logger.error(f"Bottleneck detection step failed: {e}", exc_info=True)
+        if self._should_run('bottleneck_detection'):
+            try:
+                step_start = time.time()
+                await self._update_bottleneck_detection(subsystem_timings)
+                subsystem_timings['bottleneck_detection'] = (time.time() - step_start) * 1000
+                self._record_ok('bottleneck_detection')
+            except Exception as e:
+                logger.error(f"Bottleneck detection step failed: {e}", exc_info=True)
+                subsystem_timings['bottleneck_detection'] = 0.0
+                self._record_err('bottleneck_detection', e)
+        else:
             subsystem_timings['bottleneck_detection'] = 0.0
 
         # 10. IDENTITY UPDATE: Periodically recompute identity from system state
         # Update every 100 cycles to avoid overhead
         if self.state.workspace.cycle_count % 100 == 0:
-            try:
-                step_start = time.time()
-                if hasattr(self.subsystems, 'identity_manager'):
-                    self.subsystems.identity_manager.update(
-                        memory_system=self.subsystems.memory,
-                        goal_system=self.state.workspace,
-                        emotion_system=self.subsystems.affect
-                    )
-                    logger.debug("Identity recomputed from system state")
-                subsystem_timings['identity_update'] = (time.time() - step_start) * 1000
-            except Exception as e:
-                logger.error(f"Identity update failed: {e}", exc_info=True)
+            if self._should_run('identity_update'):
+                try:
+                    step_start = time.time()
+                    if hasattr(self.subsystems, 'identity_manager'):
+                        self.subsystems.identity_manager.update(
+                            memory_system=self.subsystems.memory,
+                            goal_system=self.state.workspace,
+                            emotion_system=self.subsystems.affect
+                        )
+                        logger.debug("Identity recomputed from system state")
+                    subsystem_timings['identity_update'] = (time.time() - step_start) * 1000
+                    self._record_ok('identity_update')
+                except Exception as e:
+                    logger.error(f"Identity update failed: {e}", exc_info=True)
+                    subsystem_timings['identity_update'] = 0.0
+                    self._record_err('identity_update', e)
+            else:
                 subsystem_timings['identity_update'] = 0.0
 
         # Update timing metrics so total_cycles is tracked even when

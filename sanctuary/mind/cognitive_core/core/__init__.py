@@ -31,6 +31,7 @@ from .lifecycle import LifecycleManager
 from .cycle_executor import CycleExecutor
 from .cognitive_loop import CognitiveLoop
 from .action_executor import ActionExecutor
+from .subsystem_health import SubsystemSupervisor, SubsystemStatus, SubsystemHealthState
 
 logger = logging.getLogger(__name__)
 
@@ -103,12 +104,18 @@ class CognitiveCore:
         
         # Initialize timing manager
         self.timing = TimingManager(self.config)
-        
+
+        # Initialize subsystem supervisor for fault isolation
+        self.supervisor = SubsystemSupervisor(self.config.get("supervisor", {}))
+
         # Initialize action executor
         self.action_executor = ActionExecutor(self.subsystems, self.state)
-        
-        # Initialize cycle executor
-        self.cycle_executor = CycleExecutor(self.subsystems, self.state, self.action_executor, self.timing)
+
+        # Initialize cycle executor with supervisor
+        self.cycle_executor = CycleExecutor(
+            self.subsystems, self.state, self.action_executor,
+            self.timing, self.supervisor
+        )
         
         # Initialize cognitive loop orchestrator
         self.loop = CognitiveLoop(self.subsystems, self.state, self.timing, self.cycle_executor)
@@ -200,6 +207,18 @@ class CognitiveCore:
     def get_performance_breakdown(self) -> Dict[str, Any]:
         """Get detailed performance breakdown by subsystem."""
         return self.timing.get_performance_breakdown()
+
+    def get_health_report(self) -> Dict[str, Any]:
+        """Get subsystem health report from the supervisor."""
+        return self.supervisor.get_system_report()
+
+    def get_subsystem_health(self, name: str) -> 'SubsystemHealthState':
+        """Get health state for a specific subsystem."""
+        return self.supervisor.get_health(name)
+
+    def reset_subsystem(self, name: str) -> None:
+        """Manually reset a failed subsystem to HEALTHY."""
+        self.supervisor.reset(name)
 
     # ========== Direct subsystem access for backward compatibility ==========
     
@@ -324,4 +343,4 @@ class CognitiveCore:
         return self.timing.metrics
 
 
-__all__ = ['CognitiveCore']
+__all__ = ['CognitiveCore', 'SubsystemSupervisor', 'SubsystemStatus', 'SubsystemHealthState']

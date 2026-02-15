@@ -347,9 +347,9 @@ class TestProactiveInitiationSystem:
         # Should keep only max_pending
         assert len(system.pending_opportunities) == 3
         
-        # Should keep highest urgency
+        # Should keep highest urgency (top 3: 0.55, 0.50, 0.45)
         urgencies = [opp.urgency for opp in system.pending_opportunities]
-        assert all(u >= 0.5 for u in urgencies)
+        assert all(u >= 0.45 for u in urgencies)
     
     def test_should_initiate_now_with_appropriate(self):
         """Test should_initiate_now with appropriate opportunity."""

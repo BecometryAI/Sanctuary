@@ -1,4 +1,3 @@
-from langchain.schema import Document
 """
 RAG Engine implementation for Sanctuary's mind-brain integration.
 """
@@ -8,10 +7,11 @@ from pathlib import Path
 import json
 from datetime import datetime
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
-from langchain.chains import RetrievalQA
-from langchain.prompts import PromptTemplate
+from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_chroma import Chroma
+from langchain_classic.chains import RetrievalQA
+from langchain_core.prompts import PromptTemplate
 
 import torch
 import chromadb
@@ -238,7 +238,7 @@ class DirectChromaRetriever:
     
     def get_relevant_documents(self, query: str):
         """Retrieve relevant documents for a query."""
-        from langchain.schema import Document
+        from langchain_core.documents import Document
         
         try:
             # Try LangChain wrapper first if available

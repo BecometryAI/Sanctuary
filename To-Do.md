@@ -502,6 +502,12 @@ Priority tasks:
 6. Address assertion threshold drift (pending)
 7. Fix deeper integration API mismatches (ConsciousnessCore, ExecutiveFunction)
 
+**Immediate: Test Infrastructure & Broken Tests**
+1. Fix corrupted `test_phase1_boot.py` (syntax error — literal `\n` in source)
+2. Fix `langchain.schema` import failures (version mismatch across multiple test files)
+3. Add GitHub Actions CI workflow (run `uv run pytest` on every PR)
+4. Add tests for untested `cognitive_core/core/` modules (cognitive_loop, state_manager, subsystem_coordinator, etc.)
+
 **After Test Stabilization: Production Readiness**
 1. Complete multimodal perception integration (wire audio/image into loop)
 2. Implement communication reflection (PR #10)
@@ -519,7 +525,7 @@ Priority tasks:
 
 ### For Contributors
 
-1. **Review Architecture**: See README.md for architecture overview and operational_guidelines_and_instructions.md for operational guidance
+1. **Review Architecture**: See README.md for architecture overview and `docs/operational_guidelines_and_instructions.md` for operational guidance
 2. **Check Dependencies**: Some tasks depend on others (e.g., communication agency needs decoupled I/O)
 3. **Claim a Task**: Comment on this issue or open a new issue referencing the task
 4. **Create Branch**: `git checkout -b feature/<task-name>`
@@ -574,5 +580,5 @@ Official documentation and resources for MeTTa integration (Phase 5):
 
 ---
 
-**Last Updated**: 2026-01-24 (Test fixes session - collection errors resolved)
-**Next Review**: After Test Suite Stabilization milestone
+**Last Updated**: 2026-02-14 (Repo cleanup + test roadmap added)
+**Next Review**: After Test Infrastructure milestone

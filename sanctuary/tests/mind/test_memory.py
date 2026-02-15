@@ -6,10 +6,11 @@ Test for Sanctuary Persistent Memory System
 """
 
 # Import from memory_legacy.py (renamed from memory.py)
-from sanctuary.mind.memory_legacy import MemoryManager
+from mind.memory_legacy import MemoryManager
 from chromadb.config import Settings
 from unittest.mock import Mock
 
+@pytest.mark.integration
 def test_memory():
     # Use a unique temporary directory for each test run
     import tempfile

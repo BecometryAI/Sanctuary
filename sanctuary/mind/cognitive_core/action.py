@@ -315,8 +315,8 @@ class ActionSubsystem:
         valence = snapshot.emotions.get("valence", 0.0)
         arousal = snapshot.emotions.get("arousal", 0.0)
         
-        # Memory retrieval - trigger when workspace is sparse
-        if len(snapshot.percepts) < 5:
+        # Memory retrieval - trigger when workspace is sparse but not empty
+        if 0 < len(snapshot.percepts) < 5:
             candidates.append(Action(
                 type=ActionType.RETRIEVE_MEMORY,
                 priority=0.4,

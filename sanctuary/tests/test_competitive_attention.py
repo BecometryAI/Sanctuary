@@ -133,24 +133,24 @@ class TestLateralInhibition:
             inhibition_strength=0.4,
             iterations=15,
         )
-        
-        # Start with similar activations
+
+        # Use diverse embeddings so percepts compete (not form coalitions)
         percepts = [
             Percept(modality="text", raw="P1", embedding=[1.0, 0.0, 0.0]),
-            Percept(modality="text", raw="P2", embedding=[0.9, 0.1, 0.0]),
-            Percept(modality="text", raw="P3", embedding=[0.8, 0.2, 0.0]),
+            Percept(modality="text", raw="P2", embedding=[0.0, 1.0, 0.0]),
+            Percept(modality="text", raw="P3", embedding=[0.0, 0.0, 1.0]),
         ]
-        
+
         base_scores = {
             percepts[0].id: 0.55,
             percepts[1].id: 0.50,
             percepts[2].id: 0.45,
         }
-        
+
         _, metrics = comp.compete(percepts, base_scores)
-        
-        # After competition, spread should increase (winner-take-all)
-        # This means competition is actually happening
+
+        # After competition with diverse embeddings, inhibition should happen
+        # and spread should increase (winner-take-all)
         assert metrics.activation_spread_after >= metrics.activation_spread_before
 
 

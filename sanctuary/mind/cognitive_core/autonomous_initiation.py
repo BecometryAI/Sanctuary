@@ -164,10 +164,11 @@ class AutonomousInitiationController:
         Returns:
             Goal with SPEAK_AUTONOMOUS type if introspection detected, None otherwise
         """
-        # Find introspective percepts
+        # Find introspective percepts (exclude value_conflict which has its own handler)
         introspective_percepts = [
             p for p in snapshot.percepts.values()
             if p.modality == "introspection"
+            and (not isinstance(p.raw, dict) or p.raw.get("type") != "value_conflict")
         ]
         
         if not introspective_percepts:
@@ -198,7 +199,7 @@ class AutonomousInitiationController:
         sharing_context = {
             "introspection_type": introspection_type,
             "observation": description,
-            "details": content,
+            "details": content.get("details", {}) if isinstance(content, dict) else {},
             "purpose": "share_for_feedback"  # Signal this needs external grounding
         }
         
@@ -233,7 +234,8 @@ class AutonomousInitiationController:
         # Look for value conflict introspections
         value_conflicts = [
             p for p in snapshot.percepts.values()
-            if (p.modality == "introspection" 
+            if (p.modality == "introspection"
+                and isinstance(p.raw, dict)
                 and p.raw.get("type") == "value_conflict")
         ]
         

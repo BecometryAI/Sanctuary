@@ -1,7 +1,11 @@
 """
 Minimal test server for privacy controls
 """
-from fastapi import FastAPI, HTTPException
+import pytest
+
+fastapi = pytest.importorskip("fastapi", reason="fastapi not installed")
+FastAPI = fastapi.FastAPI
+HTTPException = fastapi.HTTPException
 import uvicorn
 from datetime import datetime
 import logging

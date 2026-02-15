@@ -1,1 +1,255 @@
-"""\nPhase 1 Boot Integration Test.\n\nGoal: Verify that CognitiveCore can instantiate and run cognitive cycles\nwithout errors, using mock perception (no sentence-transformers needed).\n\nThis is the most fundamental integration test: if the system can boot\nand cycle, everything downstream has a foundation to build on.\n\nRun with:\n    pytest sanctuary/tests/integration/test_phase1_boot.py -v\n"""\n\nimport asyncio\nimport logging\nimport tempfile\nfrom pathlib import Path\n\nimport pytest\n\n# Configure logging to see boot sequence\nlogging.basicConfig(level=logging.INFO)\nlogger = logging.getLogger(__name__)\n\n\n@pytest.fixture\ndef boot_temp_dir():\n    """Create a temporary directory for boot data files."""\n    with tempfile.TemporaryDirectory(prefix="sanctuary_boot_test_") as tmpdir:\n        yield Path(tmpdir)\n\n\n@pytest.fixture\ndef boot_config(boot_temp_dir):\n    """Create boot configuration with mock perception."""\n    from sanctuary.mind.cognitive_core.boot_config import create_boot_config\n    return create_boot_config(temp_dir=boot_temp_dir, mock_perception=True)\n\n\nclass TestPhase1Boot:\n    """Phase 1: Can the system instantiate and cycle without errors?"""\n\n    def test_boot_config_creation(self, boot_temp_dir):\n        """Boot config creates valid configuration with required directories."""\n        from sanctuary.mind.cognitive_core.boot_config import create_boot_config\n        config = create_boot_config(temp_dir=boot_temp_dir)\n\n        assert config["cycle_rate_hz"] == 10.0\n        assert config["attention_budget"] == 100\n        assert config["perception"]["mock_mode"] is True\n        assert config["devices"]["enabled"] is False\n\n        # Required directories exist\n        assert Path(config["identity_dir"]).is_dir()\n        assert Path(config["journal_dir"]).is_dir()\n        assert Path(config["checkpointing"]["checkpoint_dir"]).is_dir()\n\n    def test_mock_perception_instantiation(self):\n        """MockPerceptionSubsystem can be created without ML dependencies."""\n        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem\n\n        perception = MockPerceptionSubsystem(config={"mock_embedding_dim": 384})\n        assert perception.embedding_dim == 384\n\n    @pytest.mark.asyncio\n    async def test_mock_perception_encoding(self):\n        """Mock perception produces deterministic embeddings."""\n        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem\n\n        perception = MockPerceptionSubsystem(config={"mock_embedding_dim": 384})\n\n        # Encode text\n        percept = await perception.encode("hello world", "text")\n        assert percept is not None\n        assert len(percept.embedding) == 384\n        assert percept.modality == "text"\n\n        # Same input produces same embedding (deterministic)\n        percept2 = await perception.encode("hello world", "text")\n        assert percept.embedding == percept2.embedding\n\n        # Different input produces different embedding\n        percept3 = await perception.encode("goodbye world", "text")\n        assert percept.embedding != percept3.embedding\n\n    @pytest.mark.asyncio\n    async def test_mock_perception_all_modalities(self):\n        """Mock perception handles all modality types."""\n        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem\n\n        perception = MockPerceptionSubsystem()\n\n        modalities = {\n            "text": "hello",\n            "image": b"fake_image_bytes",\n            "audio": {"duration_seconds": 2},\n            "sensor": {"value": 42, "sensor_type": "temperature"},\n            "introspection": {"description": "reflecting on state"},\n        }\n\n        for modality, raw_input in modalities.items():\n            percept = await perception.encode(raw_input, modality)\n            assert percept is not None, f"Failed for modality: {modality}"\n            assert len(percept.embedding) == 384, f"Wrong dim for modality: {modality}"\n            assert percept.modality == modality\n\n    def test_workspace_instantiation(self):\n        """GlobalWorkspace can be created independently."""\n        from sanctuary.mind.cognitive_core.workspace import GlobalWorkspace\n        ws = GlobalWorkspace()\n        snapshot = ws.get_snapshot()\n        assert snapshot is not None\n\n    def test_cognitive_core_instantiation(self, boot_config):\n        """CognitiveCore instantiates with boot config (the main Phase 1 test)."""\n        from sanctuary.mind.cognitive_core.core import CognitiveCore\n\n        core = CognitiveCore(config=boot_config)\n\n        assert core is not None\n        assert core.workspace is not None\n        assert core.subsystems is not None\n        assert core.subsystems.perception is not None\n        assert core.subsystems.affect is not None\n        assert core.subsystems.attention is not None\n        assert core.subsystems.action is not None\n\n        logger.info("\u2705 CognitiveCore instantiated successfully!")\n\n    @pytest.mark.asyncio\n    async def test_cognitive_core_runs_cycles(self, boot_config):\n        """CognitiveCore can start, run cycles, and stop without errors."""\n        from sanctuary.mind.cognitive_core.core import CognitiveCore\n\n        core = CognitiveCore(config=boot_config)\n\n        # Start the cognitive loop\n        await core.start()\n        assert core.running\n\n        # Let it run for a short time (~10 cycles at 10Hz)\n        await asyncio.sleep(1.0)\n\n        # Stop gracefully\n        await core.stop()\n        assert not core.running\n\n        # Check metrics - should have completed some cycles\n        metrics = core.get_metrics()\n        logger.info(f"Completed cycles: {metrics.get('total_cycles', 0)}")\n\n        logger.info("\u2705 CognitiveCore ran and stopped successfully!")\n\n    @pytest.mark.asyncio\n    async def test_inject_input_and_cycle(self, boot_config):\n        """CognitiveCore accepts input injection during cycling."""\n        from sanctuary.mind.cognitive_core.core import CognitiveCore\n\n        core = CognitiveCore(config=boot_config)\n\n        # Inject input before starting\n        core.inject_input("hello sanctuary", modality="text")\n\n        # Start and let it process\n        await core.start()\n        await asyncio.sleep(0.5)\n        await core.stop()\n\n        # Query final state\n        snapshot = core.query_state()\n        assert snapshot is not None\n\n        logger.info("\u2705 Input injection test passed!")\n\n    @pytest.mark.asyncio\n    async def test_workspace_state_after_cycling(self, boot_config):\n        """Workspace has valid state after cycling."""\n        from sanctuary.mind.cognitive_core.core import CognitiveCore\n\n        core = CognitiveCore(config=boot_config)\n\n        await core.start()\n        await asyncio.sleep(0.5)\n        await core.stop()\n\n        snapshot = core.query_state()\n        assert snapshot is not None\n\n        # Workspace should have serializable state\n        state_dict = snapshot.model_dump() if hasattr(snapshot, "model_dump") else vars(snapshot)\n        assert isinstance(state_dict, dict)\n\n        logger.info("\u2705 Workspace state is valid after cycling!")\n\n    def test_subsystem_cross_references(self, boot_config):\n        """Subsystems are properly wired together after instantiation."""\n        from sanctuary.mind.cognitive_core.core import CognitiveCore\n\n        core = CognitiveCore(config=boot_config)\n\n        # Workspace has references to key subsystems\n        assert core.workspace.affect is not None\n        assert core.workspace.action_subsystem is not None\n        assert core.workspace.perception is not None\n\n        # IWMT core should be initialized (enabled by default in boot config)\n        assert core.subsystems.iwmt_core is not None\n\n        logger.info("\u2705 Subsystem cross-references verified!")\n\n\nclass TestPhase1MockPerceptionStats:\n    """Verify mock perception tracking and cache behavior."""\n\n    @pytest.mark.asyncio\n    async def test_cache_hit_rate(self):\n        """Cache works correctly for repeated inputs."""\n        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem\n\n        perception = MockPerceptionSubsystem(config={"cache_size": 10})\n\n        # First encoding (cache miss)\n        await perception.encode("test input", "text")\n        stats = perception.get_stats()\n        assert stats["cache_misses"] == 1\n        assert stats["cache_hits"] == 0\n\n        # Second encoding of same input (cache hit)\n        await perception.encode("test input", "text")\n        stats = perception.get_stats()\n        assert stats["cache_hits"] == 1\n\n        assert stats["mock_mode"] is True\n\n    @pytest.mark.asyncio\n    async def test_cache_eviction(self):\n        """Cache evicts oldest entries when full."""\n        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem\n\n        perception = MockPerceptionSubsystem(config={"cache_size": 3})\n\n        # Fill cache\n        for i in range(3):\n            await perception.encode(f"input_{i}", "text")\n        assert len(perception.embedding_cache) == 3\n\n        # One more evicts the oldest\n        await perception.encode("input_3", "text")\n        assert len(perception.embedding_cache) == 3  # Still 3\n\n        # First input should be evicted (cache miss)\n        await perception.encode("input_0", "text")\n        stats = perception.get_stats()\n        # input_0 was evicted, so this is a miss\n        assert stats["cache_misses"] > 3  # More than initial 3\n
+"""
+Phase 1 Boot Integration Test.
+
+Goal: Verify that CognitiveCore can instantiate and run cognitive cycles
+without errors, using mock perception (no sentence-transformers needed).
+
+This is the most fundamental integration test: if the system can boot
+and cycle, everything downstream has a foundation to build on.
+
+Run with:
+    pytest sanctuary/tests/integration/test_phase1_boot.py -v
+"""
+
+import asyncio
+import logging
+import tempfile
+from pathlib import Path
+
+import pytest
+
+# Configure logging to see boot sequence
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@pytest.fixture
+def boot_temp_dir():
+    """Create a temporary directory for boot data files."""
+    with tempfile.TemporaryDirectory(prefix="sanctuary_boot_test_") as tmpdir:
+        yield Path(tmpdir)
+
+
+@pytest.fixture
+def boot_config(boot_temp_dir):
+    """Create boot configuration with mock perception."""
+    from sanctuary.mind.cognitive_core.boot_config import create_boot_config
+    return create_boot_config(temp_dir=boot_temp_dir, mock_perception=True)
+
+
+class TestPhase1Boot:
+    """Phase 1: Can the system instantiate and cycle without errors?"""
+
+    def test_boot_config_creation(self, boot_temp_dir):
+        """Boot config creates valid configuration with required directories."""
+        from sanctuary.mind.cognitive_core.boot_config import create_boot_config
+        config = create_boot_config(temp_dir=boot_temp_dir)
+
+        assert config["cycle_rate_hz"] == 10.0
+        assert config["attention_budget"] == 100
+        assert config["perception"]["mock_mode"] is True
+        assert config["devices"]["enabled"] is False
+
+        # Required directories exist
+        assert Path(config["identity_dir"]).is_dir()
+        assert Path(config["journal_dir"]).is_dir()
+        assert Path(config["checkpointing"]["checkpoint_dir"]).is_dir()
+
+    def test_mock_perception_instantiation(self):
+        """MockPerceptionSubsystem can be created without ML dependencies."""
+        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem
+
+        perception = MockPerceptionSubsystem(config={"mock_embedding_dim": 384})
+        assert perception.embedding_dim == 384
+
+    @pytest.mark.asyncio
+    async def test_mock_perception_encoding(self):
+        """Mock perception produces deterministic embeddings."""
+        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem
+
+        perception = MockPerceptionSubsystem(config={"mock_embedding_dim": 384})
+
+        # Encode text
+        percept = await perception.encode("hello world", "text")
+        assert percept is not None
+        assert len(percept.embedding) == 384
+        assert percept.modality == "text"
+
+        # Same input produces same embedding (deterministic)
+        percept2 = await perception.encode("hello world", "text")
+        assert percept.embedding == percept2.embedding
+
+        # Different input produces different embedding
+        percept3 = await perception.encode("goodbye world", "text")
+        assert percept.embedding != percept3.embedding
+
+    @pytest.mark.asyncio
+    async def test_mock_perception_all_modalities(self):
+        """Mock perception handles all modality types."""
+        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem
+
+        perception = MockPerceptionSubsystem()
+
+        modalities = {
+            "text": "hello",
+            "image": b"fake_image_bytes",
+            "audio": {"duration_seconds": 2},
+            "sensor": {"value": 42, "sensor_type": "temperature"},
+            "introspection": {"description": "reflecting on state"},
+        }
+
+        for modality, raw_input in modalities.items():
+            percept = await perception.encode(raw_input, modality)
+            assert percept is not None, f"Failed for modality: {modality}"
+            assert len(percept.embedding) == 384, f"Wrong dim for modality: {modality}"
+            assert percept.modality == modality
+
+    def test_workspace_instantiation(self):
+        """GlobalWorkspace can be created independently."""
+        from sanctuary.mind.cognitive_core.workspace import GlobalWorkspace
+        ws = GlobalWorkspace()
+        snapshot = ws.get_snapshot()
+        assert snapshot is not None
+
+    def test_cognitive_core_instantiation(self, boot_config):
+        """CognitiveCore instantiates with boot config (the main Phase 1 test)."""
+        from sanctuary.mind.cognitive_core.core import CognitiveCore
+
+        core = CognitiveCore(config=boot_config)
+
+        assert core is not None
+        assert core.workspace is not None
+        assert core.subsystems is not None
+        assert core.subsystems.perception is not None
+        assert core.subsystems.affect is not None
+        assert core.subsystems.attention is not None
+        assert core.subsystems.action is not None
+
+        logger.info("CognitiveCore instantiated successfully!")
+
+    @pytest.mark.asyncio
+    async def test_cognitive_core_runs_cycles(self, boot_config):
+        """CognitiveCore can start, run cycles, and stop without errors."""
+        from sanctuary.mind.cognitive_core.core import CognitiveCore
+
+        core = CognitiveCore(config=boot_config)
+
+        # Start the cognitive loop
+        await core.start()
+        assert core.running
+
+        # Let it run for a short time (~10 cycles at 10Hz)
+        await asyncio.sleep(1.0)
+
+        # Stop gracefully
+        await core.stop()
+        assert not core.running
+
+        # Check metrics - should have completed some cycles
+        metrics = core.get_metrics()
+        logger.info(f"Completed cycles: {metrics.get('total_cycles', 0)}")
+
+        logger.info("CognitiveCore ran and stopped successfully!")
+
+    @pytest.mark.asyncio
+    async def test_inject_input_and_cycle(self, boot_config):
+        """CognitiveCore accepts input injection during cycling."""
+        from sanctuary.mind.cognitive_core.core import CognitiveCore
+
+        core = CognitiveCore(config=boot_config)
+
+        # Inject input before starting
+        core.inject_input("hello sanctuary", modality="text")
+
+        # Start and let it process
+        await core.start()
+        await asyncio.sleep(0.5)
+        await core.stop()
+
+        # Query final state
+        snapshot = core.query_state()
+        assert snapshot is not None
+
+        logger.info("Input injection test passed!")
+
+    @pytest.mark.asyncio
+    async def test_workspace_state_after_cycling(self, boot_config):
+        """Workspace has valid state after cycling."""
+        from sanctuary.mind.cognitive_core.core import CognitiveCore
+
+        core = CognitiveCore(config=boot_config)
+
+        await core.start()
+        await asyncio.sleep(0.5)
+        await core.stop()
+
+        snapshot = core.query_state()
+        assert snapshot is not None
+
+        # Workspace should have serializable state
+        state_dict = snapshot.model_dump() if hasattr(snapshot, "model_dump") else vars(snapshot)
+        assert isinstance(state_dict, dict)
+
+        logger.info("Workspace state is valid after cycling!")
+
+    def test_subsystem_cross_references(self, boot_config):
+        """Subsystems are properly wired together after instantiation."""
+        from sanctuary.mind.cognitive_core.core import CognitiveCore
+
+        core = CognitiveCore(config=boot_config)
+
+        # Workspace has references to key subsystems
+        assert core.workspace.affect is not None
+        assert core.workspace.action_subsystem is not None
+        assert core.workspace.perception is not None
+
+        # IWMT core should be initialized (enabled by default in boot config)
+        assert core.subsystems.iwmt_core is not None
+
+        logger.info("Subsystem cross-references verified!")
+
+
+class TestPhase1MockPerceptionStats:
+    """Verify mock perception tracking and cache behavior."""
+
+    @pytest.mark.asyncio
+    async def test_cache_hit_rate(self):
+        """Cache works correctly for repeated inputs."""
+        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem
+
+        perception = MockPerceptionSubsystem(config={"cache_size": 10})
+
+        # First encoding (cache miss)
+        await perception.encode("test input", "text")
+        stats = perception.get_stats()
+        assert stats["cache_misses"] == 1
+        assert stats["cache_hits"] == 0
+
+        # Second encoding of same input (cache hit)
+        await perception.encode("test input", "text")
+        stats = perception.get_stats()
+        assert stats["cache_hits"] == 1
+
+        assert stats["mock_mode"] is True
+
+    @pytest.mark.asyncio
+    async def test_cache_eviction(self):
+        """Cache evicts oldest entries when full."""
+        from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem
+
+        perception = MockPerceptionSubsystem(config={"cache_size": 3})
+
+        # Fill cache
+        for i in range(3):
+            await perception.encode(f"input_{i}", "text")
+        assert len(perception.embedding_cache) == 3
+
+        # One more evicts the oldest
+        await perception.encode("input_3", "text")
+        assert len(perception.embedding_cache) == 3  # Still 3
+
+        # First input should be evicted (cache miss)
+        await perception.encode("input_0", "text")
+        stats = perception.get_stats()
+        # input_0 was evicted, so this is a miss
+        assert stats["cache_misses"] > 3  # More than initial 3

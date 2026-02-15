@@ -191,6 +191,7 @@ class ConsciousnessTest(ABC):
                 timestamp=start_time,
                 score=0.0,
                 passed=False,
+                subscores={"setup": 0.0},
                 observations=["Test setup failed"],
                 analysis="Test could not be executed due to setup failure."
             )

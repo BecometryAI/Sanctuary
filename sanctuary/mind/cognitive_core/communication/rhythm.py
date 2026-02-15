@@ -319,24 +319,22 @@ class ConversationalRhythmModel:
     
     def _update_averages(self) -> None:
         """Update running averages for response time and turn length."""
-        if len(self.turns) < 2:
-            return
-        
-        # Calculate response times (gaps between turns)
-        response_times = []
-        for i in range(len(self.turns) - 1):
-            if self.turns[i].is_complete:
-                gap = (self.turns[i + 1].started_at - self.turns[i].ended_at).total_seconds()
-                if gap >= 0:  # Ignore negative gaps (shouldn't happen but be safe)
-                    response_times.append(gap)
-        
-        if response_times:
-            # Use exponential moving average for responsiveness
-            recent_responses = response_times[-10:]  # Last 10 gaps
-            new_avg = sum(recent_responses) / len(recent_responses)
-            self.avg_response_time = (0.7 * self.avg_response_time + 0.3 * new_avg)
-        
-        # Calculate turn lengths
+        # Calculate response times (gaps between turns) - needs at least 2 turns
+        if len(self.turns) >= 2:
+            response_times = []
+            for i in range(len(self.turns) - 1):
+                if self.turns[i].is_complete:
+                    gap = (self.turns[i + 1].started_at - self.turns[i].ended_at).total_seconds()
+                    if gap >= 0:  # Ignore negative gaps (shouldn't happen but be safe)
+                        response_times.append(gap)
+
+            if response_times:
+                # Use exponential moving average for responsiveness
+                recent_responses = response_times[-10:]  # Last 10 gaps
+                new_avg = sum(recent_responses) / len(recent_responses)
+                self.avg_response_time = (0.7 * self.avg_response_time + 0.3 * new_avg)
+
+        # Calculate turn lengths - works with any number of turns
         turn_lengths = [turn.content_length for turn in self.turns if turn.content_length > 0]
         if turn_lengths:
             recent_lengths = turn_lengths[-10:]  # Last 10 turns

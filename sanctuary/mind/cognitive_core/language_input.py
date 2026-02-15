@@ -558,10 +558,12 @@ JSON Response:"""
         
         # Check high-priority specific patterns first
         # These are more specific and should override generic patterns
+        # REQUEST before QUESTION so "can you..." matches REQUEST, not QUESTION
         high_priority_intents = [
             IntentType.MEMORY_REQUEST,
             IntentType.INTROSPECTION_REQUEST,
             IntentType.GREETING,
+            IntentType.REQUEST,
         ]
         
         for intent_type in high_priority_intents:

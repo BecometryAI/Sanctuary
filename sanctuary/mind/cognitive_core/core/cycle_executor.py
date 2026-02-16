@@ -563,7 +563,7 @@ class CycleExecutor:
             # Add high-priority autonomous goal
             self.state.workspace.add_goal(autonomous_goal)
             logger.info(f"🗣️ Autonomous speech goal added: {autonomous_goal.description}")
-    
+
     async def _check_interruption(self) -> None:
         """
         Check if an urgent interruption is warranted during human turn.

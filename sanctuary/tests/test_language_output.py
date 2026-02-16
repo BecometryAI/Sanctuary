@@ -14,8 +14,22 @@ import asyncio
 from pathlib import Path
 from unittest.mock import Mock, AsyncMock, patch
 
+import mind.cognitive_core.fallback_handlers as _fh
 from mind.cognitive_core.language_output import LanguageOutputGenerator
 from mind.cognitive_core.workspace import WorkspaceSnapshot, Percept, Goal, GoalType
+
+
+@pytest.fixture(autouse=True)
+def reset_circuit_breaker():
+    """Reset the output circuit breaker singleton before each test.
+
+    The circuit breaker is a module-level singleton. If a prior test caused
+    failures that opened the circuit, subsequent tests would bypass the LLM
+    and use the fallback generator instead.
+    """
+    _fh._output_circuit_breaker = None
+    yield
+    _fh._output_circuit_breaker = None
 
 
 class MockLLM:

@@ -63,6 +63,10 @@ class CycleExecutor:
         # IWMT prediction tracking
         self._current_predictions = []
         self._current_prediction_errors = []
+
+        # Emotion-triggered memory retrieval rate limiting
+        self._cycles_since_emotion_retrieval = 0
+        self._emotion_retrieval_cooldown = 15  # min cycles between emotion-triggered retrievals
     
     def _has_temporal_grounding(self) -> bool:
         """Check if temporal grounding subsystem is available."""
@@ -129,6 +133,10 @@ class CycleExecutor:
                         context=context
                     )
                     self._current_prediction_errors = self.subsystems.iwmt_core.world_model.prediction_errors[-10:]
+                    # Compute and store IWMT confidence for action modulation
+                    error_summary = self.subsystems.iwmt_core.world_model.get_prediction_error_summary()
+                    avg_surprise = error_summary.get("average_surprise", 0.5)
+                    self.state.workspace.metadata["iwmt_confidence"] = 1.0 - min(avg_surprise, 1.0)
                     logger.debug(f"🔮 IWMT: Generated {len(self._current_predictions)} predictions")
                 else:
                     self._current_predictions = []
@@ -279,6 +287,20 @@ class CycleExecutor:
             affect_update = {}
             subsystem_timings['affect'] = 0.0
 
+        # 4.5 GOAL DYNAMICS: Adjust goal priorities based on staleness, deadlines, emotion
+        if self._should_run('goal_dynamics'):
+            try:
+                step_start = time.time()
+                self._adjust_goal_priorities()
+                subsystem_timings['goal_dynamics'] = (time.time() - step_start) * 1000
+                self._record_ok('goal_dynamics')
+            except Exception as e:
+                logger.error(f"Goal dynamics step failed: {e}", exc_info=True)
+                subsystem_timings['goal_dynamics'] = 0.0
+                self._record_err('goal_dynamics', e)
+        else:
+            subsystem_timings['goal_dynamics'] = 0.0
+
         # 5. ACTION: Decide what to do and execute
         if self._should_run('action'):
             try:
@@ -386,6 +408,19 @@ class CycleExecutor:
             try:
                 step_start = time.time()
                 await self.subsystems.memory.consolidate(self.state.workspace.broadcast())
+
+                # 9.1 Cross-memory association detection (after consolidation)
+                consolidated_id = getattr(self.subsystems.memory, 'last_consolidated_id', None)
+                if consolidated_id and hasattr(self.subsystems, 'memory_associations'):
+                    try:
+                        await self.subsystems.memory_associations.detect_associations(
+                            memory_manager=self.subsystems.memory.memory_manager,
+                            recent_memory_id=consolidated_id,
+                        )
+                        self.subsystems.memory.last_consolidated_id = None  # consume
+                    except Exception as assoc_err:
+                        logger.debug(f"Association detection failed (non-critical): {assoc_err}")
+
                 subsystem_timings['memory_consolidation'] = (time.time() - step_start) * 1000
                 self._record_ok('memory_consolidation')
             except Exception as e:
@@ -441,26 +476,77 @@ class CycleExecutor:
     
     async def _retrieve_memories(self) -> list:
         """
-        Retrieve memories if there are memory retrieval goals.
-        
+        Retrieve memories based on explicit goals OR strong emotional state.
+
+        Triggers:
+        1. Explicit RETRIEVE_MEMORY goals (always honored)
+        2. High emotional intensity (arousal > 0.7 or |valence| > 0.6) with cooldown
+
         Returns:
             List of memory percepts
         """
+        self._cycles_since_emotion_retrieval += 1
         snapshot = self.state.workspace.broadcast()
-        retrieve_goals = [
-            g for g in snapshot.goals
-            if g.type == GoalType.RETRIEVE_MEMORY
-        ]
-        
-        if retrieve_goals:
-            # Retrieve memories and add as percepts (fast_mode for performance)
+
+        # Check for explicit retrieval goals
+        has_retrieval_goal = any(
+            g.type == GoalType.RETRIEVE_MEMORY for g in snapshot.goals
+        )
+
+        # Check for emotion-triggered retrieval
+        emotion_triggered = False
+        if not has_retrieval_goal and self._cycles_since_emotion_retrieval >= self._emotion_retrieval_cooldown:
+            emotional_state = self.subsystems.affect.get_state()
+            arousal = emotional_state.get("arousal", 0.0)
+            valence = emotional_state.get("valence", 0.0)
+            intensity = emotional_state.get("intensity", 0.0)
+
+            if arousal > 0.7 or abs(valence) > 0.6 or intensity > 0.65:
+                emotion_triggered = True
+                self._cycles_since_emotion_retrieval = 0
+                logger.debug(
+                    f"💾 Emotion-triggered memory retrieval: "
+                    f"arousal={arousal:.2f}, valence={valence:.2f}, intensity={intensity:.2f}"
+                )
+
+        if has_retrieval_goal or emotion_triggered:
             return await self.subsystems.memory.retrieve_for_workspace(
-                snapshot, 
+                snapshot,
                 fast_mode=True,
                 timeout=0.05
             )
         return []
     
+    def _adjust_goal_priorities(self) -> None:
+        """
+        Run goal priority dynamics: staleness boost, deadline urgency, emotion congruence.
+
+        Reads current goals and emotional state, computes adjustments via
+        GoalDynamics, and applies them to the workspace.
+        """
+        if not hasattr(self.subsystems, 'goal_dynamics'):
+            return
+
+        goals = list(self.state.workspace.current_goals)
+        if not goals:
+            return
+
+        emotional_state = self.subsystems.affect.get_state()
+        cycle_count = self.state.workspace.cycle_count
+
+        adjustments = self.subsystems.goal_dynamics.adjust_priorities(
+            goals=goals,
+            cycle_count=cycle_count,
+            emotional_state=emotional_state,
+        )
+
+        for adj in adjustments:
+            self.state.workspace.update_goal_priority(adj.goal_id, adj.new_priority)
+            logger.debug(
+                f"🎯 Goal priority adjusted: {adj.goal_id[:8]}... "
+                f"{adj.old_priority:.3f} → {adj.new_priority:.3f} ({adj.reason})"
+            )
+
     async def _execute_actions(self) -> None:
         """Decide on actions and execute them."""
         snapshot = self.state.workspace.broadcast()
@@ -551,7 +637,17 @@ class CycleExecutor:
                 percept_type = percept.raw.get("type")
                 if percept_type in ["self_model_update", "behavioral_inconsistency", "existential_question"]:
                     self.subsystems.introspective_journal.record_observation(percept.raw)
-        
+
+        # Identity consistency check (every 50 cycles)
+        if self.state.workspace.cycle_count % 50 == 0:
+            try:
+                consistency_percept = self.subsystems.meta_cognition.check_identity_consistency()
+                if consistency_percept:
+                    meta_percepts.append(consistency_percept)
+                    logger.info("🪞 Identity consistency check generated a percept")
+            except Exception as e:
+                logger.debug(f"Identity consistency check failed (non-critical): {e}")
+
         return meta_percepts
     
     async def _check_autonomous_triggers(self) -> None:

@@ -2,15 +2,18 @@
 Identity Continuity: Track identity stability and changes over time.
 
 This module implements tracking of identity snapshots over time to measure
-consistency and detect identity changes or drift.
+consistency and detect identity changes or drift. Snapshots are persisted
+to disk as JSONL for long-term identity evolution tracking.
 """
 
 from __future__ import annotations
 
+import json
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 from dataclasses import dataclass, field
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +39,17 @@ class IdentitySnapshot:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass
+class IdentityEvolutionEvent:
+    """Records a detected identity change and what caused it."""
+    timestamp: datetime
+    event_type: str  # "value_added", "value_removed", "disposition_shift", "tendency_change"
+    description: str
+    old_value: Any = None
+    new_value: Any = None
+    trigger: str = ""  # what caused the change (e.g. "behavior_pattern", "emotional_shift")
+
+
 class IdentityContinuity:
     """
     Track identity stability and changes over time.
@@ -53,35 +67,119 @@ class IdentityContinuity:
     def __init__(self, max_snapshots: int = 100, config: Dict = None):
         """
         Initialize identity continuity tracker.
-        
+
         Args:
             max_snapshots: Maximum snapshots to keep in history
             config: Optional configuration dictionary
         """
         if max_snapshots < 1:
             raise ValueError("max_snapshots must be at least 1")
-        
+
         self.snapshots: List[IdentitySnapshot] = []
         self.max_snapshots = max_snapshots
         self.config = config or {}
-        
+
+        # Evolution event log
+        self.evolution_events: List[IdentityEvolutionEvent] = []
+
+        # Disk persistence (only when explicitly configured)
+        persistence_dir = self.config.get("persistence_dir")
+        self._persistence_enabled = persistence_dir is not None
+        self._persistence_dir = Path(persistence_dir) if persistence_dir else Path("data/identity/evolution")
+        self._snapshot_file = self._persistence_dir / "snapshots.jsonl"
+        self._events_file = self._persistence_dir / "events.jsonl"
+        if self._persistence_enabled:
+            self._ensure_persistence_dir()
+            self._load_persisted_snapshots()
+
         logger.debug(f"IdentityContinuity initialized (max_snapshots={max_snapshots})")
+
+    def _ensure_persistence_dir(self) -> None:
+        """Create persistence directory if it doesn't exist."""
+        try:
+            self._persistence_dir.mkdir(parents=True, exist_ok=True)
+        except Exception as e:
+            logger.debug(f"Could not create persistence dir: {e}")
+
+    def _load_persisted_snapshots(self) -> None:
+        """Load previously persisted snapshots from disk."""
+        if not self._snapshot_file.exists():
+            return
+        try:
+            with open(self._snapshot_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    data = json.loads(line)
+                    snapshot = IdentitySnapshot(
+                        timestamp=datetime.fromisoformat(data["timestamp"]),
+                        core_values=data.get("core_values", []),
+                        emotional_disposition=data.get("emotional_disposition", {}),
+                        self_defining_memories=data.get("self_defining_memories", []),
+                        behavioral_tendencies=data.get("behavioral_tendencies", {}),
+                        metadata=data.get("metadata", {}),
+                    )
+                    self.snapshots.append(snapshot)
+            # Trim to max
+            if len(self.snapshots) > self.max_snapshots:
+                self.snapshots = self.snapshots[-self.max_snapshots:]
+            logger.info(f"Loaded {len(self.snapshots)} identity snapshots from disk")
+        except Exception as e:
+            logger.debug(f"Could not load persisted snapshots: {e}")
+
+    def _persist_snapshot(self, snapshot: IdentitySnapshot) -> None:
+        """Append a snapshot to the JSONL file."""
+        if not self._persistence_enabled:
+            return
+        try:
+            data = {
+                "timestamp": snapshot.timestamp.isoformat(),
+                "core_values": snapshot.core_values,
+                "emotional_disposition": snapshot.emotional_disposition,
+                "self_defining_memories": snapshot.self_defining_memories,
+                "behavioral_tendencies": snapshot.behavioral_tendencies,
+                "metadata": snapshot.metadata,
+            }
+            with open(self._snapshot_file, 'a') as f:
+                f.write(json.dumps(data) + "\n")
+        except Exception as e:
+            logger.debug(f"Could not persist snapshot: {e}")
+
+    def _persist_event(self, event: IdentityEvolutionEvent) -> None:
+        """Append an evolution event to the JSONL file."""
+        if not self._persistence_enabled:
+            return
+        try:
+            data = {
+                "timestamp": event.timestamp.isoformat(),
+                "event_type": event.event_type,
+                "description": event.description,
+                "old_value": event.old_value,
+                "new_value": event.new_value,
+                "trigger": event.trigger,
+            }
+            with open(self._events_file, 'a') as f:
+                f.write(json.dumps(data) + "\n")
+        except Exception as e:
+            logger.debug(f"Could not persist event: {e}")
     
-    def take_snapshot(self, identity: Any) -> None:
+    def take_snapshot(self, identity: Any, trigger: str = "") -> None:
         """
         Record current identity state as a snapshot.
-        
+
+        Detects changes from the previous snapshot and logs evolution events.
+
         Args:
             identity: ComputedIdentity or Identity object
+            trigger: What caused this snapshot (e.g. "periodic", "behavior_pattern")
         """
         # Extract snapshot data from identity
         if hasattr(identity, 'as_identity'):
-            # ComputedIdentity - convert to Identity first
             identity_obj = identity.as_identity()
         else:
-            # Already an Identity object
             identity_obj = identity
-        
+
         # Create snapshot
         snapshot = IdentitySnapshot(
             timestamp=datetime.now(),
@@ -94,18 +192,106 @@ class IdentityContinuity:
             behavioral_tendencies=identity_obj.behavioral_tendencies.copy(),
             metadata={
                 "source": identity_obj.source,
-                "snapshot_count": len(self.snapshots) + 1
+                "snapshot_count": len(self.snapshots) + 1,
+                "trigger": trigger,
             }
         )
-        
+
+        # Detect evolution events by comparing to previous snapshot
+        if self.snapshots:
+            self._detect_evolution_events(self.snapshots[-1], snapshot, trigger)
+
         # Add to history
         self.snapshots.append(snapshot)
-        
+
         # Trim if needed
         if len(self.snapshots) > self.max_snapshots:
             self.snapshots = self.snapshots[-self.max_snapshots:]
-        
+
+        # Persist to disk
+        self._persist_snapshot(snapshot)
+
         logger.debug(f"Identity snapshot taken (total: {len(self.snapshots)})")
+
+    def _detect_evolution_events(
+        self, prev: IdentitySnapshot, curr: IdentitySnapshot, trigger: str
+    ) -> None:
+        """Compare two snapshots and log any identity changes as events."""
+        now = datetime.now()
+
+        # Value changes
+        prev_values = set(prev.core_values)
+        curr_values = set(curr.core_values)
+        for added in curr_values - prev_values:
+            event = IdentityEvolutionEvent(
+                timestamp=now,
+                event_type="value_added",
+                description=f"New core value emerged: {added}",
+                new_value=added,
+                trigger=trigger,
+            )
+            self.evolution_events.append(event)
+            self._persist_event(event)
+            logger.info(f"🧬 Identity evolution: value added — {added}")
+
+        for removed in prev_values - curr_values:
+            event = IdentityEvolutionEvent(
+                timestamp=now,
+                event_type="value_removed",
+                description=f"Core value faded: {removed}",
+                old_value=removed,
+                trigger=trigger,
+            )
+            self.evolution_events.append(event)
+            self._persist_event(event)
+            logger.info(f"🧬 Identity evolution: value removed — {removed}")
+
+        # Disposition shift (only log if significant)
+        disp_change = self._compute_disposition_change(
+            prev.emotional_disposition, curr.emotional_disposition
+        )
+        if disp_change > 0.2:
+            event = IdentityEvolutionEvent(
+                timestamp=now,
+                event_type="disposition_shift",
+                description=f"Emotional disposition shifted by {disp_change:.3f}",
+                old_value=prev.emotional_disposition,
+                new_value=curr.emotional_disposition,
+                trigger=trigger,
+            )
+            self.evolution_events.append(event)
+            self._persist_event(event)
+
+        # Behavioral tendency changes
+        for key in set(list(prev.behavioral_tendencies.keys()) + list(curr.behavioral_tendencies.keys())):
+            old_val = prev.behavioral_tendencies.get(key, 0.0)
+            new_val = curr.behavioral_tendencies.get(key, 0.0)
+            if abs(new_val - old_val) > 0.15:
+                event = IdentityEvolutionEvent(
+                    timestamp=now,
+                    event_type="tendency_change",
+                    description=f"Behavioral tendency '{key}' changed: {old_val:.2f} → {new_val:.2f}",
+                    old_value=old_val,
+                    new_value=new_val,
+                    trigger=trigger,
+                )
+                self.evolution_events.append(event)
+                self._persist_event(event)
+
+    def get_evolution_summary(self, last_n: int = 20) -> Dict[str, Any]:
+        """Return a summary of recent identity evolution events."""
+        recent = self.evolution_events[-last_n:] if self.evolution_events else []
+        by_type: Dict[str, int] = {}
+        for e in recent:
+            by_type[e.event_type] = by_type.get(e.event_type, 0) + 1
+        return {
+            "total_events": len(self.evolution_events),
+            "recent_events": [
+                {"type": e.event_type, "description": e.description, "timestamp": e.timestamp.isoformat()}
+                for e in recent
+            ],
+            "event_counts": by_type,
+        }
     
     def get_continuity_score(self) -> float:
         """

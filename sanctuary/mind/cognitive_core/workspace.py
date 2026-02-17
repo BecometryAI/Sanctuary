@@ -60,6 +60,7 @@ class Goal(BaseModel):
     priority: float = Field(ge=0.0, le=1.0, default=0.5)
     created_at: datetime = Field(default_factory=datetime.now)
     progress: float = Field(ge=0.0, le=1.0, default=0.0)
+    deadline: Optional[datetime] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
@@ -222,6 +223,7 @@ class GlobalWorkspace:
         self.persistence_dir = persistence_dir
         
         # Core state
+        self.metadata: Dict[str, Any] = {}
         self.current_goals: List[Goal] = []
         self.active_percepts: Dict[str, Percept] = {}
         self.emotional_state: Dict[str, float] = {
@@ -263,6 +265,7 @@ class GlobalWorkspace:
             memories=list(self.attended_memories),
             timestamp=self.timestamp,
             cycle_count=self.cycle_count,
+            metadata=dict(self.metadata),
             temporal_context=dict(self.temporal_context) if self.temporal_context else None,
         )
 
@@ -356,6 +359,26 @@ class GlobalWorkspace:
         
         logger.info(f"Added goal: type={goal.type.value}, priority={goal.priority}")
 
+    def update_goal_priority(self, goal_id: str, new_priority: float) -> bool:
+        """
+        Update the priority of an existing goal.
+
+        Args:
+            goal_id: ID of the goal to update
+            new_priority: New priority value (clamped to 0.0-1.0)
+
+        Returns:
+            True if goal was found and updated, False otherwise
+        """
+        new_priority = max(0.0, min(1.0, new_priority))
+        for goal in self.current_goals:
+            if goal.id == goal_id:
+                goal.priority = new_priority
+                # Re-sort by priority
+                self.current_goals.sort(key=lambda g: g.priority, reverse=True)
+                return True
+        return False
+
     def remove_goal(self, goal_id: str) -> None:
         """
         Removes completed or abandoned goals.
@@ -393,10 +416,11 @@ class GlobalWorkspace:
             "dominance": 0.0,
         }
         self.attended_memories.clear()
+        self.metadata = {}
         self.timestamp = datetime.now()
         self.cycle_count = 0
         self.temporal_context = None
-        
+
         logger.info("Workspace cleared")
     
     def set_temporal_context(self, temporal_context: Dict[str, Any]) -> None:

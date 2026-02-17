@@ -10,6 +10,7 @@ from .resources import CognitiveResources, ResourcePool
 from .competition import GoalCompetition, ActiveGoal
 from .interactions import GoalInteraction
 from .metrics import GoalCompetitionMetrics
+from .dynamics import GoalDynamics, GoalAdjustment
 
 __all__ = [
     "CognitiveResources",
@@ -18,4 +19,6 @@ __all__ = [
     "ActiveGoal",
     "GoalInteraction",
     "GoalCompetitionMetrics",
+    "GoalDynamics",
+    "GoalAdjustment",
 ]

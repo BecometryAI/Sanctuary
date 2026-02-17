@@ -212,6 +212,20 @@ class SubsystemCoordinator:
             config=config.get("introspective_loop", {})
         )
         
+        # Initialize cross-memory association detector
+        from ..memory_associations import MemoryAssociationDetector
+        self.memory_associations = MemoryAssociationDetector(
+            config=config.get("memory_associations", {})
+        )
+        logger.debug("🔗 Memory association detector initialized")
+
+        # Initialize goal dynamics for priority adjustment
+        from ..goals import GoalDynamics
+        self.goal_dynamics = GoalDynamics(
+            config=config.get("goal_dynamics", {})
+        )
+        logger.debug("🎯 Goal dynamics initialized")
+
         # Initialize communication drive system with validated config
         from ..communication import CommunicationDriveSystem
         self.communication_drives = CommunicationDriveSystem(

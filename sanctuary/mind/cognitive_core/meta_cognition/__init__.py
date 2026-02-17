@@ -636,6 +636,103 @@ class SelfMonitor:
         else:
             return "Identity information not available"
     
+    def check_identity_consistency(self) -> Optional[Percept]:
+        """
+        Cross-check static charter values vs. dynamically computed identity.
+
+        Detects divergences between what the charter says the system values
+        and what the computed identity (from actual behavior) reflects.
+
+        Returns:
+            Introspective Percept if divergences found, None otherwise
+        """
+        if not self.identity or not self.identity_manager:
+            return None
+
+        try:
+            computed = self.identity_manager.get_identity()
+            if computed.source == "empty":
+                return None  # Not enough data yet
+
+            divergences = []
+
+            # 1. Check charter values vs. computed values
+            charter_values = set()
+            if self.identity.charter:
+                charter_values = {v.lower() for v in self.identity.charter.core_values}
+
+            computed_values = {v.lower() for v in computed.core_values} if computed.core_values else set()
+
+            if charter_values and computed_values:
+                charter_not_in_computed = charter_values - computed_values
+                for missing in charter_not_in_computed:
+                    divergences.append({
+                        "type": "charter_value_not_reflected",
+                        "description": f"Charter value '{missing}' not reflected in computed identity",
+                        "severity": 0.6,
+                    })
+
+                computed_not_in_charter = computed_values - charter_values
+                for novel in computed_not_in_charter:
+                    divergences.append({
+                        "type": "emergent_value",
+                        "description": f"Computed identity includes value '{novel}' not in charter",
+                        "severity": 0.3,  # Lower severity — emergent values are natural
+                    })
+
+            # 2. Check behavioral tendencies vs. charter guidelines
+            tendencies = computed.behavioral_tendencies or {}
+            if self.identity.charter and self.identity.charter.behavioral_guidelines:
+                for guideline in self.identity.charter.behavioral_guidelines:
+                    gl = guideline.lower()
+                    # If charter says "never lie" but honesty tendency is low
+                    if ("honest" in gl or "truthful" in gl or "never lie" in gl):
+                        speak_tend = tendencies.get("tendency_speak", 0.0)
+                        introspect_tend = tendencies.get("tendency_introspect", 0.0)
+                        if speak_tend > 0.6 and introspect_tend < 0.1:
+                            divergences.append({
+                                "type": "guideline_tendency_mismatch",
+                                "description": f"High speech tendency with low introspection may conflict with honesty guideline",
+                                "severity": 0.4,
+                            })
+
+            # 3. Check identity drift against continuity
+            drift = self.identity_manager.get_identity_drift()
+            if drift.get("has_drift") and drift.get("disposition_change", 0) > 0.4:
+                divergences.append({
+                    "type": "significant_drift",
+                    "description": f"Identity has drifted significantly (disposition change: {drift['disposition_change']:.3f})",
+                    "severity": 0.5,
+                })
+
+            if not divergences:
+                return None
+
+            max_severity = max(d["severity"] for d in divergences)
+            if max_severity < 0.3:
+                return None  # Too minor to report
+
+            percept_text = (
+                f"Identity Consistency Check: {len(divergences)} divergence(s) detected "
+                f"between charter and computed identity.\n"
+            )
+            for d in divergences:
+                percept_text += f"  - [{d['type']}] {d['description']}\n"
+
+            return Percept(
+                modality="introspection",
+                raw=percept_text,
+                complexity=8,
+                metadata={
+                    "type": "identity_consistency_check",
+                    "divergences": divergences,
+                    "max_severity": max_severity,
+                },
+            )
+        except Exception as e:
+            logger.debug(f"Identity consistency check failed: {e}")
+            return None
+
     def get_computed_identity_percept(self) -> Optional[Percept]:
         """
         Generate an introspective percept about computed identity.

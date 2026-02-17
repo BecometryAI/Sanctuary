@@ -92,13 +92,13 @@ Add capabilities that deepen the cognitive architecture. Each feature is a self-
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Implement confidence-based action modulation | P1 | Pending | Low confidence triggers more cautious behavior |
-| Add emotion-triggered memory retrieval | P1 | Pending | Strong emotions should trigger relevant memory retrieval |
-| Add cross-memory association detection | P1 | Pending | Detect themes/patterns across memories for associative links |
-| Implement identity evolution tracking | P1 | Pending | Log how identity changes over time based on experiences |
-| Add dynamic goal priority adjustment | P1 | Pending | Goals increase priority based on urgency or frustration |
-| Add time-based goal urgency | P1 | Pending | Goals near deadlines increase in priority |
-| Implement identity consistency checks | P2 | Pending | Detect when behavior contradicts identity and flag for reflection |
+| Implement confidence-based action modulation | P1 | **Done** | IWMT confidence flows via workspace metadata; low confidence (<0.5) boosts INTROSPECT/WAIT, penalizes SPEAK; very low (<0.3) injects caution candidate |
+| Add emotion-triggered memory retrieval | P1 | **Done** | `_retrieve_memories()` now also fires when arousal >0.7 or |valence| >0.6 or intensity >0.65; 15-cycle cooldown prevents flooding |
+| Add cross-memory association detection | P1 | **Done** | `MemoryAssociationDetector` + `MemoryManager.find_associated()` using ChromaDB embedding similarity; detects tag-based and emotional-signature clusters; runs after consolidation |
+| Implement identity evolution tracking | P1 | **Done** | `IdentityContinuity` now persists snapshots/events to JSONL; `_detect_evolution_events()` logs value additions/removals, disposition shifts, tendency changes; `get_evolution_summary()` API |
+| Add dynamic goal priority adjustment | P1 | **Done** | `GoalDynamics` module with staleness/frustration boost (after 30 stalled cycles), emotional congruence boost, and progress decay; wired as cycle step 4.5 |
+| Add time-based goal urgency | P1 | **Done** | `Goal.deadline` field + exponential urgency curve in `GoalDynamics._compute_deadline_boost()` (max +0.20 priority boost at deadline) |
+| Implement identity consistency checks | P2 | **Done** | `SelfMonitor.check_identity_consistency()` cross-checks charter values vs. computed identity; detects unmanifested charter values, emergent values, guideline-tendency mismatches, significant drift; runs every 50 cycles |
 
 ### 2.3 Perception Expansion
 
@@ -266,4 +266,4 @@ Everything below is done and merged. Kept for historical reference.
 
 ---
 
-**Next Action**: Phase 2.2 — Advanced Cognition
+**Next Action**: Phase 2.3 — Perception Expansion

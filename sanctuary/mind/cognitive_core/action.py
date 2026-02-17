@@ -367,7 +367,17 @@ class ActionSubsystem:
                         reason="Responding to introspective percept"
                     ))
         
-        # 4. Default: wait if nothing urgent
+        # 4. Confidence-driven caution: add introspect when IWMT confidence is very low
+        iwmt_confidence = snapshot.metadata.get("iwmt_confidence")
+        if iwmt_confidence is not None and iwmt_confidence < 0.3:
+            candidates.append(Action(
+                type=ActionType.INTROSPECT,
+                priority=0.55,
+                reason=f"Low prediction confidence ({iwmt_confidence:.2f}), pausing to reflect",
+                metadata={"trigger": "low_confidence"}
+            ))
+
+        # 5. Default: wait if nothing urgent
         if not candidates:
             candidates.append(Action(
                 type=ActionType.WAIT,
@@ -559,14 +569,22 @@ class ActionSubsystem:
         # Calculate base final score
         intermediate_score = base_score + goal_boost + emotional_boost - recency_penalty - cost_penalty
         intermediate_score = max(0.0, min(1.0, intermediate_score))
-        
+
         # 5. Apply affect modulation if available
         if self.affect:
-            final_score = self.affect.influence_action(intermediate_score, action)
-        else:
-            final_score = intermediate_score
-        
-        return max(0.0, min(1.0, final_score))
+            intermediate_score = self.affect.influence_action(intermediate_score, action)
+
+        # 6. Confidence-based modulation (from IWMT prediction confidence)
+        confidence = snapshot.metadata.get("iwmt_confidence")
+        if confidence is not None and confidence < 0.5:
+            # Low confidence: boost cautious actions, penalize committal ones
+            low_conf_factor = 1.0 - confidence  # 0.5 → 0.5, 0.0 → 1.0
+            if action.type in (ActionType.INTROSPECT, ActionType.WAIT, ActionType.RETRIEVE_MEMORY):
+                intermediate_score *= 1.0 + low_conf_factor * 0.3  # up to +30%
+            elif action.type in (ActionType.SPEAK, ActionType.SPEAK_AUTONOMOUS):
+                intermediate_score *= 1.0 - low_conf_factor * 0.2  # up to -20%
+
+        return max(0.0, min(1.0, intermediate_score))
     
     def register_tool(self, name: str, handler: Callable, description: str) -> None:
         """

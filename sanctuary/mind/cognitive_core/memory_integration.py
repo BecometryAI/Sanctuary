@@ -93,7 +93,8 @@ class MemoryIntegration:
         self.retrieval_top_k = self.config.get("retrieval_top_k", 5)
         self.min_cycles_between_consolidation = self.config.get("min_cycles", 20)
         self.cycles_since_consolidation = 0
-        
+        self.last_consolidated_id: Optional[str] = None
+
         logger.info("✅ MemoryIntegration initialized")
     
     async def retrieve_for_workspace(
@@ -184,6 +185,7 @@ class MemoryIntegration:
             success = await self.memory_manager.commit_journal(memory_entry)
             if success:
                 self.cycles_since_consolidation = 0
+                self.last_consolidated_id = str(memory_entry.id)
                 logger.info("💾 Consolidated workspace to long-term memory")
             else:
                 logger.warning("Memory consolidation failed")

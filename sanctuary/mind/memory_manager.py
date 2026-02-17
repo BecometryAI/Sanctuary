@@ -857,6 +857,64 @@ class MemoryManager:
             logger.error(f"Recall failed for query '{query}': {e}", exc_info=True)
             return []
     
+    async def find_associated(
+        self,
+        memory_id: str,
+        n_results: int = 5,
+        min_significance: Optional[int] = None,
+    ) -> List[JournalEntry]:
+        """Find memories semantically similar to a given memory.
+
+        Uses the ChromaDB embedding of the source memory to find
+        nearest-neighbor entries in the journal collection.
+
+        Args:
+            memory_id: UUID string of the source memory
+            n_results: Number of similar memories to return
+            min_significance: Optional minimum significance filter
+
+        Returns:
+            List of associated JournalEntry objects (excludes the source)
+        """
+        try:
+            # Get the source memory's embedding from ChromaDB
+            result = self.journal_collection.get(
+                ids=[memory_id],
+                include=["embeddings"]
+            )
+            if not result["embeddings"] or not result["embeddings"][0]:
+                return []
+
+            embedding = result["embeddings"][0]
+
+            where_filter = self._build_chroma_filter(
+                filter_tags=None,
+                min_significance=min_significance,
+                memory_type="journal",
+            )
+
+            # Query for similar memories using the embedding
+            similar = self.journal_collection.query(
+                query_embeddings=[embedding],
+                n_results=n_results + 1,  # +1 to account for the source itself
+                where=where_filter if where_filter else None,
+            )
+
+            if not similar["ids"] or not similar["ids"][0]:
+                return []
+
+            # Filter out the source memory
+            associated_ids = [
+                UUID(eid) for eid in similar["ids"][0]
+                if eid != memory_id
+            ][:n_results]
+
+            return await self._load_entries_batch(associated_ids, memory_type="journal")
+
+        except Exception as e:
+            logger.error(f"find_associated failed for {memory_id}: {e}", exc_info=True)
+            return []
+
     def _build_chroma_filter(
         self,
         filter_tags: Optional[List[str]],

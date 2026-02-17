@@ -7,7 +7,7 @@ behavioral patterns, goal structures, and emotional tendencies.
 """
 
 from .computed import ComputedIdentity, Identity
-from .continuity import IdentitySnapshot, IdentityContinuity
+from .continuity import IdentitySnapshot, IdentityContinuity, IdentityEvolutionEvent
 from .manager import IdentityManager
 from .behavior_logger import BehaviorLogger
 
@@ -16,6 +16,7 @@ __all__ = [
     'Identity',
     'IdentitySnapshot',
     'IdentityContinuity',
+    'IdentityEvolutionEvent',
     'IdentityManager',
     'BehaviorLogger'
 ]

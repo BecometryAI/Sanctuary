@@ -53,8 +53,11 @@ class IdentityManager:
         self.bootstrap_config: Optional[Dict] = None
         self.config = config or {}
         
-        # Initialize subsystems
-        self.continuity = IdentityContinuity(config=config)
+        # Initialize subsystems with persistence enabled
+        continuity_config = dict(config) if config else {}
+        if "persistence_dir" not in continuity_config:
+            continuity_config["persistence_dir"] = "data/identity/evolution"
+        self.continuity = IdentityContinuity(config=continuity_config)
         self.behavior_log = BehaviorLogger(config=config)
         
         # Load bootstrap config if provided

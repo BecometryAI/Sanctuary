@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Dict, Any, Optional
+from typing import AsyncIterator, Callable, Dict, Any, Optional
 from pathlib import Path
 from datetime import datetime
 
@@ -171,6 +171,58 @@ class LanguageOutputGenerator:
         logger.info(f"🗣️ Generated fallback response: {len(response)} chars")
         return response
     
+    async def generate_stream(
+        self,
+        snapshot: WorkspaceSnapshot,
+        context: Optional[Dict] = None,
+        on_token: Optional[Callable[[str], None]] = None,
+    ) -> str:
+        """
+        Stream a response token-by-token, calling on_token for each chunk.
+
+        Falls back to non-streaming generate() if the LLM client doesn't
+        support streaming or the circuit breaker is open.
+
+        Args:
+            snapshot: Current workspace snapshot
+            context: Optional generation context
+            on_token: Optional callback invoked with each text chunk as it arrives
+
+        Returns:
+            Complete generated response string (all chunks concatenated)
+        """
+        context = context or {}
+
+        if self.llm and self.circuit_breaker.can_attempt():
+            try:
+                prompt = self._build_prompt(snapshot, context)
+                chunks: list[str] = []
+
+                async for chunk in self.llm.generate_stream(
+                    prompt=prompt,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                ):
+                    chunks.append(chunk)
+                    if on_token is not None:
+                        on_token(chunk)
+
+                self.circuit_breaker.record_success()
+                full_response = "".join(chunks)
+                formatted = self._format_response(full_response)
+                filtered = self._apply_content_filter(formatted)
+                logger.info(f"🗣️ Streamed response: {len(filtered)} chars")
+                return filtered
+
+            except Exception as e:
+                logger.warning(f"LLM streaming failed: {e}")
+                self.circuit_breaker.record_failure()
+                if not self.use_fallback_on_error:
+                    raise
+
+        # Fallback to non-streaming
+        return await self.generate(snapshot, context)
+
     async def _generate_with_llm(
         self, 
         snapshot: WorkspaceSnapshot,

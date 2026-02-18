@@ -219,6 +219,13 @@ class SubsystemCoordinator:
         )
         logger.debug("🔗 Memory association detector initialized")
 
+        # Initialize percept similarity detector for deduplication
+        from ..percept_similarity import PerceptSimilarityDetector
+        self.percept_similarity = PerceptSimilarityDetector(
+            config=config.get("percept_similarity", {})
+        )
+        logger.debug("🔍 Percept similarity detector initialized")
+
         # Initialize goal dynamics for priority adjustment
         from ..goals import GoalDynamics
         self.goal_dynamics = GoalDynamics(

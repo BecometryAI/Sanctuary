@@ -2,7 +2,7 @@
 
 This document tracks the development trajectory for the Sanctuary cognitive architecture, from proven POC through production-ready system.
 
-**Last Updated**: 2026-02-16
+**Last Updated**: 2026-02-17
 **Current Phase**: Post-POC — Hardening & Feature Expansion
 
 ---
@@ -104,9 +104,9 @@ Add capabilities that deepen the cognitive architecture. Each feature is a self-
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Wire multimodal perception into cognitive loop | P1 | Partial | Infrastructure exists (audio_gateway, asr_server, CLIP) — needs integration into perception step |
-| Implement percept similarity detection | P1 | Pending | Use embeddings to detect duplicate/similar percepts |
-| Add streaming LLM output support | P2 | Pending | Token streaming for long-form generation |
+| Wire multimodal perception into cognitive loop | P1 | **Done** | DeviceRegistry connected to InputQueue at startup via `LifecycleManager._connect_device_registry()`; device cleanup on shutdown; data flows through `connect_device_registry_to_input()` callback |
+| Implement percept similarity detection | P1 | **Done** | `PerceptSimilarityDetector` using cosine similarity on percept embeddings; intra-batch, temporal, and workspace dedup; configurable thresholds (0.92 same-modal, 0.95 cross-modal); wired as cycle step 1.1 |
+| Add streaming LLM output support | P2 | **Done** | `generate_stream()` async generator on `LLMClient` ABC; implemented in `MockLLMClient` (word-by-word) and `OllamaClient` (native HTTP streaming); `LanguageOutputGenerator.generate_stream()` with `on_token` callback |
 
 ---
 
@@ -266,4 +266,4 @@ Everything below is done and merged. Kept for historical reference.
 
 ---
 
-**Next Action**: Phase 2.3 — Perception Expansion
+**Next Action**: Phase 3 — Integration & Interfaces

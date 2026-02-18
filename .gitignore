@@ -97,9 +97,10 @@ data/checkpoints_demo/
 data/checkpoints_demo_simple/
 data/checkpoints/
 
-# ChromaDB storage and introspection journals (runtime generated)
+# ChromaDB storage, introspection journals, and identity evolution (runtime generated)
 data/chroma/
 data/introspection/
+data/identity/evolution/
 
 # Test output and temporary files
 test_chain/

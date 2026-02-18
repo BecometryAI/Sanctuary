@@ -22,7 +22,7 @@ import logging
 import json
 import time
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
+from typing import AsyncIterator, Dict, Any, Optional, List
 from collections import deque
 
 logger = logging.getLogger(__name__)
@@ -115,6 +115,31 @@ class LLMClient(ABC):
         """
         pass
     
+    async def generate_stream(
+        self,
+        prompt: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        **kwargs
+    ) -> AsyncIterator[str]:
+        """
+        Stream generated text token-by-token.
+
+        Default implementation falls back to non-streaming generate().
+        Subclasses may override for true token streaming.
+
+        Args:
+            prompt: Input prompt text
+            temperature: Generation temperature (overrides default)
+            max_tokens: Maximum tokens to generate (overrides default)
+            **kwargs: Additional model-specific parameters
+
+        Yields:
+            Text chunks as they are generated
+        """
+        response = await self.generate(prompt, temperature, max_tokens, **kwargs)
+        yield response
+
     async def _check_rate_limit(self):
         """Check and enforce rate limiting."""
         current_time = time.time()
@@ -185,21 +210,44 @@ class MockLLMClient(LLMClient):
         
         return response
     
+    async def generate_stream(
+        self,
+        prompt: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        **kwargs
+    ) -> AsyncIterator[str]:
+        """Stream mock response word-by-word."""
+        await self._check_rate_limit()
+
+        start_time = time.time()
+
+        words = [
+            "This", " is", " a", " mock", " streamed", " response",
+            " from", " the", " development", " LLM", " client.",
+        ]
+        for word in words:
+            await asyncio.sleep(0.02)
+            yield word
+
+        latency = time.time() - start_time
+        self._update_metrics(latency, tokens=len(words))
+
     async def generate_structured(
-        self, 
-        prompt: str, 
+        self,
+        prompt: str,
         schema: Dict,
         temperature: Optional[float] = None,
         **kwargs
     ) -> Dict:
         """Generate a mock structured JSON response."""
         await self._check_rate_limit()
-        
+
         start_time = time.time()
-        
+
         # Simulate processing delay
         await asyncio.sleep(0.1)
-        
+
         # Return mock structured response
         response = {
             "intent": {
@@ -225,10 +273,10 @@ class MockLLMClient(LLMClient):
             "context_updates": {},
             "confidence": 0.85
         }
-        
+
         latency = time.time() - start_time
         self._update_metrics(latency, tokens=50)
-        
+
         return response
 
 
@@ -676,6 +724,92 @@ class OllamaClient(LLMClient):
             raise LLMError(f"Ollama HTTP {e.code}: {body}")
         except urllib.error.URLError as e:
             raise LLMError(f"Cannot reach Ollama at {self.base_url}: {e}")
+
+    async def generate_stream(
+        self,
+        prompt: str,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        **kwargs
+    ) -> AsyncIterator[str]:
+        """Stream text using Ollama's native streaming endpoint."""
+        if not self._initialized:
+            logger.warning("Ollama not connected, using mock stream")
+            async for chunk in MockLLMClient().generate_stream(prompt, temperature, max_tokens):
+                yield chunk
+            return
+
+        await self._check_rate_limit()
+
+        start_time = time.time()
+        temp = temperature if temperature is not None else self.temperature
+        max_tok = max_tokens if max_tokens is not None else self.max_tokens
+
+        payload = json.dumps({
+            "model": self.model_name,
+            "prompt": prompt,
+            "stream": True,
+            "options": {
+                "temperature": temp,
+                "num_predict": max_tok,
+            }
+        }).encode("utf-8")
+
+        try:
+            token_count = 0
+            for chunk in await asyncio.to_thread(self._do_stream_request, payload):
+                token_count += 1
+                yield chunk
+
+            latency = time.time() - start_time
+            self._update_metrics(latency, tokens=token_count)
+            logger.debug(f"Ollama streamed {token_count} chunks in {latency:.2f}s")
+
+        except Exception as e:
+            logger.error(f"Ollama stream failed: {e}")
+            self._update_metrics(time.time() - start_time, error=True)
+            raise LLMError(f"Ollama stream failed: {e}")
+
+    def _do_stream_request(self, payload: bytes) -> List[str]:
+        """
+        Synchronous streaming HTTP request to Ollama (run in thread).
+
+        Returns list of text chunks (collected synchronously so the async
+        generator in generate_stream can yield them without blocking).
+        """
+        import urllib.request
+        import urllib.error
+
+        req = urllib.request.Request(
+            f"{self.base_url}/api/generate",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
+        chunks = []
+        try:
+            with urllib.request.urlopen(req, timeout=int(self.timeout)) as resp:
+                for line in resp:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line.decode())
+                        chunk = data.get("response", "")
+                        if chunk:
+                            chunks.append(chunk)
+                        if data.get("done", False):
+                            break
+                    except json.JSONDecodeError:
+                        continue
+        except urllib.error.HTTPError as e:
+            body = e.read().decode() if e.fp else ""
+            raise LLMError(f"Ollama HTTP {e.code}: {body}")
+        except urllib.error.URLError as e:
+            raise LLMError(f"Cannot reach Ollama at {self.base_url}: {e}")
+
+        return chunks
 
     async def generate_structured(
         self,

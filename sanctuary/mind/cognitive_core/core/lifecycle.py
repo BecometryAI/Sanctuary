@@ -67,16 +67,19 @@ class LifecycleManager:
         
         # Initialize queues in async context
         self.state.initialize_queues()
-        
+
+        # Connect device registry to input queue for multimodal perception
+        self._connect_device_registry()
+
         # Set running flag
         self.state.running = True
-        
+
         # Enable auto-GC if configured
         self._enable_memory_gc()
-        
+
         # Start auto-save if enabled
         await self._start_auto_save()
-        
+
         logger.info("🧠 Cognitive core started")
     
     async def stop(self) -> None:
@@ -93,6 +96,9 @@ class LifecycleManager:
         # Stop auto-save if running
         await self._stop_auto_save()
         
+        # Disconnect devices and stop hot-plug monitoring
+        await self._shutdown_device_registry()
+
         # Stop continuous consciousness
         if hasattr(self.subsystems, 'continuous_consciousness'):
             await self.subsystems.continuous_consciousness.stop()
@@ -111,6 +117,19 @@ class LifecycleManager:
         
         logger.info("🧠 CognitiveCore shutdown complete.")
     
+    async def _shutdown_device_registry(self) -> None:
+        """Disconnect all devices and stop hot-plug monitoring."""
+        registry = getattr(self.subsystems, 'device_registry', None)
+        if registry is None:
+            return
+
+        try:
+            await registry.stop_hot_plug_monitoring()
+            await registry.disconnect_all_devices()
+            logger.info("📷 Device registry shut down")
+        except Exception as e:
+            logger.error(f"📷 Error during device registry shutdown: {e}")
+
     async def _restore_latest_checkpoint(self) -> None:
         """Restore from the most recent checkpoint."""
         latest = self.subsystems.checkpoint_manager.get_latest_checkpoint()
@@ -122,6 +141,17 @@ class LifecycleManager:
             except Exception as e:
                 logger.error(f"Failed to restore checkpoint: {e}")
     
+    def _connect_device_registry(self) -> None:
+        """Connect device registry to input queue for multimodal data routing."""
+        if not hasattr(self.subsystems, 'device_registry') or self.subsystems.device_registry is None:
+            return
+
+        connected = self.subsystems.connect_device_registry_to_input(self.state.input_queue)
+        if connected:
+            logger.info("📷 Device registry connected to cognitive pipeline")
+        else:
+            logger.debug("📷 Device registry connection skipped (no callback set)")
+
     def _enable_memory_gc(self) -> None:
         """Enable memory garbage collection if configured."""
         gc_config = self.config.get("memory_gc", {})

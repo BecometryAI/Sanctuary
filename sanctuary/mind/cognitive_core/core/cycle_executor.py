@@ -175,6 +175,30 @@ class CycleExecutor:
             new_percepts = []
             subsystem_timings['perception'] = 0.0
 
+        # 1.1 PERCEPT DEDUP: Filter near-duplicate percepts
+        if self._should_run('percept_dedup'):
+            try:
+                if new_percepts and hasattr(self.subsystems, 'percept_similarity'):
+                    step_start = time.time()
+                    before_count = len(new_percepts)
+                    new_percepts = self.subsystems.percept_similarity.filter_duplicates(
+                        new_percepts,
+                        workspace_percepts=self.state.workspace.active_percepts,
+                    )
+                    filtered = before_count - len(new_percepts)
+                    if filtered > 0:
+                        logger.debug(f"🔍 Percept dedup: filtered {filtered}/{before_count} duplicates")
+                    subsystem_timings['percept_dedup'] = (time.time() - step_start) * 1000
+                    self._record_ok('percept_dedup')
+                else:
+                    subsystem_timings['percept_dedup'] = 0.0
+            except Exception as e:
+                logger.error(f"Percept dedup step failed: {e}", exc_info=True)
+                subsystem_timings['percept_dedup'] = 0.0
+                self._record_err('percept_dedup', e)
+        else:
+            subsystem_timings['percept_dedup'] = 0.0
+
         # 1.5. IWMT UPDATE: Update world model with new percepts
         if self._should_run('iwmt_update'):
             try:

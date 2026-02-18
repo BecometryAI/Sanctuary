@@ -75,17 +75,14 @@ class SanctuaryAPI:
     async def start(self) -> None:
         """
         Start the cognitive core.
-        
+
         Must be called before using chat() or other interactive methods.
         Starts the recurrent cognitive loop in the background.
         """
         if not self._running:
-            # Start cognitive core (runs in background task)
-            asyncio.create_task(self.core.start())
-            
-            # Give it a moment to initialize
-            await asyncio.sleep(0.1)
-            
+            # Start cognitive core and wait for it to be ready
+            await self.core.start()
+
             self._running = True
             logger.info("🧠 SanctuaryAPI started")
     

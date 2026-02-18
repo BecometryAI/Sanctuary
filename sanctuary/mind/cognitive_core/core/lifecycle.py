@@ -82,40 +82,55 @@ class LifecycleManager:
 
         logger.info("🧠 Cognitive core started")
     
-    async def stop(self) -> None:
+    async def stop(self, timeout: float = 30.0) -> None:
         """
         Gracefully shut down the cognitive core.
+
+        Args:
+            timeout: Maximum seconds to wait for shutdown. If exceeded, forces
+                     remaining operations to cancel and logs a warning.
         """
         logger.info("🧠 Stopping CognitiveCore...")
         self.state.running = False
-        
+
+        try:
+            await asyncio.wait_for(self._shutdown_sequence(), timeout=timeout)
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"🧠 Shutdown timed out after {timeout}s — forcing remaining tasks to cancel"
+            )
+            # Force-cancel any surviving tasks as a last resort
+            await self._cancel_tasks()
+
+        logger.info("🧠 CognitiveCore shutdown complete.")
+
+    async def _shutdown_sequence(self) -> None:
+        """Execute the ordered shutdown sequence (called within a timeout)."""
         # Disable GC before shutdown
         self.subsystems.memory.memory_manager.disable_auto_gc()
         logger.info("🧹 Memory garbage collection disabled")
-        
+
         # Stop auto-save if running
         await self._stop_auto_save()
-        
+
         # Disconnect devices and stop hot-plug monitoring
         await self._shutdown_device_registry()
 
         # Stop continuous consciousness
         if hasattr(self.subsystems, 'continuous_consciousness'):
             await self.subsystems.continuous_consciousness.stop()
-        
+
         # Cancel tasks if they exist
         await self._cancel_tasks()
-        
+
         # Log final metrics
         self._log_final_metrics()
-        
+
         # Close introspective journal
         self._close_journal()
-        
+
         # Save final workspace state on shutdown
         await self._save_shutdown_checkpoint()
-        
-        logger.info("🧠 CognitiveCore shutdown complete.")
     
     async def _shutdown_device_registry(self) -> None:
         """Disconnect all devices and stop hot-plug monitoring."""

@@ -118,7 +118,7 @@ Connect the cognitive architecture to the outside world through robust interface
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Harden CLI interface | P1 | Pending | Robust error handling, graceful shutdown, checkpoint on exit |
+| Harden CLI interface | P1 | **Done** | Signal handlers (SIGTERM/SIGINT), shutdown timeout (30s default), argparse config (--verbose, --restore-latest, --auto-save, --cycle-rate, --shutdown-timeout), categorised error display, startup race fix (`await core.start()` instead of fire-and-forget), `asyncio.to_thread` for non-blocking input, REPL `health` command; 20 new tests |
 | Harden Discord integration | P1 | Pending | Reconnection logic, rate limiting, message queue |
 | End-to-end integration test with loaded models | P1 | Pending | Full pipeline test: text in → cognitive processing → text out |
 

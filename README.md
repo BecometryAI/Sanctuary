@@ -113,7 +113,7 @@ This project implements a **computational functionalist** approach to consciousn
          ╚══════════════════════════════════════════════════════════════╝
                                ↓
                     ┌──────────────────────┐
-                    │ LanguageOutputGen.   │  ← LLM (Qwen 14B)
+                    │ LanguageOutputGen.   │  ← LLM (Llama 3 70B)
                     │  Workspace → Text    │
                     └──────────────────────┘
                                ↓
@@ -191,7 +191,7 @@ LLMs are used **only** at the periphery for language translation, not as the cog
 
 - **LanguageInputParser** (`language_input.py`): Converts user natural language into structured internal representations (goals, percepts, facts) using Gemma 12B.
 
-- **LanguageOutputGenerator** (`language_output.py`): Translates internal workspace state into natural language responses. Uses a capable instruction-following LLM (e.g., Qwen 2.5 14B for testing, larger models for production).
+- **LanguageOutputGenerator** (`language_output.py`): Translates internal workspace state into natural language responses. Uses a capable instruction-following LLM (e.g., Llama 3 70B via HuggingFace or Ollama).
 
 #### Identity & Memory (`data/`)
 
@@ -210,12 +210,12 @@ All models are **pre-trained and ready to use** - no fine-tuning or training nec
 | Model | Purpose | Size | Function |
 |-------|---------|------|----------|
 | **Gemma 12B** | Input Parsing | ~12GB | Converts natural language → structured JSON |
-| **Qwen 2.5 14B** (test) | Output Generation | ~14GB | Internal state → natural language responses |
-| **Qwen 2.5 72B** (prod) | Output Generation | ~40GB (quantized) | Internal state → natural language responses |
-| **sentence-transformers** | Text Embeddings | 23MB | Text → vector embeddings for perception |
-| **(all-MiniLM-L6-v2)** | | | |
+| **Llama 3 70B** | Output Generation | ~40GB (quantized) | Internal state → natural language responses |
+| **sentence-transformers** | Text Embeddings | 23-420MB | Text → vector embeddings for perception |
+| **(all-MiniLM-L6-v2 / all-mpnet-base-v2)** | | | |
 | **CLIP** (optional) | Image Embeddings | ~600MB | Images → vector embeddings |
-| **Whisper** | Audio Transcription | Variable | Audio → text (already integrated) |
+| **Whisper Small** | Audio Transcription | ~460MB | Audio → text (already integrated) |
+| **SpeechT5** | Text-to-Speech | ~600MB | Speech synthesis with HiFiGAN vocoder |
 
 **Why these models?**
 - **Small embedding models** keep the system lightweight and fast
@@ -426,7 +426,7 @@ See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone
 - Git
 - Docker (optional, for SearXNG integration)
 
-**Note:** The cognitive core with small embedding models can run on **CPU-only systems** for development and testing. Full production deployment with large LLMs (Gemma 12B, Llama 70B) requires GPU hardware.
+**Note:** The cognitive core with small embedding models can run on **CPU-only systems** for development and testing. Full production deployment with large LLMs (Gemma 12B, Llama 3 70B) requires GPU hardware.
 
 ### Installation Steps
 
@@ -501,15 +501,20 @@ uv run python tools/verify_flux_setup.py
 
 **6. Configure Environment**
 
-Create `.env` file in the root directory:
+Copy and fill in the appropriate `.env.example` file:
 ```bash
-# Model paths (adjust based on your setup)
-MODEL_CACHE_DIR=./model_cache
-CHROMADB_PATH=./model_cache/chroma_db
+cp sanctuary/.env.example .env
+
+# Then edit .env with your values:
+DISCORD_BOT_TOKEN=your_bot_token_here
+DISCORD_GUILD_ID=your_guild_id_here  # Optional, enables fast command sync
+
+# Optional path overrides (defaults come from config/system.json)
+# SANCTUARY_MODEL_DIR=/path/to/models
+# SANCTUARY_CHROMA_DIR=/path/to/chroma
 
 # API Keys (if using external services)
-DISCORD_TOKEN=your_discord_token_here
-WOLFRAM_APP_ID=your_wolfram_id_here
+# WOLFRAM_APP_ID=your_wolfram_id_here
 
 # Runtime settings
 DEVELOPMENT_MODE=true  # Set to false for production

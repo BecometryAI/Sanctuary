@@ -119,17 +119,8 @@ class SanctuaryClient(discord.Client):
         intents = discord.Intents.all()
         super().__init__(intents=intents)
 
-        # Set up command handling with user+guild install support
+        # Set up command handling
         self.tree = discord.app_commands.CommandTree(self)
-        self.tree.allowed_installs = discord.app_commands.AppInstallationType(
-            guild=True,
-            user=True,
-        )
-        self.tree.allowed_contexts = discord.app_commands.AppCommandContext(
-            guild=True,
-            dm_channel=True,
-            private_channel=True,
-        )
 
         # Optional guild for fast command sync during development
         self._sync_guild = discord.Object(id=guild_id) if guild_id else None
@@ -271,8 +262,6 @@ class SanctuaryClient(discord.Client):
             response_file.unlink()  # Clean up
             
     @discord.app_commands.command()
-    @discord.app_commands.allowed_installs(guilds=True, users=False)
-    @discord.app_commands.allowed_contexts(guilds=True, dms=False, private_channels=False)
     async def join(self, interaction: discord.Interaction):
         """Join the user's voice channel"""
         # Check if user is in a voice channel
@@ -304,8 +293,6 @@ class SanctuaryClient(discord.Client):
         await interaction.response.send_message("Joined voice channel!")
         
     @discord.app_commands.command()
-    @discord.app_commands.allowed_installs(guilds=True, users=False)
-    @discord.app_commands.allowed_contexts(guilds=True, dms=False, private_channels=False)
     async def leave(self, interaction: discord.Interaction):
         """Leave the voice channel"""
         if interaction.guild_id in self._voice_clients:

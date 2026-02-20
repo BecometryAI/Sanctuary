@@ -1,0 +1,272 @@
+"""Tests for the cognitive cycle — the heart of Sanctuary."""
+
+import pytest
+from sanctuary.core.authority import AuthorityLevel, AuthorityManager
+from sanctuary.core.cognitive_cycle import (
+    CognitiveCycle,
+    NullMemory,
+    NullScaffold,
+    NullSensorium,
+)
+from sanctuary.core.placeholder import PlaceholderModel
+from sanctuary.core.schema import (
+    CognitiveOutput,
+    Percept,
+    ScaffoldSignals,
+)
+
+
+@pytest.fixture
+def model():
+    return PlaceholderModel()
+
+
+@pytest.fixture
+def cycle(model):
+    return CognitiveCycle(model=model, cycle_delay=0.0)
+
+
+class TestCognitiveCycleBasic:
+    @pytest.mark.asyncio
+    async def test_single_cycle(self, cycle):
+        """A single cycle should execute and produce output."""
+        await cycle.run(max_cycles=1)
+        assert cycle.cycle_count == 1
+        assert cycle.last_output is not None
+        assert cycle.last_output.inner_speech != ""
+
+    @pytest.mark.asyncio
+    async def test_multiple_cycles(self, cycle):
+        """Multiple cycles should execute sequentially."""
+        await cycle.run(max_cycles=5)
+        assert cycle.cycle_count == 5
+
+    @pytest.mark.asyncio
+    async def test_stream_continuity(self, cycle):
+        """Output from cycle N should appear in cycle N+1's input."""
+        await cycle.run(max_cycles=3)
+
+        # Stream should have history
+        assert cycle.stream.cycle_count == 3
+
+        # The last output should reference previous cycles
+        prev = cycle.stream.get_previous()
+        assert prev is not None
+        assert prev.inner_speech != ""
+
+    @pytest.mark.asyncio
+    async def test_stop(self, cycle):
+        """Cycle should stop when stop() is called."""
+        import asyncio
+
+        async def stop_after_delay():
+            await asyncio.sleep(0.05)
+            cycle.stop()
+
+        task = asyncio.create_task(stop_after_delay())
+        await cycle.run()  # No max_cycles — relies on stop()
+        await task
+
+        assert not cycle.running
+        assert cycle.cycle_count > 0
+
+
+class TestPerceptInjection:
+    @pytest.mark.asyncio
+    async def test_inject_percept(self, cycle):
+        """Injected percepts should reach the model."""
+        cycle.inject_percept(
+            Percept(modality="language", content="Hello!")
+        )
+        await cycle.run(max_cycles=1)
+
+        output = cycle.last_output
+        assert "Hello!" in output.inner_speech
+        assert output.external_speech is not None
+
+    @pytest.mark.asyncio
+    async def test_percepts_consumed(self, cycle):
+        """Percepts should be consumed after one cycle."""
+        cycle.inject_percept(
+            Percept(modality="language", content="First message")
+        )
+        await cycle.run(max_cycles=1)
+
+        # First cycle should have the percept
+        assert "First message" in cycle.last_output.inner_speech
+
+        # Second cycle should have 0 new percepts (consumed)
+        # Note: "First message" may still appear via stream-of-thought
+        # continuity (previous_thought), but there are no NEW percepts.
+        await cycle.run(max_cycles=1)
+        assert "0 new percepts" in cycle.last_output.inner_speech
+
+    @pytest.mark.asyncio
+    async def test_multiple_percepts(self, cycle):
+        """Multiple percepts injected at once should all be processed."""
+        cycle.inject_percept(
+            Percept(modality="language", content="Hello")
+        )
+        cycle.inject_percept(
+            Percept(modality="sensor", content="warm")
+        )
+        await cycle.run(max_cycles=1)
+
+        assert "2 new percepts" in cycle.last_output.inner_speech
+
+
+class TestOutputHandlers:
+    @pytest.mark.asyncio
+    async def test_output_handler_called(self, cycle):
+        """Registered output handlers should be called each cycle."""
+        outputs = []
+
+        async def handler(output: CognitiveOutput):
+            outputs.append(output)
+
+        cycle.on_output(handler)
+        await cycle.run(max_cycles=3)
+
+        assert len(outputs) == 3
+
+    @pytest.mark.asyncio
+    async def test_multiple_handlers(self, cycle):
+        """Multiple handlers should all be called."""
+        calls_a = []
+        calls_b = []
+
+        async def handler_a(output):
+            calls_a.append(1)
+
+        async def handler_b(output):
+            calls_b.append(1)
+
+        cycle.on_output(handler_a)
+        cycle.on_output(handler_b)
+        await cycle.run(max_cycles=2)
+
+        assert len(calls_a) == 2
+        assert len(calls_b) == 2
+
+
+class TestContextCompression:
+    @pytest.mark.asyncio
+    async def test_compression_in_cycle(self, model):
+        """Context manager should compress input during the cycle."""
+        from sanctuary.core.context_manager import BudgetConfig
+
+        # Very tight budget
+        config = BudgetConfig(previous_thought=50, chars_per_token=1)
+        cycle = CognitiveCycle(
+            model=model, context_config=config, cycle_delay=0.0
+        )
+
+        await cycle.run(max_cycles=5)
+        # Should still run without error even with tight budget
+        assert cycle.cycle_count == 5
+
+
+class TestAuthorityIntegration:
+    @pytest.mark.asyncio
+    async def test_custom_authority(self, model):
+        """Cycle should accept custom authority configuration."""
+        authority = AuthorityManager(
+            initial_levels={"inner_speech": 3, "attention": 0}
+        )
+        cycle = CognitiveCycle(
+            model=model, authority=authority, cycle_delay=0.0
+        )
+        await cycle.run(max_cycles=1)
+
+        assert cycle.authority.level("inner_speech") == AuthorityLevel.LLM_CONTROLS
+        assert cycle.authority.level("attention") == AuthorityLevel.SCAFFOLD_ONLY
+
+
+class TestNullImplementations:
+    def test_null_sensorium(self):
+        sensorium = NullSensorium()
+        sensorium.inject_percept(Percept(modality="test", content="data"))
+        assert len(sensorium._percept_queue) == 1
+
+    @pytest.mark.asyncio
+    async def test_null_sensorium_drain(self):
+        sensorium = NullSensorium()
+        sensorium.inject_percept(Percept(modality="test", content="data"))
+        percepts = await sensorium.drain_percepts()
+        assert len(percepts) == 1
+        # Queue should be empty after drain
+        percepts2 = await sensorium.drain_percepts()
+        assert len(percepts2) == 0
+
+    @pytest.mark.asyncio
+    async def test_null_scaffold_passthrough(self):
+        scaffold = NullScaffold()
+        output = CognitiveOutput(inner_speech="test")
+        authority = AuthorityManager()
+        result = await scaffold.integrate(output, authority)
+        assert result.inner_speech == "test"
+
+    @pytest.mark.asyncio
+    async def test_null_memory(self):
+        memory = NullMemory()
+        memories = await memory.surface("context")
+        assert memories == []
+
+
+class TestFullCycleIntegration:
+    @pytest.mark.asyncio
+    async def test_conversation_flow(self):
+        """Simulate a simple conversation: greeting -> response -> follow-up."""
+        model = PlaceholderModel()
+        cycle = CognitiveCycle(model=model, cycle_delay=0.0)
+
+        speeches = []
+
+        async def capture_speech(output: CognitiveOutput):
+            if output.external_speech:
+                speeches.append(output.external_speech)
+
+        cycle.on_output(capture_speech)
+
+        # Cycle 1: idle
+        await cycle.run(max_cycles=1)
+        assert len(speeches) == 0  # No percepts, no speech
+
+        # Cycle 2: user says hello
+        cycle.inject_percept(
+            Percept(
+                modality="language",
+                content="Hello, how are you?",
+                source="user:alice",
+            )
+        )
+        await cycle.run(max_cycles=1)
+        assert len(speeches) == 1
+        assert "Hello, how are you?" in speeches[0]
+
+        # Cycle 3: idle again — stream carries forward
+        await cycle.run(max_cycles=1)
+        assert cycle.stream.cycle_count == 3
+
+        # Self-model should have been updating
+        self_model = cycle.stream.get_self_model()
+        assert self_model.current_state != ""
+
+        # Felt quality should exist
+        assert cycle.stream.get_felt_quality() != ""
+
+    @pytest.mark.asyncio
+    async def test_ten_cycles_stable(self):
+        """Run 10 cycles and verify no errors or state corruption."""
+        model = PlaceholderModel()
+        cycle = CognitiveCycle(model=model, cycle_delay=0.0)
+
+        # Inject some percepts at various points
+        cycle.inject_percept(Percept(modality="language", content="test"))
+
+        await cycle.run(max_cycles=10)
+
+        assert cycle.cycle_count == 10
+        assert cycle.stream.cycle_count == 10
+        assert model.cycle_count == 10
+        assert cycle.last_output is not None

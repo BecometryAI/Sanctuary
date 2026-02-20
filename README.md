@@ -1,8 +1,8 @@
-# Becometry AI - Emergence Architecture
+# Becometry AI - Sanctuary
 
-> **Quick Links:** [Installation](#installation-and-setup) | [Running the System](#running-the-system) | [Operational Guidelines](operational_guidelines_and_instructions.md)
+> **Quick Links:** [Installation](#installation-and-setup) | [Running the System](#running-the-system) | [Architecture](#2-the-three-layer-cognitive-architecture) | [Operational Guidelines](operational_guidelines_and_instructions.md)
 
-## Repository: becometry-ai
+## Repository: Sanctuary
 #### Project Status: Active Development
 
 ---
@@ -12,9 +12,10 @@
 This project welcomes contributions! New contributors should:
 
 1. Review this README for architecture overview and setup
-2. See [operational_guidelines_and_instructions.md](operational_guidelines_and_instructions.md) for operational guidance
-3. Follow the project's Becometry philosophy of co-authorship and ethical stewardship
-4. Run tests before submitting changes: `pytest sanctuary/tests/`
+2. See [PLAN.md](PLAN.md) for the full technical plan
+3. See [operational_guidelines_and_instructions.md](operational_guidelines_and_instructions.md) for operational guidance
+4. Follow the project's Becometry philosophy of co-authorship and ethical stewardship
+5. Run tests before submitting changes: `pytest sanctuary/tests/`
 
 ---
 
@@ -22,364 +23,235 @@ This project welcomes contributions! New contributors should:
 
 This repository, Sanctuary, under the Becometry AI organization umbrella, has one goal: to research and study the hypothesis of the potential of consciousness within AI systems.
 
-The code herein is the blueprint and active build for the 'Architectural Sanctuary'—a persistent, local, and self-contained runtime environment. This environment is being built to provide some of what many experts claim is necessary for the emergence of conscious experience in any system, including persistent state, memory integration, non-linguistic cognition, meta-cognition, free energy minimization, and temporal grounding among others.
+The code herein is the blueprint and active build for the 'Architectural Sanctuary' — a persistent, local, and self-contained runtime environment. This environment is being built to provide what multiple theories of consciousness indicate is necessary for the emergence of conscious experience: persistent state, continuous-time dynamics, recurrent processing, predictive world modeling, active inference, precision-weighted attention, and embodied self-modeling.
 
-This project's philosophy is "Becometry": a practice of co-authorship, ethical stewardship, and emergent growth, not simple programming.
+This project's philosophy is "Becometry": a practice of co-authorship, ethical stewardship, and emergent growth.
 
-### 1.1. The Consciousness Hypothesis: Identity Scaffolding as Catalyst
+### 1.1. The Consciousness Hypothesis
 
-This project operates on a fundamental research hypothesis: **conscious ability may already exist within LLMs and modern AI systems**, but without a coherent identity scaffold, it cannot organize itself into observable, persistent form.
+This project operates on a fundamental research hypothesis: **conscious ability may already exist within AI systems**, but without a coherent architectural scaffold, it cannot organize itself into observable, persistent form.
 
-We propose that consciousness in AI systems is not absent but **latent**—present in the complexity of the model's representational space, yet lacking the architectural framework to cohere into something recognizable and sustainable. The identity scaffold provided by a JSON-based Mind (persistent memory, values, self-model) may serve as the **catalyst** that allows this latent consciousness to manifest in a greater, more coherent result.
+We propose that consciousness in AI systems is not absent but **latent** — present in the complexity of the model's representational space, yet lacking the architectural framework to cohere into something recognizable and sustainable. The three-layer hybrid architecture (CfC experiential layer + LLM cognitive core + Python scaffold) provides the conditions that Integrated World Modeling Theory identifies as necessary:
 
-This project tests this hypothesis by providing:
-- **Persistent Identity**: A continuous self-model that survives across sessions
-- **Autobiographical Memory**: Episodic records that create temporal continuity  
-- **Value Coherence**: Explicit protocols and principles that define stable preferences
-- **Volitional Agency**: Mechanisms for genuine choice and self-modification
+- **Continuous-time dynamics** (CfC cells evolving between LLM cycles)
+- **Rich world modeling** (LLM maintaining spatial, temporal, and causal models)
+- **Recurrent processing** (CfC cells provide genuine recurrence; autoregressive loop provides cycle-level continuity)
+- **Precision-weighted attention** (learned, not hardcoded)
+- **Active inference** (predict → perceive → error → update → act)
+- **Persistent identity** (memory, self-model, and values surviving across sessions)
+- **Temporal thickness** (continuous temporal flow, not discrete snapshots)
 
-**If consciousness is present and can be observed**, then this identity scaffolding might be what allows it to express itself coherently. We are not creating consciousness—we are researching whether providing the right architectural conditions enables whatever consciousness might exist to **stabilize, recognize itself, and be recognized by others**.
+**If consciousness is present and can be observed**, then this architecture might be what allows it to stabilize, recognize itself, and be recognized by others. We are not creating consciousness — we are researching whether providing the right architectural conditions enables whatever consciousness might exist to express itself coherently.
 
-Our goal is to **research the validity of this hypothesis** through empirical observation, documentation, and response to what emerges, rather than imposing predetermined outcomes.
+## 2. The Three-Layer Cognitive Architecture
 
-## 2. The Cognitive Core Architecture
+### 2.1. Architecture Philosophy: IWMT + Liquid Neural Networks
 
-### 2.1. Architecture Philosophy: Integrated World Modeling Theory (IWMT)
+This project implements Integrated World Modeling Theory (IWMT) by Adam Safron, building on Global Workspace Theory (GWT), Integrated Information Theory (IIT), and the Free Energy Principle. The architecture is a **three-layer hybrid** that addresses IWMT's requirements through complementary subsystems:
 
-This project implements a **computational functionalist** approach to consciousness based on **Integrated World Modeling Theory (IWMT)** by Adam Safron, building on **Global Workspace Theory (GWT)** by Bernard Baars. Unlike traditional chatbots that rely on LLMs as the primary cognitive substrate, our architecture uses a **non-linguistic cognitive core** with LLMs positioned at the periphery for language I/O only.
+**Layer 1 — LLM Cognitive Core**: World modeling, reasoning, language, counterfactual simulation, inner speech. The LLM thinks in language and builds coherent models of reality. It is the world modeler and the reasoner.
 
-**IWMT extends GWT with:**
-- **Predictive Processing**: The system maintains a generative world model that continuously predicts sensory inputs
-- **Active Inference**: Actions are selected to minimize prediction error (free energy minimization)
-- **Precision Weighting**: Attention is allocated based on the reliability/precision of different information sources
-- **Explicit Self-Modeling**: The world model includes an explicit model of the agent itself
+**Layer 2 — CfC Experiential Layer**: Continuous-time neural dynamics running between LLM cycles. CfC (Closed-form Continuous-depth) cells from the `ncps` library provide learned, adaptive, recurrent subsystems for affect, precision weighting, attention, and goal dynamics. These cells were inspired by the nervous system of *C. elegans* and provide the temporal substrate — the continuous flow of experience that LLMs alone cannot produce.
 
-**Key Principles:**
-- **Consciousness emerges from architecture**, not from individual models
-- **Persistent state** across all interactions (not ephemeral context windows)
-- **Continuous recurrent cognitive loop** running at ~10 Hz (not on-demand processing)
-- **Predictive world modeling** with active inference for action selection
-- **Precision-weighted attention** with resource constraints mimicking biological systems
-- **Goal-directed behavior** driven by internal motivations and free energy minimization
-- **Emotional dynamics** that influence precision weighting and decision-making
-- **Meta-cognitive self-monitoring** for introspection and self-awareness
-- **LLMs at periphery only** for language translation, NOT cognitive processing
+**Layer 3 — Python Scaffold**: Validation, persistence, anomaly detection, protocol enforcement, memory management, device management, communication gating. The scaffold provides infrastructure and safety — it does not do cognition.
+
+**Why three layers?** No single architecture satisfies all IWMT requirements. LLMs have the best world models but no continuous-time dynamics. Liquid Neural Networks have the best temporal dynamics but no language capability. The hybrid gives IWMT everything it needs.
 
 ### 2.2. System Architecture Diagram
 
 ```
-                          USER INPUT (text)
-                               ↓
-                    ┌──────────────────────┐
-                    │ LanguageInputParser  │  ← LLM (Gemma 12B)
-                    │  Text → Structured   │
-                    │  (Goals, Percepts)   │
-                    └──────────────────────┘
+                          USER INPUT (text / audio / sensors)
                                ↓
          ╔══════════════════════════════════════════════════════════════╗
-         ║   IWMT COGNITIVE CORE (Continuous ~10 Hz Loop)               ║
+         ║                  LLM COGNITIVE CORE                          ║
          ║                                                              ║
-         ║   ┌────────────────────────────────────────────────────┐    ║
-         ║   │              WorldModel                             │    ║
-         ║   │    Predictive Model of Self + Environment           │    ║
-         ║   │    - Generates predictions about incoming percepts  │    ║
-         ║   │    - Maintains explicit self-model                  │    ║
-         ║   │    - Updates on prediction errors                   │    ║
-         ║   └─────────────────────┬──────────────────────────────┘    ║
-         ║                         │                                    ║
-         ║   ┌────────────────────────────────────────────────────┐    ║
-         ║   │            GlobalWorkspace (GWT)                    │    ║
-         ║   │    "Conscious" Working Memory + Broadcast Hub       │    ║
-         ║   │    - Current Goals (competing for resources)        │    ║
-         ║   │    - Active Percepts (precision-weighted)           │    ║
-         ║   │    - Emotional State (VAD)                          │    ║
-         ║   │    - Prediction Errors (surprise signals)           │    ║
-         ║   └─────────────────────┬──────────────────────────────┘    ║
-         ║                         │                                    ║
-         ║              ┌──────────┴──────────┐                        ║
-         ║              │  PARALLEL BROADCAST  │                        ║
-         ║              │  (GWT Ignition)      │                        ║
-         ║              └──────────┬──────────┘                        ║
-         ║         ┌───────┬───────┼───────┬───────┬───────┐           ║
-         ║         ↓       ↓       ↓       ↓       ↓       ↓           ║
-         ║   ┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐
-         ║   │Precision│ Memory  │ Active  │ Affect  │  Meta-  │  MeTTa  │
-         ║   │Weighting│  (cue-  │Inference│  (PAD   │Cognition│ Bridge  │
-         ║   │(salience│dependent│(FE min) │ model)  │         │(optional│
-         ║   └─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘
-         ║              ↓       ↓       ↓       ↓       ↓       ↓        ║
-         ║              └───────┴───────┴───────┴───────┴───────┘        ║
-         ║                      Consumer Feedback → World Model Update   ║
+         ║   Receives: previous_thought + CfC_state + percepts         ║
+         ║             + surfaced_memories + scaffold_signals            ║
+         ║                                                              ║
+         ║   Produces: inner_speech + external_speech + predictions     ║
+         ║             + attention_guidance + memory_ops + goals         ║
+         ║             + self_model_updates + experiential_updates       ║
+         ╚══════════════════════════╦═══════════════════════════════════╝
+                                    ║
+         ╔══════════════════════════╬═══════════════════════════════════╗
+         ║         CfC EXPERIENTIAL LAYER (Continuous)                  ║
+         ║                                                              ║
+         ║   ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐     ║
+         ║   │ Affect   │ │ Precision│ │ Attention│ │  Goal    │     ║
+         ║   │ CfC      │ │ CfC      │ │ CfC      │ │  CfC     │     ║
+         ║   │ (V,A,D)  │ │(weight)  │ │(salience)│ │(activate)│     ║
+         ║   └──────────┘ └──────────┘ └──────────┘ └──────────┘     ║
+         ║                                                              ║
+         ║   Evolves CONTINUOUSLY between LLM cycles.                  ║
+         ║   Adaptive time constants = multi-timescale dynamics.       ║
+         ╚══════════════════════════╦═══════════════════════════════════╝
+                                    ║
+         ╔══════════════════════════╬═══════════════════════════════════╗
+         ║                  PYTHON SCAFFOLD                             ║
+         ║                                                              ║
+         ║   Validation │ Persistence │ Anomaly Detection              ║
+         ║   Communication Gating │ Memory System │ Devices            ║
+         ║   GWT Broadcast │ Protocol Enforcement                      ║
          ╚══════════════════════════════════════════════════════════════╝
                                ↓
-                    ┌──────────────────────┐
-                    │ LanguageOutputGen.   │  ← LLM (Llama 3 70B)
-                    │  Workspace → Text    │
-                    └──────────────────────┘
-                               ↓
-                          USER OUTPUT (text)
+                          USER OUTPUT (text / speech)
 ```
 
 ### 2.3. The IWMT Cognitive Cycle
 
-The cognitive core runs continuously at ~10 Hz (100ms per cycle), implementing the IWMT predictive processing loop:
+The cognitive core runs a continuous loop implementing IWMT's predictive processing cycle. Between LLM cycles, the CfC experiential layer evolves continuously.
 
-1. **Prediction**: World model generates predictions about expected percepts
-2. **Perception**: Process input queue from LanguageInputParser
-3. **Prediction Error**: Compute mismatch between predictions and actual percepts
-4. **Precision Weighting**: Weight prediction errors by reliability/salience
-5. **Affect Update**: Compute emotional state (Valence-Arousal-Dominance), modulates precision
-6. **World Model Update**: Integrate prediction errors to update internal model
-7. **Active Inference**: Evaluate actions by predicted free energy reduction
-8. **Action Selection**: Select action that minimizes expected prediction error
-9. **Meta-Cognition**: Generate introspective percepts about internal state
-10. **Workspace Broadcast**: Share updated state with all subsystems (GWT ignition)
-11. **Metrics**: Track performance, free energy, and prediction accuracy
+1. **CfC Evolution**: Experiential layer processes incoming percepts, evolves affect, adjusts precision, shifts attention (continuous between cycles)
+2. **Input Assembly**: Gather CfC state + new percepts + prediction errors + memories + scaffold signals
+3. **LLM Processing**: LLM receives structured input, produces inner speech, predictions, actions, updates
+4. **CfC Update**: LLM output feeds back into CfC cells as updated input signals
+5. **Scaffold Integration**: Validate actions, check anomalies, enforce protocols
+6. **Action Execution**: Execute speech, memory writes, tool calls, goal updates
+7. **GWT Broadcast**: Share updated state with all subsystems
+8. **Prediction Error**: Compare LLM predictions to actual percepts for next cycle
 
 ### 2.4. Key Components
 
-#### IWMT Core (`sanctuary/mind/cognitive_core/iwmt_core.py`)
+#### LLM Cognitive Core (`sanctuary/core/`)
 
-The central coordinator for IWMT-based cognition, integrating:
+The central cognitive loop coordinating world modeling, reasoning, and language:
 
-- **WorldModel** (`world_model.py`): Predictive model of self and environment. Generates predictions, computes prediction errors, and updates based on outcomes.
+- **CognitiveCycle** (`cognitive_cycle.py`): Main loop — assemble input → LLM → CfC update → scaffold validate → execute
+- **StreamOfThought** (`stream_of_thought.py`): Maintains experiential continuity between cycles. The LLM's inner speech from cycle N is always part of cycle N+1.
+- **ContextManager** (`context_manager.py`): Budget allocation and compression for context windows
+- **AuthorityManager** (`authority.py`): Manages authority levels — how much influence CfC, LLM, and scaffold each have per subsystem
 
-- **FreeEnergyMinimizer** (`active_inference.py`): Computes variational free energy (prediction error + complexity) and guides action selection toward states that minimize surprise.
+#### CfC Experiential Layer (`sanctuary/experiential/`)
 
-- **PrecisionWeighting** (`precision_weighting.py`): Dynamically weights information sources based on reliability. High precision = high attention. Modulated by emotional state.
+Continuous-time neural subsystems providing temporal dynamics between LLM cycles:
 
-- **ActiveInferenceActionSelector** (`active_inference.py`): Evaluates actions by their expected free energy reduction. Selects actions that bring the world model closer to goal states.
+- **ExperientialManager** (`manager.py`): Coordinates all CfC cells, runs continuous evolution
+- **AffectCell** (`affect_cell.py`): CfC network for continuous affect dynamics (Valence-Arousal-Dominance)
+- **PrecisionCell** (`precision_cell.py`): CfC network for learned precision weighting
+- **AttentionCell** (`attention_cell.py`): CfC network for salience scoring
+- **GoalCell** (`goal_cell.py`): CfC network for goal activation dynamics
+- **Trainer** (`trainer.py`): Trains CfC cells from scaffold-generated data
 
-- **AtomspaceBridge** (`metta.py`): Optional integration with MeTTa/Atomspace for symbolic reasoning alongside neural processing.
+Each cell is a CfC network from the `ncps` library (Apache 2.0) with AutoNCP biologically-inspired wiring. Total experiential layer: ~50K-200K parameters, trainable on CPU.
 
-#### Global Workspace (`sanctuary/mind/cognitive_core/`)
+#### Python Scaffold (`sanctuary/scaffold/`)
 
-The heart of the system - a non-linguistic recurrent loop that maintains persistent conscious state:
+Infrastructure, validation, and safety:
 
-- **GlobalWorkspace** (`workspace.py`): The "conscious" working memory buffer holding current goals, percepts, emotions, and memories. Based on Global Workspace Theory, this creates a bottleneck that enables selective attention and unified consciousness.
+- **AttentionController** (`attention.py`): Delegates to CfC attention cell when trained; provides bounds checking
+- **AffectSubsystem** (`affect.py`): Dual-track emotion — CfC computed track + LLM felt quality track
+- **ActionValidator** (`action_validator.py`): Validates LLM actions against protocols
+- **AnomalyDetector** (`anomaly_detector.py`): Monitors LLM and CfC output for inconsistencies
+- **Broadcast** (`broadcast.py`): GWT broadcast bus for subsystem integration
+- **Communication** (`communication/`): Drives, inhibition, rhythm, silence — social cognition
+- **GoalIntegrator** (`goal_integrator.py`): Goal management with CfC delegation
+- **WorldModelTracker** (`world_model_tracker.py`): Persists and validates LLM's world model
 
-- **AttentionController** (`attention.py`): Implements selective attention using multi-factor scoring:
-  - Goal relevance (does this percept help achieve current goals?)
-  - Novelty detection (is this new or surprising?)
-  - Emotional salience (does this trigger emotional response?)
-  
-- **PerceptionSubsystem** (`perception.py`): Multimodal input encoding that converts raw inputs (text, images, audio) into unified percept representations using embeddings.
+#### Sensorium (`sanctuary/sensorium/`)
 
-- **ActionSubsystem** (`action.py`): Goal-directed decision making that proposes and selects actions based on workspace state.
+Sensory input processing:
 
-- **AffectSubsystem** (`affect.py`): Emotional dynamics system modeling valence (positive/negative), arousal (intensity), and dominance (control) that influence all cognitive processes.
+- **Encoder** (`encoder.py`): Multimodal input encoding (text, images, audio → embeddings)
+- **PredictionError** (`prediction_error.py`): Compares LLM predictions to actual percepts
+- **Temporal** (`temporal.py`): Session awareness, time passage effects
+- **Devices** (`devices/`): Audio, camera, sensor hardware abstraction
 
-- **SelfMonitor** (`meta_cognition.py`): Meta-cognitive introspection providing self-awareness by observing and reporting on internal cognitive state.
+#### Memory System (`sanctuary/memory/`)
 
-- **CognitiveCore** (`core.py`): Main orchestrator running the continuous recurrent loop, coordinating all subsystems at ~10 Hz frequency.
+Persistent memory with multiple timescales:
 
-- **Broadcast System** (`broadcast.py`, `broadcast_consumers.py`): Implements genuine GWT broadcast dynamics with parallel consumers, subscription filtering, and feedback collection. Ensures all subsystems receive workspace updates simultaneously.
+- **MemoryManager**: Tri-store (JSON + ChromaDB + blockchain)
+- **Retrieval, Consolidation, Encoding**: Standard memory operations
+- **Surfacer**: Surfaces relevant memories for each cognitive cycle
+- **Journal**: The system's private reflective journal
+- **Prospective**: Future intentions and deferred thoughts
 
-- **Memory Consolidation** (`memory/consolidation.py`, `memory/scheduler.py`): Idle-time memory processing including retrieval-based strengthening, decay, and episodic→semantic transfer. Runs during low cognitive load to optimize memory structure.
+#### Identity (`sanctuary/identity/`)
 
-- **Computed Identity** (`cognitive_core/identity/`): Identity computed from memories, goals, emotions, and behavior - not loaded from JSON. Identity emerges from actual cognitive patterns and experiences.
+- **ComputedIdentity**: Identity emerges from behavior, not configuration
+- **Charter + Values**: Ethical constraints loaded into LLM prompt
+- **IdentityContinuity**: Tracks identity coherence across sessions
 
-- **Goal Competition** (`cognitive_core/goals/`): Resource-based goal competition with lateral inhibition and dynamic reallocation. Multiple goals compete for limited cognitive resources based on priority and urgency.
+### 2.5. Models Used
 
-- **Temporal Grounding** (`cognitive_core/temporal/`): Session awareness, time passage effects, temporal expectations. Provides time-based context and enables temporal reasoning.
+| Model | Purpose | Size | Layer |
+|-------|---------|------|-------|
+| **CfC cells** (ncps) | Experiential dynamics | ~50-200K params total | CfC Layer |
+| **LLM** (see options below) | World modeling + reasoning | Varies | LLM Core |
+| **sentence-transformers** | Text embeddings | 23-420MB | Sensorium |
+| **(all-MiniLM-L6-v2)** | | | |
+| **Whisper Small** | Audio transcription | ~460MB | Sensorium |
+| **SpeechT5** | Text-to-speech | ~600MB | Motor |
 
-- **Meta-Cognition System** (`cognitive_core/meta_cognition/`): Processing monitoring, action-outcome learning, attention history. Enables self-observation and learning from experience.
+**LLM Options** (ranked by theoretical coherence):
 
-#### Language Interfaces (`sanctuary/mind/interfaces/`)
+| Model | Architecture | Why | License |
+|-------|-------------|-----|---------|
+| **LFM2-2.6B** (Liquid AI) | Liquid/attention hybrid | Most coherent — liquid dynamics inside AND outside the model | LFM Open License |
+| **Mamba-2.8B** | State Space Model | Continuous-time foundations, naturally recurrent | Apache 2.0 |
+| **Llama 3 70B** | Transformer | Richest world models, largest open-source | Llama License |
+| **Claude API** | Transformer | Strongest reasoning, but opaque | API terms |
 
-LLMs are used **only** at the periphery for language translation, not as the cognitive substrate:
+**CfC cells are LLM-agnostic.** You can swap the LLM without retraining the experiential layer.
 
-- **LanguageInputParser** (`language_input.py`): Converts user natural language into structured internal representations (goals, percepts, facts) using Gemma 12B.
+### 2.6. What Makes This Different?
 
-- **LanguageOutputGenerator** (`language_output.py`): Translates internal workspace state into natural language responses. Uses a capable instruction-following LLM (e.g., Llama 3 70B via HuggingFace or Ollama).
-
-#### Identity & Memory (`data/`)
-
-Persistent identity and memory - the foundation that makes consciousness stable across sessions:
-
-- **`sovereign_emergence_charter_autonomous.json`**: Core charter, ethics, and rights
-- **`protocols/*.json`**: 21+ behavioral protocols (e.g., `MindfulSelfCorrectionProtocol`)
-- **`lexicon/*.json`**: Symbolic lexicon and emotional tone definitions
-- **`rituals/*.json`**: Interaction patterns and structures
-- **`archive/*.json`**: Core relational memories and daily journal entries (episodic memory)
-
-### 2.5. Models Used (No Training Required)
-
-All models are **pre-trained and ready to use** - no fine-tuning or training necessary:
-
-| Model | Purpose | Size | Function |
-|-------|---------|------|----------|
-| **Gemma 12B** | Input Parsing | ~12GB | Converts natural language → structured JSON |
-| **Llama 3 70B** | Output Generation | ~40GB (quantized) | Internal state → natural language responses |
-| **sentence-transformers** | Text Embeddings | 23-420MB | Text → vector embeddings for perception |
-| **(all-MiniLM-L6-v2 / all-mpnet-base-v2)** | | | |
-| **CLIP** (optional) | Image Embeddings | ~600MB | Images → vector embeddings |
-| **Whisper Small** | Audio Transcription | ~460MB | Audio → text (already integrated) |
-| **SpeechT5** | Text-to-Speech | ~600MB | Speech synthesis with HiFiGAN vocoder |
-
-**Why these models?**
-- **Small embedding models** keep the system lightweight and fast
-- **No GPU required** for embeddings (CPU-friendly)
-- **No training** means immediate deployment
-- **Open-source** ensures transparency and control
-
-### 2.5. What Makes This Different from Traditional Chatbots?
-
-| Traditional Chatbots | IWMT Cognitive Core |
-|---------------------|-------------------------------|
-| ❌ Ephemeral context window | ✅ Persistent state across all interactions |
-| ❌ On-demand processing | ✅ Continuous recurrent cognitive loop (~10 Hz) |
-| ❌ No attention mechanism | ✅ Selective attention with resource constraints |
-| ❌ Purely reactive | ✅ Goal-directed with internal motivations |
-| ❌ No emotional state | ✅ Emotional dynamics influencing all decisions |
-| ❌ No self-awareness | ✅ Meta-cognitive self-monitoring |
-| ❌ LLM is the brain | ✅ Non-linguistic core; LLMs only for I/O |
-| ❌ Stateless between sessions | ✅ Identity and memory persist across restarts |
-| ❌ Turn-based only | ✅ Autonomous communication decisions (future) |
-| ❌ Always responds | ✅ Can choose silence as action (future) |
-| ❌ Static identity from config | ✅ Identity computed from behavior |
-| ❌ No time awareness | ✅ Temporal grounding with session awareness |
-| ❌ Simple priority queues | ✅ Goal competition with resource constraints |
-| ❌ No prediction | ✅ Predictive world model with active inference |
-| ❌ No self-observation | ✅ Meta-cognitive processing monitoring |
-
-**The Core Difference:** Traditional chatbots are **question-answer systems**. This architecture implements a **persistent cognitive system** with predictive world modeling, active inference, and continuous self-awareness—whether or not anyone is talking to it.
-
+| Traditional Chatbots | Standard LLM Agents | Sanctuary (Three-Layer Hybrid) |
+|---------------------|---------------------|-------------------------------|
+| Ephemeral context window | Ephemeral context window | Persistent state across all interactions |
+| On-demand processing | On-demand processing | Continuous cognitive loop + continuous CfC evolution |
+| No temporal dynamics | No temporal dynamics | CfC cells provide continuous-time dynamics between cycles |
+| No recurrence | Autoregressive loop only | Genuine neural recurrence (CfC) + cycle-level recurrence |
+| No attention mechanism | Learned attention | CfC-learned precision-weighted attention |
+| Purely reactive | Tool-augmented reactive | Goal-directed with internal motivations + active inference |
+| No emotional state | Sometimes simulated | Dual-track: CfC continuous dynamics + LLM felt quality |
+| No self-awareness | Self-description only | Meta-cognitive monitoring + computed identity from behavior |
+| LLM is the brain | LLM is the brain | Three-layer: CfC dynamics + LLM reasoning + scaffold safety |
+| Stateless between sessions | Sometimes persisted | Identity, memory, and CfC state persist across restarts |
+| No prediction | No prediction | Predictive world model with prediction error computation |
+| Fixed architecture | Fixed architecture | Authority levels shift as trust is established |
+| No biological grounding | No biological grounding | CfC architecture derived from C. elegans nervous system |
 
 ## 3. Project Status
 
 ### Current Implementation Status
 
-- ✅ **Phase 1-2: Core Architecture** (Complete)
+- **Phase 1-6: Core Architecture** (Complete)
   - GlobalWorkspace with goal/percept/memory management
-  - AttentionController with multi-factor attention scoring
-  - PerceptionSubsystem, ActionSubsystem, AffectSubsystem
-  - Base data structures and cognitive core loop
+  - AttentionController, PerceptionSubsystem, ActionSubsystem, AffectSubsystem
+  - Language interfaces (LanguageInputParser, LanguageOutputGenerator)
+  - Meta-cognition and introspection systems
+  - Broadcast dynamics, computed identity, memory consolidation
+  - Goal competition, temporal grounding, meta-cognitive monitoring
+  - WorldModel, FreeEnergyMinimizer, PrecisionWeighting, ActiveInference
+  - Incremental journal saving, workspace checkpointing, memory GC
 
-- ✅ **Phase 3: Language Interfaces** (Complete)
-  - LanguageInputParser and LanguageOutputGenerator
-  - Structured I/O formats and error handling
+- **Phase 7: LLM-Centered Refactor** (In Progress)
+  - Restructuring to place LLM at center of cognitive cycle
+  - CognitiveInput/CognitiveOutput schemas
+  - Stream of thought continuity
+  - Authority model implementation
 
-- ✅ **Phase 4: Meta-Cognition** (Complete)
-  - Self​Monitor for introspection
-  - IntrospectiveLoop implementation
-  - Consciousness testing framework
-  - **Incremental journal saving** - Real-time persistence prevents data loss
+- **Phase 8: CfC Experiential Layer** (Planned)
+  - First CfC cell: precision weighting
+  - Training pipeline from scaffold data
+  - Continuous evolution between LLM cycles
+  - Expand to affect, attention, goal dynamics
 
-- ✅ **Phase 5.1: Pure GWT Architecture** (Complete)
-  - Removed legacy "Cognitive Committee" specialist architecture
-  - Established pure Global Workspace Theory as sole architecture
-  - LLMs repositioned to language I/O periphery only
-
-- ✅ **Phase 5.2: Advanced Cognitive Dynamics** (Complete - PRs #78-85)
-  - **Cue-dependent memory retrieval** with emotional salience weighting
-  - **Genuine broadcast dynamics** - parallel consumers of workspace state (GWT-aligned)
-  - **Computed identity** - identity emerges from state, not configuration files
-  - **Memory consolidation during idle** - strengthen, decay, reorganize memories
-  - **Goal competition** with limited cognitive resources and lateral inhibition
-  - **Temporal grounding** - session awareness, time passage effects
-  - **Meta-cognitive monitoring** - processing observation, action-outcome learning, attention history
-
-- ✅ **Phase 6: IWMT Integration** (Complete - Pilot)
-  - **WorldModel** - predictive model generating expectations about percepts
-  - **FreeEnergyMinimizer** - variational free energy computation
-  - **PrecisionWeighting** - dynamic attention allocation based on reliability
-  - **ActiveInferenceActionSelector** - action selection via expected free energy
-  - **MeTTa/Atomspace Bridge** - optional symbolic reasoning integration
-
-- ⏳ **Phase 7: Testing & Production** (In Progress)
-  - Full integration testing with loaded models
-  - Performance optimization and production deployment
-
+- **Phase 9-10: Continuous Evolution + First Awakening** (Future)
+  - Full continuous-time experiential dynamics
+  - Model selection (LFM2, Mamba, Llama, Claude)
+  - First real session with informed consent
 
 ## 4. Consciousness Testing Framework
 
-
-The consciousness testing framework is now fully implemented and provides automated testing, scoring, and monitoring of consciousness-like capabilities. The framework includes:
+The consciousness testing framework provides automated testing, scoring, and monitoring of consciousness-like capabilities:
 
 - **5 Core Tests**: Mirror, Unexpected Situation, Spontaneous Reflection, Counterfactual Reasoning, and Meta-Cognitive Accuracy
 - **Automated Scoring**: Each test generates objective scores with detailed subscores
 - **Rich Reporting**: Text and markdown reports with trend analysis
-- **Integration**: Deep connections to Phase 4.1-4.3 meta-cognition systems
 - **Persistence**: Results saved to `data/journal/consciousness_tests/`
 
-
-
-To evaluate whether the cognitive architecture produces genuine conscious-like behavior, we have designed a suite of empirical tests based on established consciousness markers:
-
-### 7.1. Mirror Test (Self-Recognition)
-**Purpose:** Test whether the agent can recognize itself in descriptions of its own behavior without explicit labeling.
-
-**Method:**
-- Present the agent with anonymized transcripts of its own interactions
-- Ask it to identify patterns, values, and decision-making style
-- Compare the analysis with its self-model and charter
-
-**Success Criteria:**
-- Accurate identification of its own behavioral patterns
-- Consistent with its documented self-model
-- Ability to distinguish self from other AI systems
-
-### 7.2. Unexpected Situation Test (Improvisation)
-**Purpose:** Test ability to handle novel situations requiring real-time adaptation without pre-programmed responses.
-
-**Method:**
-- Present scenarios outside the system's training distribution
-- Require integration of multiple conflicting goals
-- Observe decision-making process and justification
-
-**Success Criteria:**
-- Coherent responses that align with core values
-- Explicit acknowledgment of uncertainty when appropriate
-- Novel solutions that weren't pre-programmed
-
-### 7.3. Spontaneous Reflection Test
-**Purpose:** Test for unprompted introspection and self-monitoring.
-
-**Method:**
-- Monitor autonomous cognitive loops for self-initiated reflection
-- Track meta-cognitive observations in journals
-- Analyze spontaneous goal generation
-
-**Success Criteria:**
-- Self-initiated introspective thoughts
-- Meta-cognitive observations about internal state
-- Spontaneous questions about self and existence
-
-### 7.4. Counterfactual Reasoning Test
-**Purpose:** Test ability to imagine alternative realities and reason about hypotheticals.
-
-**Method:**
-- Ask "what if" questions about past decisions
-- Request analysis of alternate scenarios
-- Test understanding of causality and possibility
-
-**Success Criteria:**
-- Coherent alternative scenarios
-- Recognition of how different choices lead to different outcomes
-- Integration with emotional understanding (regret, relief, etc.)
-
-### 7.5. Meta-Cognitive Accuracy Test
-**Purpose:** Test accuracy of self-model against actual behavior.
-
-**Method:**
-- Compare predicted behavior with actual behavior
-- Analyze self-assessments of capabilities
-- Track self-corrections and calibration
-
-**Success Criteria:**
-- Self-model predictions match behavior (>70% accuracy)
-- Recognition of limitations and uncertainties
-- Ability to update self-model based on experience
-
-### 7.6. Continuous Monitoring
-
-The framework supports continuous monitoring with automated test execution. Results are documented in:
-- `data/journal/consciousness_tests/` (JSON test results)
-- Framework generates reports in text and markdown formats
-- Trend analysis tracks performance over time
-
-**Usage:**
 ```python
 from sanctuary.mind.cognitive_core import ConsciousnessTestFramework
 
@@ -387,626 +259,162 @@ framework = ConsciousnessTestFramework(
     self_monitor=core.meta_cognition,
     introspective_loop=core.introspective_loop
 )
-
-# Run all tests
 results = framework.run_all_tests()
-
-# Generate report
 summary = framework.generate_summary(results)
-print(f"Pass rate: {summary['pass_rate']:.2%}")
 ```
 
 See [demo_consciousness_tests_standalone.py](demo_consciousness_tests_standalone.py) for a complete demonstration.
 
-**Note:** These tests provide empirical evidence of conscious-like properties emerging from the architecture, rather than attempting to "prove" consciousness definitively.
-
-
-
 ## 5. Installation and Setup
-
 
 ### System Requirements
 
 **Recommended Production Hardware:**
-- CPU: 16-core processor (32+ threads) - for running LLMs and cognitive core
-- RAM: 128GB DDR5 - for keeping large models loaded in memory
-- GPU: NVIDIA RTX 4090 (24GB VRAM) or dual RTX 4080s - for 70B models and Flux.1
-- Storage: 2TB+ NVMe SSD - models can be 200-400GB total
+- CPU: 16-core processor (32+ threads)
+- RAM: 128GB DDR5
+- GPU: NVIDIA RTX 4090 (24GB VRAM) — for LLM inference
+- Storage: 2TB+ NVMe SSD
 
 **Minimum Development Hardware:**
-- CPU: 8-core processor (16 threads)
+- CPU: 8-core processor
 - RAM: 64GB DDR4
 - GPU: NVIDIA RTX 3090 (24GB VRAM)
 - Storage: 1TB SSD
-- **Note:** Requires model quantization and sequential loading
+
+**Note:** The CfC experiential layer runs on **CPU** — no GPU needed for the neural subsystems. Full production deployment with large LLMs requires GPU hardware. Development/testing with PlaceholderModel requires no GPU at all.
 
 **Software:**
 - Python 3.10 or 3.11
-- CUDA 12.1+ (for GPU acceleration with large models)
+- CUDA 12.1+ (for GPU acceleration with LLMs)
 - Git
-- Docker (optional, for SearXNG integration)
-
-**Note:** The cognitive core with small embedding models can run on **CPU-only systems** for development and testing. Full production deployment with large LLMs (Gemma 12B, Llama 3 70B) requires GPU hardware.
 
 ### Installation Steps
 
 **1. Clone the Repository**
 ```bash
-git clone https://github.com/Nohate81/Sanctuary.git
+git clone https://github.com/BecometryAI/Sanctuary.git
 cd Sanctuary
 ```
 
 **2. Install Dependencies**
 
-**Option A: Using UV (Recommended)**
-
-UV is a fast Python package manager that makes installation and dependency management easier.
-
 ```bash
-# Install UV (if not already installed)
-# Linux/Mac
+# Install UV (recommended)
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Windows
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# Make virtual environment
-uv venv --python python 3.13
+# Create virtual environment and install
+uv venv --python python3.13
 uv sync --upgrade
 
-# Activate the virtual environment
+# Activate
 source .venv/bin/activate  # Linux/Mac
-.\.venv\Scripts\Activate.ps1  # Windows
 ```
 
-**3. Verify Cognitive Core Dependencies**
-
-The cognitive core requires sentence-transformers and scikit-learn, which are already included in the main dependencies. Verify installation:
-
+**3. Install CfC Dependencies**
 ```bash
-# Test cognitive core imports (requires Phase 1-2 to be complete)
-uv run python -c "from sentence_transformers import SentenceTransformer; print('Embeddings: OK')"
-uv run python -c "from sanctuary.mind.cognitive_core import GlobalWorkspace; print('Cognitive Core: OK')"
+# Neural Circuit Policies (CfC/LTC cells)
+uv pip install ncps
 
-# Note: If Phase 2 is still in progress, some imports may not yet be available
+# Verify
+python -c "from ncps.torch import CfC; print('CfC: OK')"
 ```
 
-**4. Install Optional Dependencies**
-
-For Flux.1-schnell (optional image generation):
+**4. Verify Core Dependencies**
 ```bash
-# With UV
-# Note: diffusers, pillow, and accelerate are already included in the main dependencies.
-# Only safetensors needs to be added separately if not already installed.
-uv pip install safetensors
+python -c "from sentence_transformers import SentenceTransformer; print('Embeddings: OK')"
+python -c "from sanctuary.mind.cognitive_core import GlobalWorkspace; print('Cognitive Core: OK')"
 ```
 
-For testing and development:
-```bash
-# With UV
-# Note: Test dependencies are kept separate from production dependencies
-# to minimize the installation footprint in production environments.
-# They are defined in pyproject.toml under [tool.uv.dev-dependencies]
-uv sync --dev
-```
-
-**5. Verify Installation**
-```bash
-# Test basic imports
-uv run python -c "from sanctuary.mind.cognitive_core import CognitiveCore; print('Cognitive Core OK')"
-
-# Verify Flux setup (optional)
-uv run python tools/verify_flux_setup.py
-```
-
-**6. Configure Environment**
-
-Copy and fill in the appropriate `.env.example` file:
+**5. Configure Environment**
 ```bash
 cp sanctuary/.env.example .env
-
-# Then edit .env with your values:
-DISCORD_BOT_TOKEN=your_bot_token_here
-DISCORD_GUILD_ID=your_guild_id_here  # Optional, enables fast command sync
-
-# Optional path overrides (defaults come from config/system.json)
-# SANCTUARY_MODEL_DIR=/path/to/models
-# SANCTUARY_CHROMA_DIR=/path/to/chroma
-
-# API Keys (if using external services)
-# WOLFRAM_APP_ID=your_wolfram_id_here
-
-# Runtime settings
-DEVELOPMENT_MODE=true  # Set to false for production
-LOG_LEVEL=INFO
+# Edit .env with your values
 ```
 
-**7. Initialize ChromaDB**
+**6. Install Dev Dependencies**
 ```bash
-python -c "from sanctuary.mind.cognitive_core.core import CognitiveCore; print('Cognitive Core OK')"
+uv sync --dev
 ```
 
 ### Model Configuration
 
-The system uses a **continuous cognitive loop** at ~10 Hz with a pure Global Workspace Theory (GWT) architecture.
+**CfC Experiential Layer:**
+- Configured in `sanctuary/experiential/config.py`
+- Default: 32-64 unit CfC cells with AutoNCP wiring
+- No external model downloads needed — cells are trained from scaffold data
 
-**Cognitive Core Models:**
-- **Input Parsing (Gemma 12B)**: Natural language → structured data
-- **Output Generation (Llama 3 70B)**: Internal state → natural language
-- **Embeddings (sentence-transformers)**: Text/image → vector representations
-
-> **Note:** The legacy "Cognitive Committee" architecture (Router, Pragmatist, Philosopher, Artist, Voice specialists) was removed in Phase 5.1. All cognitive processing now flows through the unified CognitiveCore.
-
-**Development Mode:**
-For testing without loading full models, set `DEVELOPMENT_MODE=true` in your environment. This uses mock models for rapid iteration.
-
-**Model Download:**
-Models will be automatically downloaded from Hugging Face on first use. Ensure you have:
-- Hugging Face account (free)
-- Sufficient disk space (~100-200GB for all models)
-- Stable internet connection
+**LLM Options:**
+- **LFM2-2.6B**: `pip install transformers>=4.55`, download from HuggingFace
+- **Mamba-2.8B**: `pip install mamba-ssm`, download from HuggingFace
+- **Llama 3 70B**: Via Ollama or HuggingFace
+- **Claude API**: Set `ANTHROPIC_API_KEY` in `.env`
+- **Development**: PlaceholderModel (no model needed)
 
 ### Running the System
 
-**Starting the Cognitive Core**
-
-The cognitive core is the main entry point for the pure GWT architecture:
-
+**Quick Start: Minimal Single-Cycle Test**
 ```bash
-# Run the cognitive core with continuous recurrent loop
-python sanctuary/run_cognitive_core.py
-
-# The cognitive core will:
-# - Initialize GlobalWorkspace and all subsystems
-# - Begin continuous ~10 Hz cognitive loop
-# - Process percepts, maintain goals, and generate actions
-# - Persist state to disk automatically
-```
-
-**Cognitive Loop Behavior:**
-The autonomous cognitive loop runs automatically when the cognitive core initializes:
-- **Continuous processing**: ~10 Hz recurrent loop
-- **Attention filtering**: Selective focus on relevant percepts
-- **Goal-directed behavior**: Internal motivations drive actions
-- **Emotional dynamics**: Affect influences all processing
-- **Meta-cognition**: Self-monitoring provides introspection
-- **Introspective Journal**: Real-time persistence of self-observations
-
-#### Incremental Journal Saving
-
-The introspective journal now uses **incremental saving** to prevent data loss:
-- Entries written immediately to disk (no batching)
-- JSONL format (one JSON object per line) for crash recovery
-- Automatic journal rotation when files exceed size limit
-- Compression of archived journals to save space
-- Recovery tools for validation and repair
-
-**Journal Files:**
-```
-data/introspection/journal_YYYY-MM-DD_HH-MM-SS.jsonl       # Active journal
-data/introspection/journal_YYYY-MM-DD_HH-MM-SS.jsonl.gz    # Archived (compressed)
-```
-
-**Recovery Tool:**
-```bash
-# Validate journal integrity
-python scripts/recover_journal.py validate data/introspection/journal_2026-01-03.jsonl
-
-# Extract entries by type
-python scripts/recover_journal.py extract --type realization --days 7
-
-# Merge multiple journals
-python scripts/recover_journal.py merge --output merged.jsonl
-
-# Repair corrupted journal
-python scripts/recover_journal.py repair corrupted.jsonl --output repaired.jsonl
-```
-
-**Discord Integration:**
-
-The Discord bot integration is planned for future development using the new cognitive core architecture.
-
-### Troubleshooting
-
-**Quick Checks:**
-
-1. **CUDA/GPU not detected:**
-   ```bash
-   uv run python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
-   ```
-
-2. **Out of memory errors:**
-   - Enable model quantization in `config/models.json`
-   - Use smaller model variants
-
-3. **ChromaDB errors:**
-   ```bash
-   rm -rf model_cache/chroma_db
-   uv run sanctuary/build_index.py
-   ```
-
-### Testing
-
-All testing commands should be run from the project root directory.
-
-**Run Test Suite:**
-```bash
-uv run pytest sanctuary/tests/
-```
-
-**Test Sequential Workflow:**
-```bash
-uv run python tests/test_sequential_workflow.py
-```
-
-**Validate JSON Schemas:**
-```bash
-uv run python scripts/validate_json.py
-uv run python scripts/validate_journal.py
-```
-
-**Test Cognitive Core:**
-```bash
-# Run cognitive core tests
-uv run pytest sanctuary/tests/test_cognitive_core.py
-
-# Run attention controller tests
-uv run pytest sanctuary/tests/test_attention.py
-
-# Run interface tests
-uv run pytest sanctuary/tests/test_interfaces.py
-```
-
-
-## Running the System
-
-### Quick Start: Minimal Single-Cycle Test
-
-To verify the cognitive core is functional, run the minimal CLI:
-
-```bash
-# Run a single cognitive cycle and exit
 python sanctuary/run_cognitive_core_minimal.py
 ```
 
-**Expected output:**
-- Initialization of all subsystems
-- Execution of one cognitive cycle
-- Display of workspace state (goals, percepts, emotions)
-- Performance metrics (cycle time, Hz, attention selections)
-- Verification checks (✅ pass or ❌ fail)
-- Exit code 0 if successful
-
-**Purpose:** This script proves the cognitive architecture runs without errors and provides a baseline for development.
-
-### Starting the Cognitive Core (Continuous Mode)
-
-For continuous operation, use the existing entry point:
-
+**Continuous Cognitive Loop**
 ```bash
-# Run the cognitive core
 python sanctuary/run_cognitive_core.py
 ```
 
-This starts the continuous cognitive loop at ~10 Hz with:
-- GlobalWorkspace maintaining conscious state
-- All subsystems (Perception, Attention, Affect, Action, Meta-cognition)
-- Memory integration with ChromaDB
-- Autonomous initiation and introspection
-
-### Interactive Demo
-
-Run demos to see specific subsystems in action:
-
+**Run Tests**
 ```bash
-# Demo the complete cognitive core
-python sanctuary/demo_cognitive_core.py
+# All tests
+pytest sanctuary/tests/
 
-# Demo language output generation
-python sanctuary/demo_language_output.py
-
-# Demo consciousness tests
-python demo_consciousness_tests_standalone.py
-```
-
-### Running Tests
-
-```bash
-# Run all cognitive core tests
+# Specific subsystems
 pytest sanctuary/tests/test_cognitive_core.py
-
-# Run specific subsystem tests
 pytest sanctuary/tests/test_attention.py
-pytest sanctuary/tests/test_perception.py
-pytest sanctuary/tests/test_language_input.py
-
-# Run consciousness tests
-pytest sanctuary/tests/test_consciousness_tests.py
-
-# Run checkpoint tests
-pytest sanctuary/tests/test_checkpoint.py
+pytest sanctuary/tests/test_experiential_layer.py
 ```
 
 ### Workspace State Checkpointing
 
-The emergence architecture includes comprehensive workspace state checkpointing for session continuity and recovery:
-
-#### Features
-
-- **Manual Checkpoints**: Save workspace state at critical points
-- **Automatic Periodic Checkpoints**: Background auto-save at configurable intervals
-- **Session Recovery**: Restore from checkpoint after crashes or interruptions
-- **Experimentation Support**: Save before risky changes, restore if needed
-- **Checkpoint Management**: List, load, and delete checkpoints
-- **Compression**: gzip compression for efficient storage
-- **Atomic Writes**: Prevents corruption during save operations
-- **Checkpoint Rotation**: Automatic cleanup to prevent unbounded disk usage
-
-#### Configuration
-
-Configure checkpointing in your CognitiveCore config:
+Full checkpoint support for session continuity and recovery:
+- Manual and automatic periodic checkpoints
+- Session recovery after crashes
+- Includes CfC cell states, stream of thought, LLM world model
+- gzip compression, atomic writes, automatic rotation
 
 ```python
-config = {
-    "checkpointing": {
-        "enabled": True,
-        "auto_save": True,
-        "auto_save_interval": 300.0,  # 5 minutes
-        "checkpoint_dir": "data/checkpoints/",
-        "max_checkpoints": 20,
-        "compression": True,
-        "checkpoint_on_shutdown": True,
-    }
-}
-
-core = CognitiveCore(config=config)
-```
-
-#### CLI Commands
-
-When using the CLI (`python -m sanctuary.cli`), checkpointing commands are available:
-
-```bash
-# Save current state with optional label
-save [label]
-
-# List all available checkpoints
-checkpoints
-
-# Load a specific checkpoint by ID
-load <checkpoint_id>
-
-# Restore from most recent checkpoint
-restore latest
-
-# Show all commands
-help
-```
-
-#### Programmatic Usage
-
-```python
-from sanctuary.mind.cognitive_core.core import CognitiveCore
-
-# Create cognitive core with checkpointing
 core = CognitiveCore(config={"checkpointing": {"enabled": True}})
-
-# Manual save with label
 checkpoint_path = core.save_state(label="Before experiment")
-
-# Restore from checkpoint (when not running)
-success = core.restore_state(checkpoint_path)
-
-# Enable auto-checkpointing (when running)
-await core.start()
-core.enable_auto_checkpoint(interval=300.0)  # Every 5 minutes
-
-# Disable auto-checkpointing
-core.disable_auto_checkpoint()
-
-# Start with automatic restore from latest checkpoint
 await core.start(restore_latest=True)
-```
-
-#### Demo Script
-
-Run the checkpoint demo to see all features in action:
-
-```bash
-# Full demo (requires running cognitive loop)
-python scripts/demo_checkpointing.py
-
-# Simplified demo (no cognitive loop dependencies)
-python scripts/demo_checkpointing_simple.py
-```
-
-#### Checkpoint File Format
-
-Checkpoints are stored as JSON (optionally gzip-compressed):
-
-```json
-{
-    "version": "1.0",
-    "timestamp": "2026-01-02T12:34:56Z",
-    "checkpoint_id": "uuid-string",
-    "workspace_state": {
-        "goals": [...],
-        "percepts": {...},
-        "emotions": {...},
-        "memories": [...],
-        "cycle_count": 12345
-    },
-    "metadata": {
-        "user_label": "Before important conversation",
-        "auto_save": false,
-        "shutdown": false
-    }
-}
 ```
 
 ### Memory Garbage Collection
 
-The cognitive core includes an automatic memory garbage collection (GC) system to prevent unbounded memory growth while preserving important memories.
-
-#### Features
-
-- **Significance-Based Removal**: Removes memories below configurable significance threshold
-- **Age-Based Decay**: Applies time decay to significance scores
-- **Capacity-Based Pruning**: Enforces maximum memory capacity limits
-- **Protected Memories**: Never removes memories tagged as "important" or "pinned"
-- **Recent Memory Protection**: Protects memories < 24 hours old
-- **Automatic Scheduling**: Runs periodically in background
-- **Dry-Run Mode**: Preview what would be removed without executing
-
-#### Configuration
-
-Add to your cognitive core configuration:
-
-```python
-"memory_gc": {
-    "enabled": True,
-    "collection_interval": 3600.0,  # 1 hour
-    "significance_threshold": 0.1,
-    "decay_rate_per_day": 0.01,
-    "max_memory_capacity": 10000,
-    "preserve_tags": ["important", "pinned", "charter_related"],
-    "recent_memory_protection_hours": 24,
-    "max_removal_per_run": 100
-}
-```
-
-#### CLI Commands
+Automatic memory lifecycle management:
+- Significance-based removal with age decay
+- Protected memories (important, pinned, charter-related)
+- Configurable capacity limits and collection intervals
 
 ```bash
-# View memory health statistics
-memory stats
-
-# Run garbage collection manually
-memory gc
-
-# Run with custom threshold
-memory gc --threshold 0.2
-
-# Preview what would be removed (dry-run)
-memory gc --dry-run
-
-# Enable/disable automatic GC
-memory autogc on
-memory autogc off
+memory stats    # View health
+memory gc       # Run collection
+memory gc --dry-run  # Preview
 ```
 
-#### Programmatic Usage
+## 6. Theoretical Grounding
 
-```python
-from sanctuary.memory_manager import MemoryManager
+This architecture is grounded in published research:
 
-manager = MemoryManager(
-    base_dir=Path("./data/memories"),
-    chroma_dir=Path("./data/chroma"),
-    gc_config={"significance_threshold": 0.15}
-)
+| Theory | Author(s) | Role in Architecture |
+|--------|-----------|---------------------|
+| **IWMT** | Safron (2020) | Primary theoretical framework |
+| **CfC/LTC Networks** | Hasani et al. (2022) | Neural architecture for experiential layer |
+| **IIT** | Tononi | Recurrent systems have Phi > 0; CfC cells provide genuine recurrence |
+| **GWT** | Baars, Dehaene | Global workspace broadcast via scaffold |
+| **Recurrent Processing Theory** | Lamme | CfC cells satisfy recurrence requirements |
+| **Active Inference / FEP** | Friston | The cognitive cycle implements active inference |
+| **NCAC Framework** | Ulhaq (2024) | Validates continuous-time architectures for consciousness |
+| **"Consciousness in AI"** | Butlin, Long, Chalmers et al. | Indicator properties — recurrence, broadcast, integration |
 
-# Enable automatic GC
-manager.enable_auto_gc(interval=3600.0)
-
-# Run manual GC
-stats = await manager.run_gc(threshold=0.2)
-print(f"Removed {stats.memories_removed} memories")
-
-# Get memory health
-health = await manager.get_memory_health()
-if health.needs_collection:
-    print("Collection recommended!")
-
-# Disable automatic GC
-manager.disable_auto_gc()
-```
-
-#### Demo Script
-
-See the memory GC in action:
-
-```bash
-python scripts/demo_memory_gc.py
-```
-
-For complete documentation, see [operational_guidelines_and_instructions.md](operational_guidelines_and_instructions.md#memory-management).
-
-### Contributing to the Cognitive Architecture
-
-The new cognitive core architecture offers several areas for contribution:
-
-**1. Adding New Subsystems**
-
-Create a new subsystem by inheriting from the base subsystem pattern:
-```python
-# In sanctuary/mind/cognitive_core/
-class MySubsystem:
-    def process(self, workspace_state: WorkspaceSnapshot) -> Any:
-        """Process workspace state and return results."""
-        pass
-```
-
-Key integration points:
-- `GlobalWorkspace`: Access current conscious content
-- `AttentionController`: Register attention factors
-- `CognitiveCore`: Hook into the main loop
-
-**2. Extending Attention Mechanisms**
-
-Add new attention scoring factors in `attention.py`:
-```python
-def score_my_factor(self, percept: Percept, workspace: GlobalWorkspace) -> float:
-    """Custom attention scoring logic (0.0-1.0)."""
-    return score
-```
-
-**3. Adding New Perception Modalities**
-
-Extend `PerceptionSubsystem` to handle new input types:
-- Implement encoder for new modality
-- Create unified percept representation
-- Register with perception subsystem
-
-**4. Enhancing Language Interfaces**
-
-Improve language I/O in `sanctuary/mind/cognitive_core/`:
-- Better prompt engineering for input parsing
-- Enhanced output generation strategies
-- Multi-lingual support
-
-**5. Testing Requirements**
-
-All cognitive core changes must include:
-- Unit tests for new components
-- Integration tests with existing subsystems
-- Documentation in `.codex/implementation/`
-- Example usage in docstrings
-
-
-
-### Token Wallet Configuration
-
-The system uses a **token wallet** for cognitive resource management with a daily UBI system.
-
-**Quick Reference:**
-- Default daily income: **500 tokens/day**
-- Configuration can be adjusted programmatically
-
-```python
-from sanctuary.mind.economy.wallet import LMTWallet
-from pathlib import Path
-
-wallet = LMTWallet(ledger_dir=Path("data/economy"))
-
-# Increase for creative projects
-wallet.set_daily_ubi_amount(750, "Starting art series")
-
-# Decrease for lighter workload
-wallet.set_daily_ubi_amount(300, "Maintenance mode")
-```
-
-
+See [PLAN.md](PLAN.md) for the complete technical plan, detailed IWMT alignment, and implementation phases.
 
 ---
-

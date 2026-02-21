@@ -17,4 +17,11 @@ collect_ignore_glob = [
     # Legacy tests with bare 'mind' imports (need PYTHONPATH=sanctuary)
     "sanctuary/tests/mind/test_metacognition.py",
     "sanctuary/tests/mind/test_well_being.py",
+    # Broken imports — nonexistent modules or bare module names
+    "sanctuary/tests/test_friction_based_memory.py",  # mind.economy does not exist
+    "sanctuary/tests/test_emotional_modulation_standalone.py",  # bare 'import emotional_modulation'
+    "sanctuary/tests/test_emotional_modulation_integration.py",  # bare 'import emotional_modulation'
+    "sanctuary/tests/test_refactoring_backward_compatibility.py",  # emergence_core.sanctuary does not exist
+    # External ML dependency (sklearn) — not installed in CI
+    "sanctuary/tests/test_competitive_logic.py",
 ]

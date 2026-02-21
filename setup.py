@@ -6,8 +6,7 @@ from setuptools import setup, find_packages
 setup(
     name="sanctuary",
     version="0.1.0",
-    packages=find_packages(),
-    package_dir={"": "sanctuary"},
+    packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=[
         # Core ML dependencies
         "numpy>=2.3.4",

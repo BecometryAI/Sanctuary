@@ -330,7 +330,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv --python python3.11
 uv sync --upgrade
 
-# Activate the virtual environment
+# Activate
 source .venv/bin/activate  # Linux/Mac
 ```
 

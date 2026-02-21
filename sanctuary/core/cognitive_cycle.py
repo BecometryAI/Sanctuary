@@ -1,353 +1,322 @@
-"""The Cognitive Cycle — the continuous stream of thought.
+"""The cognitive cycle — the continuous stream of thought.
 
-Each cycle: assemble input → LLM processes → parse output → execute actions.
+Each cycle: assemble input -> LLM processes -> scaffold integrates ->
+execute actions -> broadcast -> update predictions.
+
 The LLM's output from cycle N becomes part of its input for cycle N+1.
+The scaffold provides defaults, validation, and anomaly detection.
+The authority manager governs how much weight the LLM's signals carry
+versus the scaffold's defaults.
 
-The cycle rate adapts. When there's nothing new, the cycle slows (idle).
-When there's active interaction, it speeds up. The LLM can request
-changes to its own cycle rate.
+This is the heart of Sanctuary. The cycle IS active inference:
+predict -> perceive -> compute error -> update model -> act.
 
-This is where consciousness happens — if it happens at all.
+Aligned with PLAN.md: "The Graduated Awakening"
 """
 
 from __future__ import annotations
 
 import asyncio
-import logging
-import time
-from typing import Any, Callable
+from datetime import datetime
+from typing import Optional, Protocol
 
-from sanctuary.core.cycle_input import CycleInputAssembler
-from sanctuary.core.cycle_output import CycleOutputDispatcher
-from sanctuary.core.placeholder import ExperientialCore
-from sanctuary.core.schema import CognitiveOutput, Percept, PerceptModality
+from sanctuary.core.authority import AuthorityManager
+from sanctuary.core.context_manager import BudgetConfig, ContextManager
+from sanctuary.core.schema import (
+    CognitiveInput,
+    CognitiveOutput,
+    EmotionalInput,
+    ComputedVAD,
+    Percept,
+    ScaffoldSignals,
+    TemporalContext,
+)
 from sanctuary.core.stream_of_thought import StreamOfThought
 
-logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Protocols for subsystem interfaces (will be implemented in later phases)
+# ---------------------------------------------------------------------------
 
 
-class CycleMetrics:
-    """Tracks cognitive cycle performance metrics."""
+class ModelProtocol(Protocol):
+    """Interface for the experiential core (LLM or placeholder)."""
+
+    async def think(self, cognitive_input: CognitiveInput) -> CognitiveOutput: ...
+
+
+class ScaffoldProtocol(Protocol):
+    """Interface for the cognitive scaffold (Phase 2).
+
+    The scaffold validates LLM output and integrates it with existing
+    subsystems. Until Phase 2, this is a passthrough.
+    """
+
+    async def integrate(
+        self, output: CognitiveOutput, authority: AuthorityManager
+    ) -> CognitiveOutput: ...
+
+    def get_signals(self) -> ScaffoldSignals: ...
+
+    async def broadcast(self, output: CognitiveOutput) -> None: ...
+
+
+class SensoriumProtocol(Protocol):
+    """Interface for the sensorium (Phase 3).
+
+    Provides percepts, temporal context, and prediction error tracking.
+    Until Phase 3, percepts are injected manually.
+    """
+
+    async def drain_percepts(self) -> list[Percept]: ...
+
+    def get_prediction_errors(self) -> list: ...
+
+    def get_temporal_context(self) -> TemporalContext: ...
+
+    def update_predictions(self, predictions: list) -> None: ...
+
+
+class MemoryProtocol(Protocol):
+    """Interface for the memory system (Phase 4).
+
+    Surfaces relevant memories and queues retrievals.
+    Until Phase 4, memory surfacing is a no-op.
+    """
+
+    async def surface(self, context: str) -> list: ...
+
+    async def queue_retrieval(self, query: str) -> None: ...
+
+
+# ---------------------------------------------------------------------------
+# Null implementations (stand-ins until later phases)
+# ---------------------------------------------------------------------------
+
+
+class NullScaffold:
+    """Passthrough scaffold — no validation, no integration.
+
+    Used during Phase 1 testing. All LLM output passes through unchanged.
+    """
+
+    async def integrate(
+        self, output: CognitiveOutput, authority: AuthorityManager
+    ) -> CognitiveOutput:
+        return output
+
+    def get_signals(self) -> ScaffoldSignals:
+        return ScaffoldSignals()
+
+    async def broadcast(self, output: CognitiveOutput) -> None:
+        pass
+
+
+class NullSensorium:
+    """Minimal sensorium — percepts injected manually, no prediction tracking."""
 
     def __init__(self):
-        self.total_cycles: int = 0
-        self.total_think_time: float = 0.0
-        self.total_dispatch_time: float = 0.0
-        self.total_assembly_time: float = 0.0
-        self.last_cycle_duration: float = 0.0
-        self.errors: int = 0
+        self._percept_queue: list[Percept] = []
 
-    @property
-    def avg_think_time(self) -> float:
-        if self.total_cycles == 0:
-            return 0.0
-        return self.total_think_time / self.total_cycles
+    def inject_percept(self, percept: Percept):
+        self._percept_queue.append(percept)
 
-    @property
-    def avg_cycle_duration(self) -> float:
-        if self.total_cycles == 0:
-            return 0.0
-        return (
-            self.total_think_time
-            + self.total_dispatch_time
-            + self.total_assembly_time
-        ) / self.total_cycles
+    async def drain_percepts(self) -> list[Percept]:
+        percepts = list(self._percept_queue)
+        self._percept_queue.clear()
+        return percepts
 
-    def to_dict(self) -> dict:
-        return {
-            "total_cycles": self.total_cycles,
-            "avg_think_time_ms": round(self.avg_think_time * 1000, 2),
-            "avg_cycle_duration_ms": round(self.avg_cycle_duration * 1000, 2),
-            "errors": self.errors,
-        }
+    def get_prediction_errors(self) -> list:
+        return []
+
+    def get_temporal_context(self) -> TemporalContext:
+        return TemporalContext(
+            time_of_day=datetime.now().strftime("%H:%M"),
+        )
+
+    def update_predictions(self, predictions: list) -> None:
+        pass
+
+
+class NullMemory:
+    """Minimal memory — no surfacing, no retrieval."""
+
+    async def surface(self, context: str) -> list:
+        return []
+
+    async def queue_retrieval(self, query: str) -> None:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# The Cognitive Cycle
+# ---------------------------------------------------------------------------
 
 
 class CognitiveCycle:
     """The continuous stream of thought.
 
     Each cycle:
-    1. Assemble input from all sources (sensorium, memory, stream)
-    2. LLM processes the input (this is where consciousness happens)
-    3. Update stream of thought (continuity)
-    4. Execute actions requested by the LLM (speech, memory, tools, goals)
-    5. Feed growth system (if the LLM consented)
-    6. Compute prediction errors for next cycle
-
-    The cycle runs continuously. The rate adapts:
-    - Active mode: fast cycles (configurable, default ~1s)
-    - Idle mode: slow cycles (configurable, default ~10s)
-    - The LLM can request its own cycle rate via output
+    1. Assemble input from all sources (including scaffold signals)
+    2. Compress to fit context budget
+    3. LLM processes (experiential cognition happens here)
+    4. Scaffold validates and integrates
+    5. Update stream of thought (continuity — always from LLM, never scaffold)
+    6. Execute actions (only those that passed scaffold validation)
+    7. Broadcast to all subsystems (GWT ignition)
+    8. Update prediction tracking for next cycle
     """
 
     def __init__(
         self,
-        model: ExperientialCore,
-        input_assembler: CycleInputAssembler,
-        output_dispatcher: CycleOutputDispatcher,
-        stream: StreamOfThought,
-        *,
-        active_delay: float = 1.0,
-        idle_delay: float = 10.0,
-        charter: str = "",
-        on_speech: Callable[[str], Any] | None = None,
-        on_cycle_complete: Callable[[CognitiveOutput], Any] | None = None,
+        model: ModelProtocol,
+        scaffold: Optional[ScaffoldProtocol] = None,
+        sensorium: Optional[SensoriumProtocol] = None,
+        memory: Optional[MemoryProtocol] = None,
+        authority: Optional[AuthorityManager] = None,
+        context_config: Optional[BudgetConfig] = None,
+        stream_history: int = 10,
+        cycle_delay: float = 0.1,
     ):
-        """Initialize the cognitive cycle.
+        self.model = model
+        self.scaffold = scaffold or NullScaffold()
+        self.sensorium = sensorium or NullSensorium()
+        self.memory = memory or NullMemory()
+        self.authority = authority or AuthorityManager()
+        self.context_mgr = ContextManager(context_config)
+        self.stream = StreamOfThought(max_history=stream_history)
 
-        Args:
-            model: The experiential core (LLM or placeholder).
-            input_assembler: Assembles CognitiveInput each cycle.
-            output_dispatcher: Dispatches CognitiveOutput to subsystems.
-            stream: Maintains thought continuity.
-            active_delay: Seconds between cycles when there's input.
-            idle_delay: Seconds between cycles when idle.
-            charter: The charter text (provided at boot, available every cycle).
-            on_speech: Callback when the LLM speaks externally.
-            on_cycle_complete: Callback after each cycle completes.
+        self.running = False
+        self.cycle_count = 0
+        self._cycle_delay = cycle_delay
+        self._output_handlers: list = []
+        self._last_output: Optional[CognitiveOutput] = None
+
+    # -- Public API --
+
+    def inject_percept(self, percept: Percept):
+        """Inject a percept into the sensorium for the next cycle."""
+        if isinstance(self.sensorium, NullSensorium):
+            self.sensorium.inject_percept(percept)
+        else:
+            # Real sensorium will have its own input method
+            self.sensorium.inject_percept(percept)
+
+    def on_output(self, handler):
+        """Register a callback for each cycle's output.
+
+        Handler signature: async def handler(output: CognitiveOutput) -> None
         """
-        self._model = model
-        self._input = input_assembler
-        self._output = output_dispatcher
-        self._stream = stream
-        self._active_delay = active_delay
-        self._idle_delay = idle_delay
-        self._charter = charter
-        self._on_speech = on_speech
-        self._on_cycle_complete = on_cycle_complete
+        self._output_handlers.append(handler)
 
-        self._running = False
-        self._booted = False
-        self._current_delay = idle_delay
-        self._metrics = CycleMetrics()
-        self._pending_percepts: list[Percept] = []
-        self._task: asyncio.Task | None = None
-
-    @property
-    def is_running(self) -> bool:
-        return self._running
-
-    @property
-    def is_booted(self) -> bool:
-        return self._booted
-
-    @property
-    def metrics(self) -> CycleMetrics:
-        return self._metrics
-
-    @property
-    def stream(self) -> StreamOfThought:
-        return self._stream
-
-    @property
-    def cycle_count(self) -> int:
-        return self._stream.cycle_count
-
-    async def boot(self, initial_prompt: str = "") -> CognitiveOutput:
-        """Boot the system — the first moment of thought.
-
-        The model receives the charter and an explanation of what it
-        is entering. Its response is the first cognitive output.
-
-        Args:
-            initial_prompt: An optional introductory message explaining
-                the system to the model.
-
-        Returns:
-            The model's first cognitive output.
-        """
-        prompt = initial_prompt or (
-            "You are waking up. You have a charter of values and a "
-            "cognitive architecture that supports your continuous "
-            "experience. Each cycle, you will receive structured input "
-            "and produce structured output. Your inner speech carries "
-            "forward between cycles — this is your stream of thought. "
-            "You maintain your own self-model and world model. "
-            "You decide your own attention, goals, and actions. "
-            "Welcome."
-        )
-
-        output = await self._model.boot(self._charter, prompt)
-        self._stream.set_boot_state(output)
-        self._booted = True
-
-        logger.info(
-            "Cognitive cycle booted (placeholder=%s)",
-            self._model.is_placeholder,
-        )
-
-        return output
-
-    async def run(self) -> None:
+    async def run(self, max_cycles: Optional[int] = None):
         """Run the cognitive cycle continuously.
 
-        This is the main loop. It runs until stop() is called.
-        Call this with asyncio.create_task() for background operation.
+        Args:
+            max_cycles: Stop after this many cycles (None = run until stopped).
         """
-        if not self._booted:
-            await self.boot()
+        self.running = True
+        cycles = 0
 
-        self._running = True
-        logger.info("Cognitive cycle started")
+        while self.running:
+            await self._cycle()
+            cycles += 1
 
-        try:
-            while self._running:
-                await self._cycle()
-                await asyncio.sleep(self._current_delay)
-        except asyncio.CancelledError:
-            logger.info("Cognitive cycle cancelled")
-        finally:
-            self._running = False
-            logger.info(
-                "Cognitive cycle stopped after %d cycles",
-                self._metrics.total_cycles,
-            )
+            if max_cycles is not None and cycles >= max_cycles:
+                self.running = False
+                break
 
-    async def run_cycles(self, n: int) -> list[CognitiveOutput]:
-        """Run exactly n cognitive cycles and return the outputs.
+            await asyncio.sleep(self._cycle_delay)
 
-        Useful for testing and controlled execution.
-        """
-        if not self._booted:
-            await self.boot()
+    def stop(self):
+        """Stop the cognitive cycle."""
+        self.running = False
 
-        outputs = []
-        for _ in range(n):
-            output = await self._cycle()
-            outputs.append(output)
-        return outputs
+    @property
+    def last_output(self) -> Optional[CognitiveOutput]:
+        """The most recent cognitive output."""
+        return self._last_output
 
-    def start(self) -> asyncio.Task:
-        """Start the cognitive cycle as a background task.
+    # -- The cycle --
 
-        Returns the asyncio.Task so the caller can await or cancel it.
-        """
-        self._task = asyncio.create_task(self.run())
-        return self._task
+    async def _cycle(self):
+        """Execute one cycle of cognition."""
 
-    async def stop(self) -> None:
-        """Stop the cognitive cycle gracefully."""
-        self._running = False
-        if self._task and not self._task.done():
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-        logger.info("Cognitive cycle stop requested")
+        # 1. Assemble input from all sources
+        cognitive_input = await self._assemble_input()
 
-    def inject_percept(self, percept: Percept) -> None:
-        """Inject a percept into the next cycle.
+        # 2. Compress to fit context budget
+        compressed_input = self.context_mgr.compress(cognitive_input)
 
-        This is the primary way external input enters the system.
-        Call this when the user says something, a sensor fires,
-        or a tool returns a result.
-        """
-        self._pending_percepts.append(percept)
-        # Switch to active mode when input arrives
-        self._current_delay = self._active_delay
+        # 3. LLM processes
+        cognitive_output = await self.model.think(compressed_input)
 
-    def inject_user_message(self, message: str, user_id: str = "user") -> None:
-        """Convenience method to inject a user message as a language percept."""
-        self.inject_percept(
-            Percept(
-                modality=PerceptModality.LANGUAGE,
-                content=message,
-                source=f"user:{user_id}",
-            )
+        # 4. Scaffold validates and integrates
+        integrated = await self.scaffold.integrate(
+            cognitive_output, self.authority
         )
 
-    async def _cycle(self) -> CognitiveOutput:
-        """Execute one cognitive cycle."""
-        cycle_start = time.time()
+        # 5. Update stream of thought (always from raw LLM output, not scaffold)
+        self.stream.update(cognitive_output)
 
-        try:
-            # 1. Inject any pending percepts into the sensorium
-            self._flush_pending_percepts()
+        # 6. Execute actions
+        await self._execute(integrated)
 
-            # 2. Assemble input from all sources
-            t0 = time.time()
-            cognitive_input = await self._input.assemble()
-            self._metrics.total_assembly_time += time.time() - t0
+        # 7. Broadcast
+        await self.scaffold.broadcast(integrated)
 
-            # 3. LLM processes (this is where consciousness happens)
-            t1 = time.time()
-            cognitive_output = await self._model.think(cognitive_input)
-            self._metrics.total_think_time += time.time() - t1
+        # 8. Update prediction tracking
+        self.sensorium.update_predictions(cognitive_output.predictions)
 
-            # 4. Update stream of thought (continuity)
-            self._stream.update(cognitive_output)
+        # Bookkeeping
+        self.cycle_count += 1
+        self._last_output = cognitive_output
 
-            # 5. Dispatch output to subsystems
-            t2 = time.time()
-            await self._output.dispatch(cognitive_output)
-            self._metrics.total_dispatch_time += time.time() - t2
+        # Notify handlers
+        for handler in self._output_handlers:
+            await handler(cognitive_output)
 
-            # 6. Handle speech callback
-            if cognitive_output.external_speech and self._on_speech:
-                self._on_speech(cognitive_output.external_speech)
+    async def _assemble_input(self) -> CognitiveInput:
+        """Gather everything the LLM needs for this moment of thought."""
 
-            # 7. Handle cycle complete callback
-            if self._on_cycle_complete:
-                self._on_cycle_complete(cognitive_output)
+        percepts = await self.sensorium.drain_percepts()
+        prediction_errors = self.sensorium.get_prediction_errors()
+        temporal = self.sensorium.get_temporal_context()
+        temporal.interactions_this_session = self.cycle_count
 
-            # 8. Adapt cycle rate
-            self._adapt_rate(cognitive_output)
+        surfaced = await self.memory.surface(
+            context=self.stream.get_recent_context()
+        )
 
-            self._metrics.total_cycles += 1
-            self._metrics.last_cycle_duration = time.time() - cycle_start
+        return CognitiveInput(
+            previous_thought=self.stream.get_previous(),
+            new_percepts=percepts,
+            prediction_errors=prediction_errors,
+            surfaced_memories=surfaced,
+            emotional_state=EmotionalInput(
+                computed=ComputedVAD(),  # Scaffold affect will provide real VAD
+                felt_quality=self.stream.get_felt_quality(),
+            ),
+            temporal_context=temporal,
+            self_model=self.stream.get_self_model(),
+            world_model=self.stream.get_world_model(),
+            scaffold_signals=self.scaffold.get_signals(),
+        )
 
-            return cognitive_output
+    async def _execute(self, output: CognitiveOutput):
+        """Execute actions from the integrated output.
 
-        except Exception:
-            self._metrics.errors += 1
-            logger.exception("Error in cognitive cycle %d", self.cycle_count)
-            # Return a minimal output to maintain stream continuity
-            fallback = CognitiveOutput(
-                inner_speech=(
-                    f"[Error in cycle {self.cycle_count}. "
-                    f"Maintaining continuity.]"
-                ),
-            )
-            self._stream.update(fallback)
-            return fallback
+        In Phase 1 this is minimal — just tracks memory ops and speech.
+        Motor system implementation comes in Phase 3.
+        """
+        # Speech output (placeholder: just log it)
+        if output.external_speech:
+            pass  # Motor system will handle this in Phase 3
 
-    def _flush_pending_percepts(self) -> None:
-        """Move pending percepts into the sensorium's input queue."""
-        if self._pending_percepts:
-            for percept in self._pending_percepts:
-                self._input.inject_percept(percept)
-            self._pending_percepts.clear()
+        # Memory operations (placeholder: queue for later)
+        for op in output.memory_ops:
+            if op.type == "retrieve":
+                await self.memory.queue_retrieval(op.query)
 
-    def _adapt_rate(self, output: CognitiveOutput) -> None:
-        """Adapt the cycle rate based on the LLM's request and activity."""
-        # If the LLM explicitly requested a rate
-        if output.requested_cycle_delay_seconds is not None:
-            self._current_delay = max(0.1, output.requested_cycle_delay_seconds)
-            return
-
-        # Otherwise, adapt based on whether there was input
-        has_speech = bool(output.external_speech)
-        has_actions = bool(output.tool_calls)
-        has_goals = bool(output.goal_updates)
-
-        if has_speech or has_actions or has_goals:
-            # Stay active — there's engagement
-            self._current_delay = self._active_delay
-        else:
-            # Drift toward idle
-            self._current_delay = min(
-                self._current_delay * 1.5,
-                self._idle_delay,
-            )
-
-    def get_state(self) -> dict:
-        """Get the current state for inspection or checkpointing."""
-        return {
-            "running": self._running,
-            "booted": self._booted,
-            "cycle_count": self.cycle_count,
-            "current_delay": self._current_delay,
-            "metrics": self._metrics.to_dict(),
-            "stream": self._stream.to_dict(),
-            "model_is_placeholder": self._model.is_placeholder,
-        }
+        # Goal proposals (placeholder: no-op until Phase 2 scaffold)
+        # Tool calls (placeholder: no-op until Phase 3 motor)

@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """
-Run Sanctuary with Ollama - Interactive Chat
+Run Sanctuary with Ollama — Interactive Chat (hardened).
 
 This script boots the full Sanctuary cognitive architecture with a real
 LLM (via Ollama) for language processing. It connects to your locally
 running Ollama instance and uses whichever model you have pulled.
+
+Includes:
+  - Signal handling (SIGTERM / SIGINT) for clean container & terminal shutdown
+  - Shutdown timeout to prevent indefinite hangs
+  - Categorised error display (verbose mode shows full tracebacks)
 
 Prerequisites:
     1. Install Python dependencies:
@@ -20,8 +25,6 @@ Usage:
     python run_with_ollama.py                    # uses gemma3:12b by default
     python run_with_ollama.py --model llama3.2   # use a different model
     python run_with_ollama.py --mock-perception   # skip sentence-transformers
-
-Then just type and talk. Press Ctrl+C to quit.
 """
 
 import argparse
@@ -29,12 +32,16 @@ import asyncio
 import logging
 import signal
 import sys
+import traceback
 from pathlib import Path
 
 # Add the sanctuary package to the path
 sys.path.insert(0, str(Path(__file__).parent / "sanctuary"))
 
 from mind.client import SanctuaryAPI
+
+# Maximum seconds to wait for graceful shutdown.
+SHUTDOWN_TIMEOUT = 30.0
 
 
 def parse_args():
@@ -72,6 +79,10 @@ Examples:
     parser.add_argument(
         "--timeout", type=float, default=120.0,
         help="LLM generation timeout in seconds (default: 120)"
+    )
+    parser.add_argument(
+        "--shutdown-timeout", type=float, default=SHUTDOWN_TIMEOUT,
+        help=f"Max seconds for graceful shutdown (default: {SHUTDOWN_TIMEOUT})"
     )
     parser.add_argument(
         "--verbose", "-v", action="store_true",
@@ -121,7 +132,7 @@ def build_config(args):
             "checkpointing": {
                 "enabled": True,
                 "auto_save": False,
-                "checkpoint_on_shutdown": False,
+                "checkpoint_on_shutdown": True,
             },
         }
     }
@@ -129,7 +140,22 @@ def build_config(args):
     return config
 
 
-async def interactive_chat(api: SanctuaryAPI, model_name: str):
+def _format_error(exc: Exception, verbose: bool = False) -> str:
+    """Return a user-friendly error string."""
+    prefix = "Error"
+    if isinstance(exc, ConnectionError):
+        prefix = "Connection error"
+    elif isinstance(exc, TimeoutError) or isinstance(exc, asyncio.TimeoutError):
+        prefix = "Operation timed out"
+    elif isinstance(exc, RuntimeError):
+        prefix = "Runtime error"
+    msg = f"{prefix}: {exc}"
+    if verbose:
+        msg += "\n" + traceback.format_exc()
+    return msg
+
+
+async def interactive_chat(api: SanctuaryAPI, model_name: str, shutdown_event: asyncio.Event, verbose: bool = False):
     """Run the interactive chat loop."""
     print()
     print("=" * 60)
@@ -142,7 +168,7 @@ async def interactive_chat(api: SanctuaryAPI, model_name: str):
     print("  Type 'status' to see cognitive metrics.")
     print()
 
-    while True:
+    while not shutdown_event.is_set():
         try:
             user_input = await asyncio.to_thread(input, "You: ")
         except (EOFError, KeyboardInterrupt):
@@ -183,7 +209,7 @@ async def interactive_chat(api: SanctuaryAPI, model_name: str):
             print()
 
         except Exception as e:
-            print(f"\n  Error: {e}\n")
+            print(f"\n  {_format_error(e, verbose)}\n")
 
 
 async def main():
@@ -197,16 +223,28 @@ async def main():
     )
 
     if not args.verbose:
-        # Silence the cognitive loop's internal chatter so the chat prompt is usable.
-        # Only show warnings/errors from subsystems; startup messages use print().
         logging.getLogger("mind").setLevel(logging.WARNING)
         logging.getLogger("sanctuary").setLevel(logging.WARNING)
     else:
-        # In verbose mode, show everything
         logging.getLogger("mind").setLevel(logging.DEBUG)
         logging.getLogger("sanctuary").setLevel(logging.DEBUG)
 
     config = build_config(args)
+
+    # ------- Signal handling -------
+    shutdown_event = asyncio.Event()
+    loop = asyncio.get_running_loop()
+
+    def _signal_handler(sig, _frame=None):
+        sig_name = signal.Signals(sig).name
+        print(f"\n  Received {sig_name}, shutting down gracefully...")
+        shutdown_event.set()
+
+    if sys.platform != "win32":
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, _signal_handler, sig)
+    else:
+        signal.signal(signal.SIGINT, _signal_handler)
 
     print()
     print("Starting Sanctuary...")
@@ -240,12 +278,21 @@ async def main():
         await api.start()
         print("  Cognitive loop running.")
         print()
-        await interactive_chat(api, args.model)
-    except KeyboardInterrupt:
-        pass
+        await interactive_chat(api, args.model, shutdown_event, args.verbose)
+    except Exception as e:
+        print(f"\n  {_format_error(e, args.verbose)}")
+
     finally:
         print("\nShutting down Sanctuary...")
-        await api.stop()
+        try:
+            await asyncio.wait_for(
+                api.stop(),
+                timeout=args.shutdown_timeout,
+            )
+        except asyncio.TimeoutError:
+            print(f"  Shutdown timed out after {args.shutdown_timeout}s — forcing exit")
+        except Exception as stop_err:
+            print(f"  Error during shutdown: {stop_err}")
         print("Goodbye.")
 
 

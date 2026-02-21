@@ -126,6 +126,8 @@ class CognitiveCore:
         # Initialize lifecycle manager
         self.lifecycle = LifecycleManager(self.subsystems, self.state, self.timing, self.config)
         
+        self._started = False
+
         logger.info(f"🧠 CognitiveCore initialized: cycle_rate={self.config['cycle_rate_hz']}Hz, "
                    f"attention_budget={self.config['attention_budget']}")
 
@@ -172,6 +174,8 @@ class CognitiveCore:
         await self.lifecycle.start(restore_latest)
         # Spawn loop as background task (runs until stop() is called)
         self._loop_task = asyncio.create_task(self.loop.run())
+        # Signal that the core is ready
+        self._started = True
 
     async def stop(self) -> None:
         """Gracefully shut down the cognitive loop."""

@@ -187,11 +187,24 @@ sanctuary/
 │   ├── authority.py               # Authority levels and access control
 │   └── context_manager.py         # Token budget and context assembly
 │
+├── scaffold/                      # Cognitive scaffold (Phase 2)
+│   ├── cognitive_scaffold.py      # Main facade — ScaffoldProtocol implementation
+│   ├── affect.py                  # Dual-track emotion (computed VAD + LLM felt quality)
+│   ├── communication.py           # Speech gating and drive system
+│   ├── goal_integrator.py         # Goal management with authority filtering
+│   ├── anomaly_detector.py        # LLM output sanity checking
+│   └── action_validator.py        # Authority-based action validation
+│
+├── memory/                        # Memory substrate (Phase 3)
+│   ├── manager.py                 # MemorySubstrate — implements MemoryProtocol
+│   ├── surfacer.py                # Context-aware memory retrieval for cycle input
+│   ├── journal.py                 # Append-only JSONL journal
+│   └── prospective.py             # Future intentions (cycle/keyword/idle triggers)
+│
 ├── model/                         # LLM model management (Phase 6)
 ├── growth/                        # The growth system (Phase 5)
 ├── sensorium/                     # Sensory input (Phase 2)
 ├── motor/                         # Action execution (Phase 2)
-├── memory/                        # Memory substrate (Phase 3)
 ├── identity/                      # Identity and values (Phase 4)
 └── api/                           # External interfaces (Phase 7)
 ```
@@ -244,16 +257,20 @@ sanctuary/
   - `CycleInputAssembler` and `CycleOutputDispatcher`
   - 65 new tests, all passing
 
-- **Phase 2: Sensorium + Motor** (Next)
-  - Adapt existing perception → `sensorium/encoder.py` (encoding only)
-  - Wire existing input queue, temporal modules, device registry
-  - Implement `motor/speech.py`, `motor/tool_executor.py`, `motor/memory_writer.py`
-  - Prediction error computation
+- **Phase 2: Scaffold Adaptation** (Complete)
+  - `CognitiveScaffold` — validates, integrates, and broadcasts LLM output
+  - Affect (dual-track VAD), communication gating, goal integration
+  - Anomaly detection, action validation, authority-based filtering
+  - 86 new tests, all passing
 
-- **Phase 3: Memory Substrate**
-  - Adapt existing memory manager, ChromaDB, blockchain backends
-  - Implement memory surfacing and journal writing
-  - Prospective memory (future intentions)
+- **Phase 3: Memory Substrate** (Complete)
+  - `MemorySubstrate` — bridges LLM memory operations to persistent storage
+  - `MemorySurfacer` — context-aware memory retrieval for cycle input
+  - `Journal` — append-only JSONL journal for the LLM's private reflections
+  - `ProspectiveMemory` — future intentions with cycle, keyword, and idle triggers
+  - `InMemoryStore` for testing, legacy `MemoryManager` bridge for production
+  - Full integration with cognitive cycle (`execute_ops`, `tick`, `surface`)
+  - 84 new tests, all passing
 
 - **Phase 4: Identity + Boot**
   - Charter loading, values, boot prompt

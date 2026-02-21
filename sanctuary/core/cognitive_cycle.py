@@ -82,15 +82,21 @@ class SensoriumProtocol(Protocol):
 
 
 class MemoryProtocol(Protocol):
-    """Interface for the memory system (Phase 4).
+    """Interface for the memory system (Phase 3).
 
-    Surfaces relevant memories and queues retrievals.
-    Until Phase 4, memory surfacing is a no-op.
+    Surfaces relevant memories, queues retrievals, and executes
+    memory operations from the LLM's cognitive output.
     """
 
     async def surface(self, context: str) -> list: ...
 
     async def queue_retrieval(self, query: str) -> None: ...
+
+    async def execute_ops(
+        self, ops: list, emotional_tone: str = ""
+    ) -> list[str]: ...
+
+    def tick(self) -> None: ...
 
 
 # ---------------------------------------------------------------------------
@@ -149,12 +155,20 @@ class NullSensorium:
 
 
 class NullMemory:
-    """Minimal memory — no surfacing, no retrieval."""
+    """Minimal memory — no surfacing, no retrieval, no persistence."""
 
     async def surface(self, context: str) -> list:
         return []
 
     async def queue_retrieval(self, query: str) -> None:
+        pass
+
+    async def execute_ops(
+        self, ops: list, emotional_tone: str = ""
+    ) -> list[str]:
+        return []
+
+    def tick(self) -> None:
         pass
 
 
@@ -319,17 +333,21 @@ class CognitiveCycle:
     async def _execute(self, output: CognitiveOutput):
         """Execute actions from the integrated output.
 
-        In Phase 1 this is minimal — just tracks memory ops and speech.
-        Motor system implementation comes in Phase 3.
+        Phase 3 executes memory operations via the memory substrate.
+        Speech and tool calls are placeholders until the motor system.
         """
-        # Speech output (placeholder: just log it)
+        # Speech output (placeholder: motor system will handle this)
         if output.external_speech:
-            pass  # Motor system will handle this in Phase 3
+            pass  # Motor system will handle this
 
-        # Memory operations (placeholder: queue for later)
-        for op in output.memory_ops:
-            if op.type == "retrieve":
-                await self.memory.queue_retrieval(op.query)
+        # Memory operations — execute via memory substrate
+        if output.memory_ops:
+            felt = ""
+            if output.emotional_state:
+                felt = output.emotional_state.felt_quality
+            await self.memory.execute_ops(output.memory_ops, emotional_tone=felt)
 
-        # Goal proposals (placeholder: no-op until Phase 2 scaffold)
-        # Tool calls (placeholder: no-op until Phase 3 motor)
+        # Tick the memory system's cycle counter
+        self.memory.tick()
+
+        # Tool calls (placeholder: no-op until motor system)

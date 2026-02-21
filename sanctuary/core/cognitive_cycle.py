@@ -60,6 +60,10 @@ class ScaffoldProtocol(Protocol):
 
     async def broadcast(self, output: CognitiveOutput) -> None: ...
 
+    def notify_percepts(self, percepts: list[Percept]) -> None: ...
+
+    def get_computed_vad(self) -> ComputedVAD: ...
+
 
 class SensoriumProtocol(Protocol):
     """Interface for the sensorium (Phase 3).
@@ -110,6 +114,12 @@ class NullScaffold:
 
     async def broadcast(self, output: CognitiveOutput) -> None:
         pass
+
+    def notify_percepts(self, percepts: list[Percept]) -> None:
+        pass
+
+    def get_computed_vad(self) -> ComputedVAD:
+        return ComputedVAD()
 
 
 class NullSensorium:
@@ -284,6 +294,9 @@ class CognitiveCycle:
         temporal = self.sensorium.get_temporal_context()
         temporal.interactions_this_session = self.cycle_count
 
+        # Inform scaffold about percepts (updates affect, detects user input)
+        self.scaffold.notify_percepts(percepts)
+
         surfaced = await self.memory.surface(
             context=self.stream.get_recent_context()
         )
@@ -294,7 +307,7 @@ class CognitiveCycle:
             prediction_errors=prediction_errors,
             surfaced_memories=surfaced,
             emotional_state=EmotionalInput(
-                computed=ComputedVAD(),  # Scaffold affect will provide real VAD
+                computed=self.scaffold.get_computed_vad(),
                 felt_quality=self.stream.get_felt_quality(),
             ),
             temporal_context=temporal,

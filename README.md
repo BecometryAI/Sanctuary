@@ -183,9 +183,9 @@ sanctuary/
 │   ├── schema.py                  # CognitiveInput / CognitiveOutput Pydantic models
 │   ├── cognitive_cycle.py         # The continuous loop
 │   ├── stream_of_thought.py       # Thought continuity between cycles
-│   ├── cycle_input.py             # Assembles input from all subsystems
-│   ├── cycle_output.py            # Dispatches output to all subsystems
-│   └── placeholder.py             # PlaceholderModel for testing
+│   ├── placeholder.py             # PlaceholderModel for testing
+│   ├── authority.py               # Authority levels and access control
+│   └── context_manager.py         # Token budget and context assembly
 │
 ├── model/                         # LLM model management (Phase 6)
 ├── growth/                        # The growth system (Phase 5)
@@ -330,7 +330,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv venv --python python3.11
 uv sync --upgrade
 
-# Activate
+# Activate the virtual environment
 source .venv/bin/activate  # Linux/Mac
 ```
 
@@ -365,8 +365,8 @@ LOG_LEVEL=INFO
 ### New Architecture (The Inversion)
 
 ```bash
-# Run the test suite for the new cognitive cycle
-uv run pytest sanctuary/tests/test_cognitive_cycle.py -v
+# Run the test suite for the new cognitive core
+uv run pytest sanctuary/tests/core/ -v
 
 # The new architecture currently uses a PlaceholderModel.
 # Real model integration is Phase 6.
@@ -393,7 +393,7 @@ python sanctuary/demo_language_output.py
 uv run pytest sanctuary/tests/
 
 # Run new architecture tests
-uv run pytest sanctuary/tests/test_cognitive_cycle.py
+uv run pytest sanctuary/tests/core/
 
 # Run legacy tests by subsystem
 uv run pytest sanctuary/tests/test_attention.py

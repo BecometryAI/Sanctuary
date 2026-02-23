@@ -17,6 +17,17 @@ import numpy as np
 from mind.cognitive_core.perception import PerceptionSubsystem
 from mind.cognitive_core.workspace import Percept
 
+try:
+    import sentence_transformers  # noqa: F401
+    _has_sentence_transformers = True
+except ImportError:
+    _has_sentence_transformers = False
+
+requires_sentence_transformers = pytest.mark.skipif(
+    not _has_sentence_transformers,
+    reason="sentence-transformers not installed",
+)
+
 
 class TestPerceptionSubsystemInitialization:
     """Test PerceptionSubsystem initialization."""
@@ -24,9 +35,10 @@ class TestPerceptionSubsystemInitialization:
     def test_initialization_default(self):
         """Test creating PerceptionSubsystem with default config."""
         perception = PerceptionSubsystem()
-        
+
         assert perception is not None
-        assert perception.text_encoder is not None
+        if _has_sentence_transformers:
+            assert perception.text_encoder is not None
         assert perception.embedding_dim == 384  # all-MiniLM-L6-v2 is 384-dim
         assert perception.cache_size == 1000
         assert len(perception.embedding_cache) == 0
@@ -184,9 +196,10 @@ class TestCacheFunctionality:
         assert len(perception.embedding_cache) == 0
 
 
+@requires_sentence_transformers
 class TestSimilarity:
     """Test semantic similarity of embeddings."""
-    
+
     @pytest.mark.asyncio
     async def test_similar_texts_similar_embeddings(self):
         """Test that similar texts have similar embeddings."""

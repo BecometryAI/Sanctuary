@@ -13,7 +13,6 @@ from .executive_function import ExecutiveFunction
 from .emotion_simulator import EmotionSimulator, AppraisalType, EmotionCategory
 from .self_awareness import SelfAwareness, CognitiveState, SelfMonitoringMetrics
 import logging
-from sentence_transformers import SentenceTransformer
 
 class ConsciousnessCore:
     def __init__(
@@ -54,6 +53,7 @@ class ConsciousnessCore:
             
             # Initialize the language model
             logging.info("Loading language model...")
+            from sentence_transformers import SentenceTransformer
             self.model = SentenceTransformer(model_name)
             logging.info("Language model loaded successfully")
             

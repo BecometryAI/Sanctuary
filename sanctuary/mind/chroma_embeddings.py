@@ -6,7 +6,6 @@ Wraps HuggingFace sentence-transformers to work with ChromaDB's new API.
 
 from typing import List
 import logging
-from sentence_transformers import SentenceTransformer
 from chromadb import Documents, EmbeddingFunction, Embeddings
 
 logger = logging.getLogger(__name__)
@@ -56,6 +55,7 @@ class ChromaCompatibleEmbeddings(EmbeddingFunction):
         
         # Load model with error handling
         try:
+            from sentence_transformers import SentenceTransformer
             logger.info(f"Loading sentence-transformers model: {model_name} on {device}")
             self.model = SentenceTransformer(model_name, device=device)
             logger.info("Embedding model loaded successfully")

@@ -111,14 +111,20 @@ class PerceptionSubsystem:
         
         # Load embedding model
         model_name = self.config.get("text_model", "all-MiniLM-L6-v2")
-        
+        self._using_fallback = False
+
         try:
             from sentence_transformers import SentenceTransformer
             self.text_encoder = SentenceTransformer(model_name)
             self.embedding_dim = self.text_encoder.get_sentence_embedding_dimension()
         except ImportError:
-            logger.error("sentence-transformers not installed. Install with: pip install sentence-transformers")
-            raise
+            logger.warning(
+                "sentence-transformers not installed — using hash-based fallback embeddings. "
+                "Install with: pip install sentence-transformers"
+            )
+            self.text_encoder = None
+            self.embedding_dim = 384  # Match all-MiniLM-L6-v2 default
+            self._using_fallback = True
         except Exception as e:
             logger.error(f"Failed to load text encoder '{model_name}': {e}")
             raise
@@ -247,16 +253,20 @@ class PerceptionSubsystem:
         # Compute embedding
         self.stats["cache_misses"] += 1
         start_time = time.time()
-        
-        raw_embedding = self.text_encoder.encode(
-            text,
-            convert_to_numpy=True,
-            normalize_embeddings=True
-        )
-        # SentenceTransformer.encode() may return 2D array for single string;
-        # squeeze to 1D before converting to list of floats
-        if hasattr(raw_embedding, 'ndim') and raw_embedding.ndim == 2:
-            raw_embedding = raw_embedding[0]
+
+        if self._using_fallback:
+            # Deterministic hash-based embedding (not semantically meaningful)
+            raw_embedding = self._hash_embedding(text)
+        else:
+            raw_embedding = self.text_encoder.encode(
+                text,
+                convert_to_numpy=True,
+                normalize_embeddings=True
+            )
+            # SentenceTransformer.encode() may return 2D array for single string;
+            # squeeze to 1D before converting to list of floats
+            if hasattr(raw_embedding, 'ndim') and raw_embedding.ndim == 2:
+                raw_embedding = raw_embedding[0]
         embedding = raw_embedding.tolist()
         
         encoding_time = time.time() - start_time
@@ -273,6 +283,18 @@ class PerceptionSubsystem:
         self.embedding_cache[cache_key] = embedding
         return embedding
     
+    def _hash_embedding(self, text: str) -> np.ndarray:
+        """Deterministic hash-based embedding fallback when sentence-transformers is unavailable."""
+        # Use hash as seed for reproducible random vector (avoids NaN from raw bytes)
+        seed = int(hashlib.sha256(text.encode()).hexdigest(), 16) % (2**32)
+        rng = np.random.RandomState(seed)
+        vec = rng.randn(self.embedding_dim).astype(np.float32)
+        # Normalize to unit length
+        norm = np.linalg.norm(vec)
+        if norm > 0:
+            vec /= norm
+        return vec
+
     def _encode_image(self, image: Any) -> List[float]:
         """
         Encode image to embedding using CLIP.

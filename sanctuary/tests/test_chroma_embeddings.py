@@ -13,6 +13,9 @@ import os
 import pytest
 import numpy as np
 
+pytest.importorskip("torch", reason="Requires torch — install with: pip install torch")
+pytest.importorskip("sentence_transformers", reason="Requires sentence-transformers — install with: pip install sentence-transformers")
+
 if os.environ.get("CI"):
     pytest.skip("Requires ML model download — skipping in CI", allow_module_level=True)
 

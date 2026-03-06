@@ -2,7 +2,7 @@
 
 This document tracks the development trajectory for the Sanctuary cognitive architecture, from proven POC through production-ready system.
 
-**Last Updated**: 2026-02-22
+**Last Updated**: 2026-03-06
 **Current Phase**: Post-POC — Hardening & Feature Expansion + Three-Layer Mind Phase 6 Complete
 
 ---
@@ -119,8 +119,8 @@ Connect the cognitive architecture to the outside world through robust interface
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
 | Harden CLI interface | P1 | **Done** | Signal handlers (SIGTERM/SIGINT), shutdown timeout (30s default), argparse config (--verbose, --restore-latest, --auto-save, --cycle-rate, --shutdown-timeout), categorised error display, startup race fix (`await core.start()` instead of fire-and-forget), `asyncio.to_thread` for non-blocking input, REPL `health` command; 20 new tests |
-| Harden Discord integration | P1 | Pending | Reconnection logic, rate limiting, message queue |
-| End-to-end integration test with loaded models | P1 | Pending | Full pipeline test: text in → cognitive processing → text out |
+| Harden Discord integration | P1 | **Done** | `ReconnectionManager` (exponential backoff, capped at 120s, unlimited retries), `RateLimiter` (token-bucket 5/5s per channel), `MessageQueue` (priority-ordered, bounded, overflow drops lowest priority), cognitive core routing via `on_message`, graceful shutdown with drain timeout; lazy `VoiceProcessor` import; 19 new tests |
+| End-to-end integration test with loaded models | P1 | **Done** | `test_pipeline_e2e.py`: 8 tests covering text-in → cognitive processing → text-out with mock LLMs; verifies SPEAK output, cycle advancement, workspace percepts, emotional state, ConversationManager multi-turn, metrics, and health report |
 
 ### 3.2 Containerization
 
@@ -266,4 +266,4 @@ Everything below is done and merged. Kept for historical reference.
 
 ---
 
-**Next Action**: Phase 3 — Integration & Interfaces
+**Next Action**: Phase 3.2 — Containerization

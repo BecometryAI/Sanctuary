@@ -54,12 +54,16 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/sanctuary:/app \
     SANCTUARY_BASE_DIR=/app/data \
     SANCTUARY_CHROMA_DIR=/app/data/chroma \
-    SANCTUARY_LOG_DIR=/app/data/logs
+    SANCTUARY_LOG_DIR=/app/data/logs \
+    SANCTUARY_CHECKPOINT_DIR=/app/data/checkpoints \
+    SANCTUARY_IDENTITY_DIR=/app/data/identity \
+    SANCTUARY_HEALTH_PORT=8000 \
+    SANCTUARY_RESTORE_LATEST=true
 
 EXPOSE 8000
 
-# Health check - verify Python and mind module work
-HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-    CMD python -c "import mind" || exit 1
+# Health check — hit the HTTP health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
 
 CMD ["python", "-m", "sanctuary.run_cognitive_core"]

@@ -12,6 +12,8 @@ __all__ = [
     "RunnerConfig",
     "SanctuaryRunner",
     "SanctuaryAPI",
+    "HealthServer",
+    "ResourceMonitor",
 ]
 
 
@@ -25,4 +27,10 @@ def __getattr__(name: str):
     if name == "SanctuaryAPI":
         from sanctuary.api.sanctuary_api import SanctuaryAPI
         return SanctuaryAPI
+    if name == "HealthServer":
+        from sanctuary.api.health import HealthServer
+        return HealthServer
+    if name == "ResourceMonitor":
+        from sanctuary.api.resource_monitor import ResourceMonitor
+        return ResourceMonitor
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

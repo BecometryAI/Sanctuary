@@ -16,6 +16,10 @@ services:
       - SANCTUARY_BASE_DIR=/app/data
       - SANCTUARY_CHROMA_DIR=/app/data/chroma
       - SANCTUARY_LOG_DIR=/app/data/logs
+      - SANCTUARY_CHECKPOINT_DIR=/app/data/checkpoints
+      - SANCTUARY_IDENTITY_DIR=/app/data/identity
+      - SANCTUARY_HEALTH_PORT=8000
+      - SANCTUARY_RESTORE_LATEST=true
     ports:
       - "8000:8000"
     volumes:
@@ -30,11 +34,11 @@ services:
         reservations:
           memory: 2G
     healthcheck:
-      test: ["CMD", "python", "-c", "import mind"]
-      interval: 60s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 120s
     depends_on:
       chromadb:
         condition: service_healthy

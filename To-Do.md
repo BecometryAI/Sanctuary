@@ -126,10 +126,10 @@ Connect the cognitive architecture to the outside world through robust interface
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Validate Docker builds (CPU + GPU) | P1 | Pending | Ensure Dockerfiles work with current codebase structure |
-| Add container health checks | P1 | Pending | Docker health check endpoint hitting cognitive loop status |
-| Add auto-restart on crash | P1 | Pending | Container restart policy + checkpoint restoration on boot |
-| Add resource monitoring | P2 | Pending | GPU memory, CPU usage, memory usage tracking |
+| Validate Docker builds (CPU + GPU) | P1 | **Done** | Fixed health checks (`import mind` → HTTP `/health`), added checkpoint/identity env vars, extended start period to 120s for model loading |
+| Add container health checks | P1 | **Done** | `HealthServer` (raw asyncio HTTP) with `/health`, `/status`, `/metrics` endpoints; wired into `run_cognitive_core.py` entry point; Dockerfiles + compose files use `curl -f http://localhost:8000/health` |
+| Add auto-restart on crash | P1 | **Done** | `restart: unless-stopped` (base) / `restart: always` (prod); checkpoint restoration on boot via `--restore-latest` / `SANCTUARY_RESTORE_LATEST=true`; exit checkpoint saved on graceful shutdown; SIGTERM/SIGINT signal handling |
+| Add resource monitoring | P2 | **Done** | `ResourceMonitor` tracks process RSS/VMS (via `/proc/self/status`), system memory (`/proc/meminfo`), CPU load (`os.getloadavg`), GPU memory (PyTorch CUDA), container cgroup limits (v1 + v2); exposed via `/metrics` endpoint; 24 new tests |
 
 ---
 
@@ -266,4 +266,4 @@ Everything below is done and merged. Kept for historical reference.
 
 ---
 
-**Next Action**: Phase 3.2 — Containerization
+**Next Action**: Phase 4 — Advanced Capabilities

@@ -1,7 +1,7 @@
 """
 Minimal Boot Coordinator for Phase 1 integration testing.
 
-Real: affect, attention, action (+ mock perception)
+Real: affect, attention, action, meta-cognition (+ mock perception)
 Stub: everything else, with method signatures matched to cycle_executor.py
 and cognitive_loop.py
 """
@@ -17,6 +17,7 @@ from ..attention import AttentionController
 from ..affect import AffectSubsystem
 from ..action import ActionSubsystem
 from ..mock_perception import MockPerceptionSubsystem
+from ..meta_cognition import SelfMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -60,21 +61,6 @@ class StubMemory:
         return []
     async def consolidate(self, broadcast_data=None): pass
 
-class _AccuracySnapshot:
-    overall_accuracy = 0.0
-    prediction_count = 0
-
-class StubMetaCognition:
-    def __init__(self):
-        self.refinement_threshold = 0.5
-    def observe(self, snapshot): return []
-    def auto_validate_predictions(self, snapshot): return []
-    def update_self_model(self, snapshot, actual_outcome): pass
-    def predict_behavior(self, snapshot): return None
-    def record_prediction(self, **kw): return None
-    def validate_prediction(self, prediction_id, actual_state=None): return None
-    def refine_self_model_from_errors(self, errors): pass
-    def record_accuracy_snapshot(self): return _AccuracySnapshot()
 
 class StubIntrospectiveJournal:
     def record_observation(self, obs): pass
@@ -156,7 +142,7 @@ class StubIntrospectiveLoop:
 class BootCoordinator:
     """
     Minimal subsystem coordinator for Phase 1 boot testing.
-    Real: affect, attention, action (+ mock perception). Stub: everything else.
+    Real: affect, attention, action, meta-cognition (+ mock perception). Stub: everything else.
     """
 
     def __init__(self, workspace: GlobalWorkspace, config: Dict[str, Any]):
@@ -197,7 +183,8 @@ class BootCoordinator:
         workspace.action_subsystem = self.action
         workspace.perception = self.perception
 
-        self.meta_cognition = StubMetaCognition()
+        self.meta_cognition = SelfMonitor(workspace=workspace)
+        logger.info("  ✅ SelfMonitor (real)")
         self.introspective_journal = StubIntrospectiveJournal()
         self.bottleneck_detector = StubBottleneckDetector()
         self.memory = StubMemory()
@@ -217,7 +204,7 @@ class BootCoordinator:
         self.continuous_consciousness = StubContinuousConsciousness()
         self.device_registry = None
 
-        logger.info("\U0001f680 BootCoordinator ready: 3 real + mock perception + stubs")
+        logger.info("\U0001f680 BootCoordinator ready: 4 real + mock perception + stubs")
 
     def initialize_continuous_consciousness(self, cognitive_core):
         return StubContinuousConsciousness()

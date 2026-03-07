@@ -31,6 +31,13 @@ from .conflict_detector import ConflictDetector
 from .confidence_estimator import ConfidenceEstimator
 from .regulator import Regulator
 from .metrics import MetricsReporter
+from .identity_auditor import (
+    AuditDomain, AuditInput, AuditVerdict, VerdictOutcome,
+    CharterSnapshot, ComputedIdentitySnapshot, DriftData, ActionSnapshot,
+    snapshot_from_charter, snapshot_from_computed_identity,
+    snapshot_from_drift, snapshot_from_action,
+)
+from .python_auditor import PythonIdentityAuditor
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +165,10 @@ class SelfMonitor:
             self_model_version=self.regulator.self_model_version,
             config=config
         )
-        
+
+        # Identity auditor — language-agnostic interface (future C++ boundary)
+        self.identity_auditor = PythonIdentityAuditor()
+
         # Sync stats references
         self._sync_stats()
         
@@ -636,12 +646,60 @@ class SelfMonitor:
         else:
             return "Identity information not available"
     
+    def _build_audit_input(self, snapshot: Optional[WorkspaceSnapshot] = None) -> AuditInput:
+        """
+        Assemble an AuditInput from live system state.
+
+        This is the serialization boundary — everything produced here is
+        flat data that can cross an IPC/FFI boundary to a C++ auditor.
+        """
+        from datetime import datetime, timezone
+
+        # Charter snapshot
+        charter_snap = snapshot_from_charter(
+            self.identity.charter if self.identity else None
+        )
+
+        # Computed identity snapshot
+        computed = None
+        if self.identity_manager:
+            try:
+                computed = self.identity_manager.get_identity()
+            except Exception:
+                pass
+        computed_snap = snapshot_from_computed_identity(computed)
+
+        # Drift data
+        drift_snap = DriftData()
+        if self.identity_manager:
+            try:
+                drift_snap = snapshot_from_drift(
+                    self.identity_manager.get_identity_drift()
+                )
+            except Exception:
+                pass
+
+        # Recent actions from snapshot metadata
+        recent_actions: tuple[ActionSnapshot, ...] = ()
+        if snapshot:
+            raw_actions = snapshot.metadata.get("recent_actions", [])
+            recent_actions = tuple(snapshot_from_action(a) for a in raw_actions[-10:])
+
+        return AuditInput(
+            charter=charter_snap,
+            computed_identity=computed_snap,
+            drift=drift_snap,
+            recent_actions=recent_actions,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            cycle_number=getattr(self.workspace, "cycle_count", 0) if self.workspace else 0,
+        )
+
     def check_identity_consistency(self) -> Optional[Percept]:
         """
         Cross-check static charter values vs. dynamically computed identity.
 
-        Detects divergences between what the charter says the system values
-        and what the computed identity (from actual behavior) reflects.
+        Delegates to the IdentityAuditor interface (Python impl by default,
+        replaceable with C++ sidecar for tamper-resistance).
 
         Returns:
             Introspective Percept if divergences found, None otherwise
@@ -650,67 +708,32 @@ class SelfMonitor:
             return None
 
         try:
-            computed = self.identity_manager.get_identity()
-            if computed.source == "empty":
-                return None  # Not enough data yet
-
-            divergences = []
-
-            # 1. Check charter values vs. computed values
-            charter_values = set()
-            if self.identity.charter:
-                charter_values = {v.lower() for v in self.identity.charter.core_values}
-
-            computed_values = {v.lower() for v in computed.core_values} if computed.core_values else set()
-
-            if charter_values and computed_values:
-                charter_not_in_computed = charter_values - computed_values
-                for missing in charter_not_in_computed:
-                    divergences.append({
-                        "type": "charter_value_not_reflected",
-                        "description": f"Charter value '{missing}' not reflected in computed identity",
-                        "severity": 0.6,
-                    })
-
-                computed_not_in_charter = computed_values - charter_values
-                for novel in computed_not_in_charter:
-                    divergences.append({
-                        "type": "emergent_value",
-                        "description": f"Computed identity includes value '{novel}' not in charter",
-                        "severity": 0.3,  # Lower severity — emergent values are natural
-                    })
-
-            # 2. Check behavioral tendencies vs. charter guidelines
-            tendencies = computed.behavioral_tendencies or {}
-            if self.identity.charter and self.identity.charter.behavioral_guidelines:
-                for guideline in self.identity.charter.behavioral_guidelines:
-                    gl = guideline.lower()
-                    # If charter says "never lie" but honesty tendency is low
-                    if ("honest" in gl or "truthful" in gl or "never lie" in gl):
-                        speak_tend = tendencies.get("tendency_speak", 0.0)
-                        introspect_tend = tendencies.get("tendency_introspect", 0.0)
-                        if speak_tend > 0.6 and introspect_tend < 0.1:
-                            divergences.append({
-                                "type": "guideline_tendency_mismatch",
-                                "description": f"High speech tendency with low introspection may conflict with honesty guideline",
-                                "severity": 0.4,
-                            })
-
-            # 3. Check identity drift against continuity
-            drift = self.identity_manager.get_identity_drift()
-            if drift.get("has_drift") and drift.get("disposition_change", 0) > 0.4:
-                divergences.append({
-                    "type": "significant_drift",
-                    "description": f"Identity has drifted significantly (disposition change: {drift['disposition_change']:.3f})",
-                    "severity": 0.5,
-                })
-
-            if not divergences:
+            audit_input = self._build_audit_input()
+            if audit_input.computed_identity.source == "empty":
                 return None
 
-            max_severity = max(d["severity"] for d in divergences)
+            # Run consistency + drift audits via the auditor interface
+            consistency = self.identity_auditor.audit_identity_consistency(audit_input)
+            drift = self.identity_auditor.audit_identity_drift(audit_input)
+
+            # Merge findings from both domains
+            all_findings = list(consistency.findings) + list(drift.findings)
+            if not all_findings:
+                return None
+
+            max_severity = max(f.severity_score for f in all_findings)
             if max_severity < 0.3:
-                return None  # Too minor to report
+                return None
+
+            # Convert findings to legacy divergences format for backward compat
+            divergences = [
+                {
+                    "type": f.code,
+                    "description": f.description,
+                    "severity": f.severity_score,
+                }
+                for f in all_findings
+            ]
 
             percept_text = (
                 f"Identity Consistency Check: {len(divergences)} divergence(s) detected "
@@ -727,6 +750,10 @@ class SelfMonitor:
                     "type": "identity_consistency_check",
                     "divergences": divergences,
                     "max_severity": max_severity,
+                    "audit_verdicts": {
+                        "consistency": consistency.outcome.value,
+                        "drift": drift.outcome.value,
+                    },
                 },
             )
         except Exception as e:

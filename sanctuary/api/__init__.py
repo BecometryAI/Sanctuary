@@ -8,6 +8,11 @@ Imports are lazy to allow ``python -m sanctuary.api`` to work even when
 optional heavy dependencies (torch, transformers, etc.) are not installed.
 """
 
+from sanctuary.api.runner import RunnerConfig, SanctuaryRunner
+from sanctuary.api.sanctuary_api import SanctuaryAPI
+from sanctuary.api.health import HealthServer
+from sanctuary.api.resource_monitor import ResourceMonitor
+
 __all__ = [
     "RunnerConfig",
     "SanctuaryRunner",

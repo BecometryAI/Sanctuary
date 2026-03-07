@@ -203,34 +203,43 @@ class ConversationManager:
     async def _wait_for_response(self, timeout: float) -> Optional[str]:
         """
         Wait for cognitive core to produce response.
-        
+
         Polls the output queue with a timeout to retrieve Sanctuary's response.
-        Only returns SPEAK actions as valid responses.
-        
+        Only returns SPEAK actions as valid responses; skips other output types
+        (e.g. SPEAK_AUTONOMOUS) and keeps waiting until timeout.
+
         Args:
             timeout: Maximum seconds to wait for response
-            
+
         Returns:
             Response text string, or None if timeout or no valid response
         """
-        try:
-            # Poll output queue with timeout
-            output = await asyncio.wait_for(
-                self.core.output_queue.get(),
-                timeout=timeout
-            )
-            
-            if output and output.get("type") == "SPEAK":
-                return output.get("text")
-            
-            return None
-            
-        except asyncio.TimeoutError:
-            logger.warning("Response timeout exceeded")
-            return None
-        except Exception as e:
-            logger.error(f"Error waiting for response: {e}")
-            return None
+        deadline = asyncio.get_event_loop().time() + timeout
+
+        while True:
+            remaining = deadline - asyncio.get_event_loop().time()
+            if remaining <= 0:
+                logger.warning("Response timeout exceeded")
+                return None
+
+            try:
+                output = await asyncio.wait_for(
+                    self.core.output_queue.get(),
+                    timeout=remaining
+                )
+
+                if output and output.get("type") == "SPEAK":
+                    return output.get("text")
+
+                # Non-SPEAK output (e.g. SPEAK_AUTONOMOUS), keep waiting
+                logger.debug(f"Skipping non-SPEAK output: {output.get('type')}")
+
+            except asyncio.TimeoutError:
+                logger.warning("Response timeout exceeded")
+                return None
+            except Exception as e:
+                logger.error(f"Error waiting for response: {e}")
+                return None
     
     def _update_dialogue_state(self, user_input: str, response: str) -> None:
         """

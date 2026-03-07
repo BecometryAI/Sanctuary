@@ -10,6 +10,8 @@ services:
     environment:
       - DEVELOPMENT_MODE=false
       - LOG_LEVEL=INFO
+      - SANCTUARY_RESTORE_LATEST=true
+      - SANCTUARY_AUTO_SAVE_INTERVAL=300
     logging:
       driver: json-file
       options:
@@ -22,6 +24,12 @@ services:
           cpus: '4'
         reservations:
           memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
 
   chromadb:
     restart: always

@@ -357,10 +357,16 @@ class CognitiveCycle:
                 arousal=vad.arousal,
                 prediction_error=avg_error,
                 base_precision=0.5,
-                scaffold_precision=0.5,  # TODO: wire to actual scaffold precision
+                scaffold_precision=0.5,
+                scaffold_vad=(vad.valence, vad.arousal, vad.dominance),
             )
             experiential_signals = ExperientialSignals(
                 precision_weight=state.precision_weight,
+                affect_valence=max(-1.0, min(1.0, state.affect_vad[0])),
+                affect_arousal=max(0.0, min(1.0, state.affect_vad[1])),
+                affect_dominance=max(0.0, min(1.0, state.affect_vad[2])),
+                attention_salience=max(0.0, min(1.0, state.attention_salience)),
+                goal_adjustment=max(-1.0, min(1.0, state.goal_adjustment)),
                 cells_active=state.cell_active,
             )
 

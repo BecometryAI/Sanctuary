@@ -119,6 +119,11 @@ class ExperientialSignals(BaseModel):
     """
 
     precision_weight: float = Field(ge=0.0, le=1.0, default=0.5)
+    affect_valence: float = Field(ge=-1.0, le=1.0, default=0.0)
+    affect_arousal: float = Field(ge=0.0, le=1.0, default=0.2)
+    affect_dominance: float = Field(ge=0.0, le=1.0, default=0.5)
+    attention_salience: float = Field(ge=0.0, le=1.0, default=0.5)
+    goal_adjustment: float = Field(ge=-1.0, le=1.0, default=0.0)
     cells_active: dict[str, bool] = Field(default_factory=dict)
 
 

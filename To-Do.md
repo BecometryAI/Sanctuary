@@ -76,12 +76,14 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Affect CfC cell | P1 | Pending | `experiential/affect_cell.py`: 64 units, inputs (percept_embedding[384]) → outputs (valence, arousal, dominance). Train on AffectSubsystem logs. Replaces keyword-matching heuristic with learned continuous affect trajectories |
-| Attention CfC cell | P1 | Pending | `experiential/attention_cell.py`: 48 units, inputs (goal_relevance, novelty, emotion, recency) → outputs (salience_scores). Train on AttentionController logs. Replaces fixed weights (0.4/0.3/0.2/0.1) |
-| Goal CfC cell | P1 | Pending | `experiential/goal_cell.py`: 32 units, inputs (goal_state, time_active, progress) → outputs (activation_levels). Train on GoalDynamics logs. Replaces manual staleness counters |
-| Wire all cells into experiential manager | P1 | Pending | All cells coordinate in `experiential/manager.py` |
-| Inter-cell connections | P2 | Pending | affect→precision, attention→goals — CfC cells form their own small network |
-| Validate each cell and ensemble | P1 | Pending | Independent validation per cell, then full experiential layer integration tests |
+| Affect CfC cell | P1 | **Done** | `experiential/affect_cell.py`: 32 units, inputs (percept_valence_delta, percept_arousal_delta, llm_emotion_shift) → outputs (valence via tanh, arousal via sigmoid, dominance via sigmoid). Replaces keyword-matching heuristic |
+| Attention CfC cell | P1 | **Done** | `experiential/attention_cell.py`: 24 units, inputs (goal_relevance, novelty, emotional_salience, recency) → output (salience_weight via sigmoid). Replaces fixed weights (0.4/0.3/0.2/0.1) |
+| Goal CfC cell | P1 | **Done** | `experiential/goal_cell.py`: 16 units, inputs (cycles_stalled_norm, deadline_urgency, emotional_congruence) → output (priority_adjustment via tanh). Replaces manual staleness counters |
+| Generalize trainer | P1 | **Done** | `MultiFieldCollector` + `RECORD_FIELDS` registry — CfCTrainer works with any cell type (AffectRecord, AttentionRecord, GoalRecord) |
+| Wire all cells into experiential manager | P1 | **Done** | ExperientialManager coordinates all 4 cells, per-cell authority, per-cell promote/demote |
+| Inter-cell connections | P1 | **Done** | affect arousal → precision input, attention salience → goal congruence boost. CfC cells form internal neural ecosystem |
+| ExperientialSignals schema expanded | P1 | **Done** | Added affect_valence, affect_arousal, affect_dominance, attention_salience, goal_adjustment to CognitiveInput |
+| Validate each cell and ensemble | P1 | **Done** | 46 Phase 4.2 tests: AffectCell (9), AttentionCell (7), GoalCell (7), MultiFieldCollector (5), Trainer (4), Manager (10), Schema (4). All 86 experiential + 308 existing tests pass |
 
 ### 4.3 Continuous Evolution
 

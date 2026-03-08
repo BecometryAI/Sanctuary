@@ -6,8 +6,18 @@ cannot provide alone. The scaffold trains these cells, then hands off
 authority as they demonstrate reliable behavior.
 """
 
+from sanctuary.experiential.affect_cell import AffectCell
+from sanctuary.experiential.attention_cell import AttentionCell
+from sanctuary.experiential.goal_cell import GoalCell
+from sanctuary.experiential.manager import ExperientialManager
 from sanctuary.experiential.precision_cell import PrecisionCell
 from sanctuary.experiential.trainer import CfCTrainer
-from sanctuary.experiential.manager import ExperientialManager
 
-__all__ = ["PrecisionCell", "CfCTrainer", "ExperientialManager"]
+__all__ = [
+    "AffectCell",
+    "AttentionCell",
+    "GoalCell",
+    "ExperientialManager",
+    "PrecisionCell",
+    "CfCTrainer",
+]

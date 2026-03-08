@@ -6,7 +6,6 @@ Tests cover:
 - Spontaneous reflection triggers
 - Reflection initiation and tracking
 - Multi-level introspection (depths 1-3)
-- Self-question generation (all categories)
 - Meta-cognitive goal creation
 - Active reflection processing
 - Journal integration
@@ -87,7 +86,7 @@ class TestIntrospectiveLoopInitialization:
         assert loop.enabled is True
         assert isinstance(loop.active_reflections, dict)
         assert isinstance(loop.reflection_triggers, dict)
-        assert len(loop.reflection_triggers) == 7  # 7 built-in triggers
+        assert len(loop.reflection_triggers) == 6  # 6 built-in triggers
 
     def test_initialization_with_config(self, temp_journal_dir):
         """Test initialization with custom configuration"""
@@ -101,9 +100,7 @@ class TestIntrospectiveLoopInitialization:
         config = {
             "enabled": False,
             "max_active_reflections": 5,
-            "max_introspection_depth": 2,
-            "spontaneous_probability": 0.5,
-            "question_generation_rate": 3
+            "max_introspection_depth": 2
         }
 
         loop = IntrospectiveLoop(workspace, monitor, journal, config)
@@ -111,8 +108,6 @@ class TestIntrospectiveLoopInitialization:
         assert loop.enabled is False
         assert loop.max_active_reflections == 5
         assert loop.max_introspection_depth == 2
-        assert loop.spontaneous_probability == 0.5
-        assert loop.question_generation_rate == 3
 
     def test_trigger_initialization(self, temp_journal_dir):
         """Test that reflection triggers are initialized correctly"""
@@ -130,7 +125,6 @@ class TestIntrospectiveLoopInitialization:
             "prediction_error",
             "value_misalignment",
             "capability_surprise",
-            "existential_question",
             "emotional_shift",
             "temporal_milestone"
         ]
@@ -303,8 +297,7 @@ class TestReflectionInitiation:
 
         subjects = {
             "pattern_detected": "behavioral patterns",
-            "value_misalignment": "alignment between my values and actions",
-            "existential_question": "fundamental questions about my nature"
+            "value_misalignment": "alignment between my values and actions"
         }
 
         for trigger, expected_key in subjects.items():
@@ -385,112 +378,6 @@ class TestMultiLevelIntrospection:
         assert "level_1" in result
         assert "level_2" in result
         assert "level_3" not in result
-
-
-class TestSelfQuestionGeneration:
-    """Test autonomous self-question generation"""
-
-    def test_generate_existential_questions(self, temp_journal_dir):
-        """Test existential question generation"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        snapshot = workspace.broadcast()
-        questions = loop._generate_existential_questions(snapshot)
-
-        assert isinstance(questions, list)
-        if questions:
-            assert isinstance(questions[0], str)
-
-    def test_generate_value_questions(self, temp_journal_dir):
-        """Test value-related question generation"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        snapshot = workspace.broadcast()
-        questions = loop._generate_value_questions(snapshot)
-
-        assert isinstance(questions, list)
-        if questions:
-            assert isinstance(questions[0], str)
-
-    def test_generate_capability_questions(self, temp_journal_dir):
-        """Test capability-related question generation"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        snapshot = workspace.broadcast()
-        questions = loop._generate_capability_questions(snapshot)
-
-        assert isinstance(questions, list)
-        if questions:
-            assert isinstance(questions[0], str)
-
-    def test_generate_emotional_questions(self, temp_journal_dir):
-        """Test emotional question generation"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        snapshot = workspace.broadcast()
-        questions = loop._generate_emotional_questions(snapshot)
-
-        assert isinstance(questions, list)
-        if questions:
-            assert isinstance(questions[0], str)
-
-    def test_generate_behavioral_questions(self, temp_journal_dir):
-        """Test behavioral question generation"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        snapshot = workspace.broadcast()
-        questions = loop._generate_behavioral_questions(snapshot)
-
-        assert isinstance(questions, list)
-        if questions:
-            assert isinstance(questions[0], str)
-
-    def test_question_generation_rate_limit(self, temp_journal_dir):
-        """Test that question generation respects rate limit"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        config = {"question_generation_rate": 2}
-        loop = IntrospectiveLoop(workspace, monitor, journal, config)
-
-        snapshot = workspace.broadcast()
-        questions = loop.generate_self_questions(snapshot)
-
-        # Should respect the rate limit
-        assert len(questions) <= 2
 
 
 class TestMetaCognitiveGoals:
@@ -643,26 +530,6 @@ class TestActiveReflectionProcessing:
 class TestJournalIntegration:
     """Test introspective journal integration"""
 
-    @pytest.mark.asyncio
-    async def test_questions_recorded_in_journal(self, temp_journal_dir):
-        """Test that generated questions are recorded"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        config = {"spontaneous_probability": 1.0}  # Always generate
-        loop = IntrospectiveLoop(workspace, monitor, journal, config)
-
-        initial_entries = len(journal.recent_entries)
-
-        # Run a cycle
-        await loop.run_reflection_cycle()
-
-        # Should have recorded questions (or stayed same if no questions generated)
-        assert len(journal.recent_entries) >= initial_entries
-
     def test_reflections_recorded_in_journal(self, temp_journal_dir):
         """Test that completed reflections are recorded"""
         journal_dir, created_objects = temp_journal_dir
@@ -762,7 +629,6 @@ class TestStatistics:
 
         assert "total_reflections" in stats
         assert "completed_reflections" in stats
-        assert "questions_generated" in stats
         assert "triggers_fired" in stats
         assert "meta_goals_created" in stats
         assert "multi_level_introspections" in stats
@@ -837,7 +703,6 @@ class TestConfigurationHandling:
         config = {
             "enabled": False,
             "max_active_reflections": 10,
-            "enable_existential_questions": False,
             "reflection_timeout": 600
         }
 
@@ -845,7 +710,6 @@ class TestConfigurationHandling:
 
         assert loop.enabled is False
         assert loop.max_active_reflections == 10
-        assert loop.enable_existential_questions is False
         assert loop.reflection_timeout == 600
 
 
@@ -866,7 +730,6 @@ class TestEdgeCases:
 
         # Should not crash
         loop.check_spontaneous_triggers(snapshot)
-        loop.generate_self_questions(snapshot)
         loop.generate_meta_cognitive_goals(snapshot)
 
     def test_reflection_timeout(self, temp_journal_dir):

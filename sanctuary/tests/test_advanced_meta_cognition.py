@@ -790,13 +790,6 @@ class TestConfigurationSupport:
         
         assert monitor.inconsistency_severity_threshold == 0.7
     
-    def test_disable_existential_questions(self):
-        """Test disabling existential questions"""
-        config = {"enable_existential_questions": False}
-        monitor = SelfMonitor(config=config)
-        
-        assert monitor.enable_existential_questions is False
-    
     def test_disable_capability_tracking(self):
         """Test disabling capability tracking"""
         config = {"enable_capability_tracking": False}

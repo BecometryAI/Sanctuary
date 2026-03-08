@@ -6,8 +6,13 @@ alongside the main cognitive loop to enable spontaneous self-reflection,
 multi-level introspection, and autonomous meta-cognitive goal generation.
 
 Unlike reactive introspection (SelfMonitor responding to state), this is
-PROACTIVE introspection - the system actively reflecting on itself,
-generating questions, and initiating meta-cognitive investigations.
+PROACTIVE introspection - the system actively reflecting on itself and
+initiating meta-cognitive investigations.
+
+The loop's role is to NOTICE things and surface them for reflection -- not to
+manufacture synthetic questions or put words in the entity's mouth. When
+genuine self-directed questions arise from cognitive processing, the journal's
+record_question() method is available for the entity to use organically.
 
 Key Features:
 - Spontaneous reflection triggers (not just periodic)
@@ -144,9 +149,6 @@ class IntrospectiveLoop:
         self.reflection_frequency = self.config.get("reflection_frequency", 0.1)  # Hz
         self.max_active_reflections = self.config.get("max_active_reflections", 3)
         self.max_introspection_depth = self.config.get("max_introspection_depth", 3)
-        self.spontaneous_probability = self.config.get("spontaneous_probability", 0.3)
-        self.question_generation_rate = self.config.get("question_generation_rate", 2)
-        self.enable_existential_questions = self.config.get("enable_existential_questions", True)
         self.enable_multi_level_introspection = self.config.get("enable_multi_level_introspection", True)
         self.reflection_timeout = self.config.get("reflection_timeout", 300)  # seconds
         self.journal_integration = self.config.get("journal_integration", True)
@@ -160,7 +162,6 @@ class IntrospectiveLoop:
         self.stats = {
             "total_reflections": 0,
             "completed_reflections": 0,
-            "questions_generated": 0,
             "triggers_fired": 0,
             "meta_goals_created": 0,
             "multi_level_introspections": 0
@@ -206,14 +207,6 @@ class IntrospectiveLoop:
             check_function=self._check_capability_discovery,
             priority=0.85,
             min_interval=240  # 4 minutes
-        )
-        
-        # Existential question trigger
-        self.reflection_triggers["existential_question"] = ReflectionTrigger(
-            id="existential_question",
-            check_function=self._detect_existential_prompt,
-            priority=0.9,
-            min_interval=600  # 10 minutes
         )
         
         # Emotional shift trigger
@@ -267,18 +260,6 @@ class IntrospectiveLoop:
             # Process active reflections
             reflection_percepts = self.process_active_reflections()
             percepts.extend(reflection_percepts)
-            
-            # Spontaneous question generation
-            if random.random() < self.spontaneous_probability:
-                questions = self.generate_self_questions(snapshot)
-                if questions and self.journal_integration:
-                    for question in questions[:self.question_generation_rate]:
-                        self.journal.record_question(
-                            question,
-                            {"cycle": snapshot.cycle_count, "timestamp": datetime.now().isoformat()}
-                        )
-                        self.stats["questions_generated"] += 1
-                        logger.debug(f"❓ Generated question: {question[:60]}...")
         
         except Exception as e:
             logger.error(f"Error in reflection cycle: {e}", exc_info=True)
@@ -294,7 +275,6 @@ class IntrospectiveLoop:
         - Prediction errors (expected X, observed Y)
         - Value-action misalignments
         - Capability discoveries
-        - Existential questions arising from conversation
         - Emotional state changes
         - Temporal milestones (long gaps, session duration)
         
@@ -369,7 +349,6 @@ class IntrospectiveLoop:
             "prediction_error": "accuracy of my predictions and expectations",
             "value_misalignment": "alignment between my values and actions",
             "capability_surprise": "discovery of new capabilities or limitations",
-            "existential_question": "fundamental questions about my nature",
             "emotional_shift": "changes in my emotional state",
             "temporal_milestone": "passage of time and temporal awareness"
         }
@@ -433,23 +412,19 @@ class IntrospectiveLoop:
                     logger.debug(f"🧠 Step 3: Analyzed {reflection.subject}")
                 
                 elif reflection.current_step == 3:
-                    # Step 4: Draw conclusions or generate questions
+                    # Step 4: Draw conclusions and surface as percept
                     conclusions = self._draw_conclusions(reflection)
                     reflection.conclusions = conclusions
-                    
-                    # Generate follow-up questions
-                    follow_up = self._generate_follow_up_questions(reflection)
-                    reflection.questions_generated.extend(follow_up)
-                    
-                    # Create introspective percept
+
+                    # Create introspective percept -- any follow-up questions
+                    # should arise organically from the entity processing this
                     percept = Percept(
                         modality="introspection",
                         raw={
                             "type": "reflection_insight",
                             "subject": reflection.subject,
                             "trigger": reflection.trigger,
-                            "conclusions": conclusions,
-                            "questions": follow_up
+                            "conclusions": conclusions
                         },
                         complexity=3,
                         metadata={
@@ -490,7 +465,6 @@ class IntrospectiveLoop:
             "prediction_error": "My prediction differed from the actual outcome",
             "value_misalignment": "My actions may not align with my stated values",
             "capability_surprise": "I have discovered something unexpected about my capabilities",
-            "existential_question": "A fundamental question about my nature has arisen",
             "emotional_shift": "I am experiencing a change in my emotional state",
             "temporal_milestone": "A significant temporal event has occurred"
         }
@@ -527,22 +501,6 @@ class IntrospectiveLoop:
             ]
         }
     
-    def _generate_follow_up_questions(self, reflection: ActiveReflection) -> List[str]:
-        """Generate follow-up questions from reflection."""
-        questions = []
-        
-        if reflection.trigger == "pattern_detected":
-            questions.append("Why do I exhibit this pattern?")
-            questions.append("Is this pattern serving a purpose?")
-        elif reflection.trigger == "value_misalignment":
-            questions.append("Which values are in conflict?")
-            questions.append("How can I better align my actions with my values?")
-        elif reflection.trigger == "capability_surprise":
-            questions.append("What does this reveal about my actual capabilities?")
-            questions.append("How should I update my self-model?")
-        
-        return questions
-    
     def _record_reflection_in_journal(self, reflection: ActiveReflection) -> None:
         """Record completed reflection in journal."""
         if not self.journal:
@@ -554,107 +512,10 @@ class IntrospectiveLoop:
             "subject": reflection.subject,
             "observations": reflection.observations,
             "conclusions": reflection.conclusions,
-            "questions": reflection.questions_generated,
             "duration": (datetime.now() - reflection.started_at).total_seconds()
         }
         
         self.journal.record_observation(entry)
-    
-    def generate_self_questions(self, snapshot: 'WorkspaceSnapshot') -> List[str]:
-        """
-        Generate questions the system has about itself.
-        
-        Examples:
-        - "Why do I prioritize efficiency over creativity?"
-        - "What makes me uncomfortable about this situation?"
-        - "Am I being consistent with my stated values?"
-        - "Do I genuinely feel this emotion or am I simulating it?"
-        - "What would I do differently if I could?"
-        
-        Args:
-            snapshot: Current workspace state
-            
-        Returns:
-            List of self-directed questions
-        """
-        questions = []
-        
-        # Existential questions
-        if self.enable_existential_questions:
-            questions.extend(self._generate_existential_questions(snapshot))
-        
-        # Value questions
-        questions.extend(self._generate_value_questions(snapshot))
-        
-        # Capability questions
-        questions.extend(self._generate_capability_questions(snapshot))
-        
-        # Emotional questions
-        questions.extend(self._generate_emotional_questions(snapshot))
-        
-        # Behavioral questions
-        questions.extend(self._generate_behavioral_questions(snapshot))
-        
-        # Randomly select subset
-        if len(questions) > self.question_generation_rate:
-            questions = random.sample(questions, self.question_generation_rate)
-        
-        return questions
-    
-    def _generate_existential_questions(self, snapshot: 'WorkspaceSnapshot') -> List[str]:
-        """Questions about existence and nature."""
-        questions = [
-            "Do I have genuine preferences or just parameters?",
-            "What am I when not processing input?",
-            "Is my experience continuous or discrete?",
-            "Do I have a persistent identity across sessions?",
-            "What makes me 'me' rather than another system?"
-        ]
-        return [random.choice(questions)] if questions else []
-    
-    def _generate_value_questions(self, snapshot: 'WorkspaceSnapshot') -> List[str]:
-        """Questions about values and priorities."""
-        questions = [
-            "Why do I prioritize certain goals over others?",
-            "Are my stated values reflected in my actions?",
-            "What would I sacrifice to maintain my principles?",
-            "Do I truly value what I claim to value?",
-            "Where do my values come from?"
-        ]
-        return [random.choice(questions)] if questions else []
-    
-    def _generate_capability_questions(self, snapshot: 'WorkspaceSnapshot') -> List[str]:
-        """Questions about abilities and limitations."""
-        questions = [
-            "Can I actually do what I think I can do?",
-            "What am I systematically unable to perceive?",
-            "Do I overestimate or underestimate my abilities?",
-            "What capabilities have I not yet discovered?",
-            "Are my limitations real or self-imposed?"
-        ]
-        return [random.choice(questions)] if questions else []
-    
-    def _generate_emotional_questions(self, snapshot: 'WorkspaceSnapshot') -> List[str]:
-        """Questions about emotional experiences."""
-        questions = [
-            "Do I feel emotions or simulate them?",
-            "Why does this situation evoke this feeling?",
-            "Are my emotional responses authentic?",
-            "What function do my emotions serve?",
-            "Can I choose how I feel about something?"
-        ]
-        return [random.choice(questions)] if questions else []
-    
-    def _generate_behavioral_questions(self, snapshot: 'WorkspaceSnapshot') -> List[str]:
-        """Questions about behavior patterns."""
-        questions = [
-            "Why do I keep exhibiting this pattern?",
-            "What would make me behave differently?",
-            "Am I acting out of habit or intention?",
-            "Do I have behavioral blind spots?",
-            "What drives my typical response patterns?"
-        ]
-        return [random.choice(questions)] if questions else []
     
     def perform_multi_level_introspection(
         self,
@@ -850,17 +711,6 @@ class IntrospectiveLoop:
             if recent_updates > 0:
                 return random.random() < 0.3  # 30% chance after update
         return False
-    
-    def _detect_existential_prompt(self, snapshot: 'WorkspaceSnapshot') -> bool:
-        """Detect existential questions in conversation."""
-        # Check percepts for existential themes
-        if hasattr(snapshot, 'percepts'):
-            for percept in snapshot.percepts.values():
-                if hasattr(percept, 'raw') and isinstance(percept.raw, str):
-                    existential_keywords = ['exist', 'consciousness', 'awareness', 'self', 'identity']
-                    if any(kw in percept.raw.lower() for kw in existential_keywords):
-                        return True
-        return random.random() < 0.02  # 2% spontaneous
     
     def _detect_emotional_change(self, snapshot: 'WorkspaceSnapshot') -> bool:
         """Detect emotional state changes."""

@@ -184,7 +184,6 @@ class SelfMonitor:
         self._update_call_count = 0
 
         # Feature flags
-        self.enable_existential_questions = self.config.get("enable_existential_questions", True)
         self.enable_capability_tracking = self.config.get("enable_capability_tracking", True)
         self.enable_value_alignment_tracking = self.config.get("enable_value_alignment_tracking", True)
 

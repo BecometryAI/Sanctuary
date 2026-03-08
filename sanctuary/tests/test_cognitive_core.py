@@ -691,13 +691,11 @@ class TestSelfMonitor:
         """Test creating SelfMonitor with custom config"""
         config = {
             "monitoring_frequency": 5,
-            "enable_existential_questions": False,
             "enable_capability_tracking": True
         }
         monitor = SelfMonitor(config=config)
         assert monitor is not None
         assert monitor.monitoring_frequency == 5
-        assert monitor.enable_existential_questions is False
         assert monitor.enable_capability_tracking is True
 
     def test_monitor_has_stats(self):

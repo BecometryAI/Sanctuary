@@ -8,6 +8,12 @@ authority as they demonstrate reliable behavior.
 
 from sanctuary.experiential.affect_cell import AffectCell
 from sanctuary.experiential.attention_cell import AttentionCell
+from sanctuary.experiential.evolution import (
+    ContinuousEvolutionLoop,
+    EvolutionConfig,
+    EvolutionSnapshot,
+    PerceptEvent,
+)
 from sanctuary.experiential.goal_cell import GoalCell
 from sanctuary.experiential.manager import ExperientialManager
 from sanctuary.experiential.precision_cell import PrecisionCell
@@ -16,8 +22,12 @@ from sanctuary.experiential.trainer import CfCTrainer
 __all__ = [
     "AffectCell",
     "AttentionCell",
+    "ContinuousEvolutionLoop",
+    "EvolutionConfig",
+    "EvolutionSnapshot",
     "GoalCell",
     "ExperientialManager",
+    "PerceptEvent",
     "PrecisionCell",
     "CfCTrainer",
 ]

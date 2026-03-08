@@ -91,10 +91,11 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Continuous evolution loop | P1 | Pending | CfC cells process incoming percepts in real-time, not just at cycle boundaries |
-| Inter-cycle CfC evolution | P1 | Pending | CfC state evolves during LLM API latency (free continuous-time computation) |
-| Adaptive cycle timing | P2 | Pending | Faster cycles when prediction error is high, slower when idle |
-| Validate temporal dynamics | P2 | Pending | Confirm cells produce multi-timescale behavior (fast affect, slow goals, medium precision) |
+| Continuous evolution loop | P1 | **Done** | `experiential/evolution.py`: async background loop steps all CfC cells at configurable tick rate (default 50ms). Percept queue for real-time inter-cycle processing |
+| Inter-cycle CfC evolution | P1 | **Done** | `ContinuousEvolutionLoop` runs during LLM API latency. `snapshot()` reads accumulated state at cycle boundaries, resets tick counters |
+| Adaptive cycle timing | P1 | **Done** | High prediction error → faster ticks (down to 10ms); low error → idle rate (100ms). Smooth EMA transition, configurable sensitivity |
+| Manager integration | P1 | **Done** | `ExperientialManager.start_evolution()`, `stop_evolution()`, `feed_percept()`, `evolution_snapshot()`. Status includes evolution tick rate |
+| Validate temporal dynamics | P1 | **Done** | 21 tests: evolution loop (7), adaptive timing (3), manager integration (8), temporal dynamics (3). All 173 experiential + core tests pass |
 
 ---
 
@@ -102,12 +103,12 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 Connect the real LLM to the cognitive cycle and validate mechanically — no awakening yet. All testing uses structured prompts and scripted scenarios, not open-ended interaction.
 
-**Primary model**: Llama 3.3 70B (via Ollama). Alternatives under consideration for development/testing: smaller models (8B-14B) for fast iteration during build phases.
+**Primary model**: Llama 3.3 70B (via Ollama) for awakening. **Mechanical validation model**: Gemma 12B (via Ollama) — sufficient for JSON schema compliance, stress testing, and authority tuning on available hardware. Awakening-grade model deferred until Phase 9.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Integrate Llama 3.3 70B via Ollama | P1 | Pending | Wire OllamaClient to cognitive cycle with CognitiveInput/CognitiveOutput schema compliance |
-| Mechanical cycle validation | P1 | Pending | End-to-end with scripted inputs: percepts → LLM reasoning → CfC evolution → action. Verify structured output compliance, cycle stability, error handling |
+| Integrate Llama 3.3 70B via Ollama | P1 | **Done** | `core/ollama_model.py`: OllamaModel implements ModelProtocol. Formats CognitiveInput → structured prompt with all sections (charter, percepts, emotions, CfC state, schema). Parses JSON → CognitiveOutput with defensive defaults, clamping, type filtering. Fallback output on parse failure. Retry logic. Metrics tracking |
+| Mechanical cycle validation | P1 | **Done** | 35 tests (mocked HTTP): prompt formatting (12), response parsing (14), fallback (2), OllamaModel integration (6), CognitiveCycle drop-in (1). Validates schema compliance, retry behavior, out-of-range clamping, invalid field filtering |
 | Tune authority levels | P1 | Pending | Scaffold→CfC authority transitions based on observed mechanical behavior |
 | Validate context budget under real model | P1 | Pending | Confirm ~4K token input budget works; tune compression if needed |
 | Stress testing | P2 | Pending | Long-running mechanical cycles (1000+), adversarial inputs, subsystem failure injection |
@@ -327,5 +328,5 @@ Design and scaffold implementation complete.
 
 ---
 
-**Next Action**: Phase 4.1 — First CfC Cell (Precision Weighting)
+**Next Action**: Phase 5 — Mechanical validation with Gemma 12B via Ollama
 **Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)

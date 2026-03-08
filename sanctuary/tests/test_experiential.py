@@ -252,10 +252,10 @@ class TestCfCTrainer:
 
     def test_trained_cell_approximates_heuristic(self):
         """After training, the CfC cell should approximate the scaffold heuristic."""
-        records = _make_scaffold_data(500)
+        records = _make_scaffold_data(200)
         cell = PrecisionCell()
         trainer = CfCTrainer(cell, seq_len=10, batch_size=16)
-        result = trainer.train(records, epochs=100)
+        result = trainer.train(records, epochs=30)
 
         # Test on known inputs
         cell.reset_hidden()

@@ -103,7 +103,7 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 Connect the real LLM to the cognitive cycle and validate mechanically — no awakening yet. All testing uses structured prompts and scripted scenarios, not open-ended interaction.
 
-**Primary model**: Llama 3.3 70B (via Ollama). Alternatives under consideration for development/testing: smaller models (8B-14B) for fast iteration during build phases.
+**Primary model**: Llama 3.3 70B (via Ollama) for awakening. **Mechanical validation model**: Gemma 12B (via Ollama) — sufficient for JSON schema compliance, stress testing, and authority tuning on available hardware. Awakening-grade model deferred until Phase 9.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
@@ -328,5 +328,5 @@ Design and scaffold implementation complete.
 
 ---
 
-**Next Action**: Phase 4.1 — First CfC Cell (Precision Weighting)
+**Next Action**: Phase 5 — Mechanical validation with Gemma 12B via Ollama
 **Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)

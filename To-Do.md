@@ -57,15 +57,15 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Add `ncps` dependency | P0 | Pending | `pip install ncps` — Apache 2.0, PyTorch CfC/LTC cells |
-| Implement `experiential/precision_cell.py` | P0 | Pending | CfC cell with AutoNCP wiring; inputs (arousal, prediction_error, base_precision) → output (precision weight) |
-| Implement `experiential/trainer.py` | P0 | Pending | Trains CfC cells from scaffold data logs (supervised learning from heuristic input/output pairs) |
-| Collect training data from scaffold | P1 | Pending | Run scaffold for N cycles, logging precision weighting inputs → outputs |
+| Add `ncps` dependency | P0 | **Done** | `ncps>=0.0.7` added to pyproject.toml — Apache 2.0, PyTorch CfC/LTC cells |
+| Implement `experiential/precision_cell.py` | P0 | **Done** | CfC cell with AutoNCP wiring (16 units, ~1K params); inputs (arousal, prediction_error, base_precision) → output (precision weight via sigmoid) |
+| Implement `experiential/trainer.py` | P0 | **Done** | DataCollector for scaffold logging + CfCTrainer for supervised learning from heuristic I/O pairs |
+| Implement `experiential/manager.py` | P1 | **Done** | Coordinates CfC cells, authority-based blending (scaffold↔CfC), save/load, monitoring |
+| Write tests | P1 | **Done** | 29 tests: PrecisionCell (11), DataCollector (4), CfCTrainer (3), ExperientialManager (11) — all passing |
+| Collect training data from scaffold | P1 | Pending | Run scaffold for N cycles, logging precision weighting inputs → outputs via DataCollector |
 | Train CfC precision cell | P1 | Pending | Supervised training on collected data; validate approximation of scaffold behavior |
-| Implement `experiential/manager.py` | P1 | Pending | Coordinates all CfC cells, runs continuous evolution between LLM cycles |
 | Wire precision cell into cognitive cycle | P1 | Pending | CfC state summary → LLM input; LLM output → CfC cell input updates |
 | Validate CfC precision vs scaffold precision | P1 | Pending | CfC should approximate then generalize beyond heuristic |
-| Write tests | P1 | Pending | CfC training, inference, and integration tests |
 
 ### 4.2 Expand CfC Layer
 

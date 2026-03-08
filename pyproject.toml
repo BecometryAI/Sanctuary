@@ -51,6 +51,8 @@ dependencies = [
     "schedule>=1.2.0",
     # GPU monitoring (optional)
     "nvidia-ml-py>=12.560.30", # For NVLink detection and GPU monitoring
+    # CfC / Liquid Neural Networks (experiential layer)
+    "ncps>=0.0.7",  # Apache 2.0 — PyTorch CfC/LTC cells with AutoNCP wiring
     # Utilities
     "python-dotenv>=1.2.1",
     "pydantic>=2.12.4",

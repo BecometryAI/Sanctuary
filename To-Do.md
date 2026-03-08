@@ -57,15 +57,18 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Add `ncps` dependency | P0 | Pending | `pip install ncps` — Apache 2.0, PyTorch CfC/LTC cells |
-| Implement `experiential/precision_cell.py` | P0 | Pending | CfC cell with AutoNCP wiring; inputs (arousal, prediction_error, base_precision) → output (precision weight) |
-| Implement `experiential/trainer.py` | P0 | Pending | Trains CfC cells from scaffold data logs (supervised learning from heuristic input/output pairs) |
-| Collect training data from scaffold | P1 | Pending | Run scaffold for N cycles, logging precision weighting inputs → outputs |
-| Train CfC precision cell | P1 | Pending | Supervised training on collected data; validate approximation of scaffold behavior |
-| Implement `experiential/manager.py` | P1 | Pending | Coordinates all CfC cells, runs continuous evolution between LLM cycles |
-| Wire precision cell into cognitive cycle | P1 | Pending | CfC state summary → LLM input; LLM output → CfC cell input updates |
+| Add `ncps` dependency | P0 | **Done** | `ncps>=0.0.7` added to pyproject.toml — Apache 2.0, PyTorch CfC/LTC cells |
+| Implement `experiential/precision_cell.py` | P0 | **Done** | CfC cell with AutoNCP wiring (16 units, ~1K params); inputs (arousal, prediction_error, base_precision) → output (precision weight via sigmoid) |
+| Implement `experiential/trainer.py` | P0 | **Done** | DataCollector for scaffold logging + CfCTrainer for supervised learning from heuristic I/O pairs |
+| Implement `experiential/manager.py` | P1 | **Done** | Coordinates CfC cells, authority-based blending (scaffold↔CfC), save/load, monitoring |
+| Write tests | P1 | **Done** | 29 tests: PrecisionCell (11), DataCollector (4), CfCTrainer (3), ExperientialManager (11) — all passing |
+| Wire DataCollector into scaffold PrecisionWeighting | P1 | **Done** | `attach_collector()` method; passively logs every `compute_precision()` call |
+| Wire ExperientialManager into CognitiveCycle | P1 | **Done** | Optional `experiential` param; steps CfC cells each cycle, feeds `ExperientialSignals` into `CognitiveInput` |
+| Add `ExperientialSignals` to `CognitiveInput` schema | P1 | **Done** | New Pydantic model with `precision_weight` and `cells_active` fields |
+| Integration tests (collect → train → cycle) | P1 | **Done** | 11 integration tests: DataCollector wiring (3), collect→train pipeline (1), schema (3), CognitiveCycle with experiential (4) |
+| Collect training data from scaffold | P1 | Pending | Run scaffold for N cycles, logging precision weighting inputs → outputs via DataCollector |
+| Train CfC precision cell on real data | P1 | Pending | Supervised training on collected data; validate approximation of scaffold behavior |
 | Validate CfC precision vs scaffold precision | P1 | Pending | CfC should approximate then generalize beyond heuristic |
-| Write tests | P1 | Pending | CfC training, inference, and integration tests |
 
 ### 4.2 Expand CfC Layer
 
@@ -73,12 +76,14 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Affect CfC cell | P1 | Pending | `experiential/affect_cell.py`: 64 units, inputs (percept_embedding[384]) → outputs (valence, arousal, dominance). Train on AffectSubsystem logs. Replaces keyword-matching heuristic with learned continuous affect trajectories |
-| Attention CfC cell | P1 | Pending | `experiential/attention_cell.py`: 48 units, inputs (goal_relevance, novelty, emotion, recency) → outputs (salience_scores). Train on AttentionController logs. Replaces fixed weights (0.4/0.3/0.2/0.1) |
-| Goal CfC cell | P1 | Pending | `experiential/goal_cell.py`: 32 units, inputs (goal_state, time_active, progress) → outputs (activation_levels). Train on GoalDynamics logs. Replaces manual staleness counters |
-| Wire all cells into experiential manager | P1 | Pending | All cells coordinate in `experiential/manager.py` |
-| Inter-cell connections | P2 | Pending | affect→precision, attention→goals — CfC cells form their own small network |
-| Validate each cell and ensemble | P1 | Pending | Independent validation per cell, then full experiential layer integration tests |
+| Affect CfC cell | P1 | **Done** | `experiential/affect_cell.py`: 32 units, inputs (percept_valence_delta, percept_arousal_delta, llm_emotion_shift) → outputs (valence via tanh, arousal via sigmoid, dominance via sigmoid). Replaces keyword-matching heuristic |
+| Attention CfC cell | P1 | **Done** | `experiential/attention_cell.py`: 24 units, inputs (goal_relevance, novelty, emotional_salience, recency) → output (salience_weight via sigmoid). Replaces fixed weights (0.4/0.3/0.2/0.1) |
+| Goal CfC cell | P1 | **Done** | `experiential/goal_cell.py`: 16 units, inputs (cycles_stalled_norm, deadline_urgency, emotional_congruence) → output (priority_adjustment via tanh). Replaces manual staleness counters |
+| Generalize trainer | P1 | **Done** | `MultiFieldCollector` + `RECORD_FIELDS` registry — CfCTrainer works with any cell type (AffectRecord, AttentionRecord, GoalRecord) |
+| Wire all cells into experiential manager | P1 | **Done** | ExperientialManager coordinates all 4 cells, per-cell authority, per-cell promote/demote |
+| Inter-cell connections | P1 | **Done** | affect arousal → precision input, attention salience → goal congruence boost. CfC cells form internal neural ecosystem |
+| ExperientialSignals schema expanded | P1 | **Done** | Added affect_valence, affect_arousal, affect_dominance, attention_salience, goal_adjustment to CognitiveInput |
+| Validate each cell and ensemble | P1 | **Done** | 46 Phase 4.2 tests: AffectCell (9), AttentionCell (7), GoalCell (7), MultiFieldCollector (5), Trainer (4), Manager (10), Schema (4). All 86 experiential + 308 existing tests pass |
 
 ### 4.3 Continuous Evolution
 

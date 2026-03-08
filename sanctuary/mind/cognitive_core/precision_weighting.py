@@ -42,17 +42,17 @@ class PrecisionWeights:
 class PrecisionWeighting:
     """
     Compute precision (inverse uncertainty) for attention.
-    
+
     Precision determines how much to weight different sources of information.
     High precision = high certainty = strong attention
     Low precision = high uncertainty = weak attention
-    
+
     Factors affecting precision:
     - Prediction errors: Higher error -> higher precision (attend to surprises)
     - Emotional arousal: Higher arousal -> lower precision (more uncertain)
     - Emotional valence: Negative valence -> bias toward threat-related
     """
-    
+
     def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize precision weighting system."""
         config = config or {}
@@ -61,7 +61,13 @@ class PrecisionWeighting:
         self.valence_bias = config.get("valence_bias", DEFAULT_VALENCE_BIAS)
         self.base_precision = config.get("base_precision", DEFAULT_BASE_PRECISION)
         self.precision_history: List[PrecisionWeights] = []
+        self._data_collector = None  # Optional CfC training data collector
         logger.info("PrecisionWeighting initialized")
+
+    def attach_collector(self, collector) -> None:
+        """Attach a DataCollector to passively log training data for CfC cells."""
+        self._data_collector = collector
+        logger.info("DataCollector attached to PrecisionWeighting")
     
     def compute_precision(
         self,
@@ -100,6 +106,15 @@ class PrecisionWeighting:
         if len(self.precision_history) > MAX_HISTORY:
             self.precision_history = self.precision_history[-MAX_HISTORY:]
         
+        # Log to CfC training data collector if attached
+        if self._data_collector is not None:
+            self._data_collector.record(
+                arousal=arousal,
+                prediction_error=prediction_error if prediction_error is not None else 0.0,
+                base_precision=self.base_precision,
+                precision_output=precision,
+            )
+
         logger.debug(f"Precision: {precision:.3f} (base={self.base_precision:.2f}, arousal={arousal_effect:.2f}, error={error_boost:.2f})")
         return precision
     

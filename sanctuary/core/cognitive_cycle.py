@@ -26,6 +26,7 @@ from sanctuary.core.schema import (
     CognitiveInput,
     CognitiveOutput,
     EmotionalInput,
+    ExperientialSignals,
     ComputedVAD,
     Percept,
     ScaffoldSignals,
@@ -215,6 +216,7 @@ class CognitiveCycle:
         memory: Optional[MemoryProtocol] = None,
         motor: Optional[Motor] = None,
         authority: Optional[AuthorityManager] = None,
+        experiential=None,
         context_config: Optional[BudgetConfig] = None,
         stream_history: int = 10,
         cycle_delay: float = 0.1,
@@ -225,6 +227,7 @@ class CognitiveCycle:
         self.memory = memory or NullMemory()
         self.motor = motor
         self.authority = authority or AuthorityManager()
+        self.experiential = experiential  # Optional ExperientialManager
         self.context_mgr = ContextManager(context_config)
         self.stream = StreamOfThought(max_history=stream_history)
 
@@ -338,6 +341,35 @@ class CognitiveCycle:
             context=self.stream.get_recent_context()
         )
 
+        # Step the experiential layer (CfC cells evolve)
+        experiential_signals = ExperientialSignals()
+        if self.experiential is not None:
+            vad = self.scaffold.get_computed_vad()
+            # Compute average prediction error for CfC input
+            avg_error = 0.0
+            if prediction_errors:
+                avg_error = sum(
+                    pe.surprise if hasattr(pe, "surprise") else 0.0
+                    for pe in prediction_errors
+                ) / len(prediction_errors)
+
+            state = self.experiential.step(
+                arousal=vad.arousal,
+                prediction_error=avg_error,
+                base_precision=0.5,
+                scaffold_precision=0.5,
+                scaffold_vad=(vad.valence, vad.arousal, vad.dominance),
+            )
+            experiential_signals = ExperientialSignals(
+                precision_weight=state.precision_weight,
+                affect_valence=max(-1.0, min(1.0, state.affect_vad[0])),
+                affect_arousal=max(0.0, min(1.0, state.affect_vad[1])),
+                affect_dominance=max(0.0, min(1.0, state.affect_vad[2])),
+                attention_salience=max(0.0, min(1.0, state.attention_salience)),
+                goal_adjustment=max(-1.0, min(1.0, state.goal_adjustment)),
+                cells_active=state.cell_active,
+            )
+
         return CognitiveInput(
             previous_thought=self.stream.get_previous(),
             new_percepts=percepts,
@@ -351,6 +383,7 @@ class CognitiveCycle:
             self_model=self.stream.get_self_model(),
             world_model=self.stream.get_world_model(),
             scaffold_signals=self.scaffold.get_signals(),
+            experiential_state=experiential_signals,
         )
 
     async def _execute(self, output: CognitiveOutput):

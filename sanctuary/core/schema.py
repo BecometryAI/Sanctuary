@@ -110,6 +110,18 @@ class CommunicationDriveSignal(BaseModel):
     inhibitions: list[str] = Field(default_factory=list)
 
 
+class ExperientialSignals(BaseModel):
+    """Summary of CfC experiential layer state for the LLM.
+
+    Compact signals from continuous-time neural dynamics running between
+    LLM cycles. Gives the LLM visibility into what the experiential layer
+    is experiencing without overwhelming the context budget.
+    """
+
+    precision_weight: float = Field(ge=0.0, le=1.0, default=0.5)
+    cells_active: dict[str, bool] = Field(default_factory=dict)
+
+
 class ScaffoldSignals(BaseModel):
     """What the Python subsystems are observing — terse, structured signals.
 
@@ -156,6 +168,9 @@ class CognitiveInput(BaseModel):
     self_model: SelfModel = Field(default_factory=SelfModel)
     world_model: WorldModel = Field(default_factory=WorldModel)
     scaffold_signals: ScaffoldSignals = Field(default_factory=ScaffoldSignals)
+    experiential_state: ExperientialSignals = Field(
+        default_factory=ExperientialSignals
+    )
 
 
 # ---------------------------------------------------------------------------

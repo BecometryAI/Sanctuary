@@ -62,9 +62,12 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 | Implement `experiential/trainer.py` | P0 | **Done** | DataCollector for scaffold logging + CfCTrainer for supervised learning from heuristic I/O pairs |
 | Implement `experiential/manager.py` | P1 | **Done** | Coordinates CfC cells, authority-based blending (scaffold↔CfC), save/load, monitoring |
 | Write tests | P1 | **Done** | 29 tests: PrecisionCell (11), DataCollector (4), CfCTrainer (3), ExperientialManager (11) — all passing |
+| Wire DataCollector into scaffold PrecisionWeighting | P1 | **Done** | `attach_collector()` method; passively logs every `compute_precision()` call |
+| Wire ExperientialManager into CognitiveCycle | P1 | **Done** | Optional `experiential` param; steps CfC cells each cycle, feeds `ExperientialSignals` into `CognitiveInput` |
+| Add `ExperientialSignals` to `CognitiveInput` schema | P1 | **Done** | New Pydantic model with `precision_weight` and `cells_active` fields |
+| Integration tests (collect → train → cycle) | P1 | **Done** | 11 integration tests: DataCollector wiring (3), collect→train pipeline (1), schema (3), CognitiveCycle with experiential (4) |
 | Collect training data from scaffold | P1 | Pending | Run scaffold for N cycles, logging precision weighting inputs → outputs via DataCollector |
-| Train CfC precision cell | P1 | Pending | Supervised training on collected data; validate approximation of scaffold behavior |
-| Wire precision cell into cognitive cycle | P1 | Pending | CfC state summary → LLM input; LLM output → CfC cell input updates |
+| Train CfC precision cell on real data | P1 | Pending | Supervised training on collected data; validate approximation of scaffold behavior |
 | Validate CfC precision vs scaffold precision | P1 | Pending | CfC should approximate then generalize beyond heuristic |
 
 ### 4.2 Expand CfC Layer

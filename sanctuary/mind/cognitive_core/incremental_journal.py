@@ -297,20 +297,49 @@ class IncrementalJournalWriter:
     
     def close(self) -> None:
         """
-        Safely close journal file handles.
-        
+        Safely close journal file handles and remove empty journal files.
+
         Should be called during system shutdown to ensure all data is persisted.
+        Zero-byte journal files (created at init but never written to) are cleaned up.
         """
         with self.write_lock:
             try:
+                current_path = self.current_path
                 if self.current_file:
                     self.current_file.flush()
                     self.current_file.close()
-                    logger.info(f"💾 Closed journal file: {self.current_path}")
+                    logger.info(f"💾 Closed journal file: {current_path}")
                     self.current_file = None
                     self.current_path = None
+
+                # Remove zero-byte journal files left over from inits with no writes
+                self._cleanup_empty_journals(current_path)
             except Exception as e:
                 logger.error(f"❌ Error closing journal file: {e}")
+
+    def _cleanup_empty_journals(self, just_closed: Optional[Path] = None) -> int:
+        """
+        Remove zero-byte journal files from the journal directory.
+
+        Args:
+            just_closed: Path of the file just closed (included in cleanup check)
+
+        Returns:
+            Number of empty files removed
+        """
+        removed = 0
+        for journal_path in self.journal_dir.glob("journal_*.jsonl"):
+            try:
+                if journal_path.stat().st_size == 0:
+                    journal_path.unlink()
+                    removed += 1
+                    logger.debug(f"🧹 Removed empty journal: {journal_path.name}")
+            except OSError:
+                pass  # File may have been removed concurrently
+
+        if removed:
+            logger.info(f"🧹 Cleaned up {removed} empty journal file(s)")
+        return removed
     
     def get_stats(self) -> Dict[str, Any]:
         """

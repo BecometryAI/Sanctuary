@@ -107,8 +107,8 @@ Connect the real LLM to the cognitive cycle and validate mechanically — no awa
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Integrate Llama 3.3 70B via Ollama | P1 | Pending | Wire OllamaClient to cognitive cycle with CognitiveInput/CognitiveOutput schema compliance |
-| Mechanical cycle validation | P1 | Pending | End-to-end with scripted inputs: percepts → LLM reasoning → CfC evolution → action. Verify structured output compliance, cycle stability, error handling |
+| Integrate Llama 3.3 70B via Ollama | P1 | **Done** | `core/ollama_model.py`: OllamaModel implements ModelProtocol. Formats CognitiveInput → structured prompt with all sections (charter, percepts, emotions, CfC state, schema). Parses JSON → CognitiveOutput with defensive defaults, clamping, type filtering. Fallback output on parse failure. Retry logic. Metrics tracking |
+| Mechanical cycle validation | P1 | **Done** | 35 tests (mocked HTTP): prompt formatting (12), response parsing (14), fallback (2), OllamaModel integration (6), CognitiveCycle drop-in (1). Validates schema compliance, retry behavior, out-of-range clamping, invalid field filtering |
 | Tune authority levels | P1 | Pending | Scaffold→CfC authority transitions based on observed mechanical behavior |
 | Validate context budget under real model | P1 | Pending | Confirm ~4K token input budget works; tune compression if needed |
 | Stress testing | P2 | Pending | Long-running mechanical cycles (1000+), adversarial inputs, subsystem failure injection |

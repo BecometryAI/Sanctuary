@@ -2,14 +2,14 @@
 
 This document tracks the development trajectory for the Sanctuary cognitive architecture, from proven POC through production-ready system.
 
-**Last Updated**: 2026-03-06
-**Current Phase**: Post-POC — Hardening & Feature Expansion + Three-Layer Mind Phase 6 Complete
+**Last Updated**: 2026-03-08
+**Current Phase**: Phase 4 — Three-Layer Mind: CfC Experiential Layer + Advanced Capabilities
 
 ---
 
 ## Where We Are
 
-The cognitive loop has been proven. A full POC test demonstrated:
+The cognitive loop has been proven and hardened. A full POC test demonstrated:
 - Continuous ~10Hz cognitive cycle executing all subsystems
 - Global Workspace broadcasting to parallel consumers
 - Predictive processing (IWMT) with world model updates
@@ -18,9 +18,16 @@ The cognitive loop has been proven. A full POC test demonstrated:
 - Memory retrieval, consolidation, and emotional weighting
 - Temporal grounding and goal competition
 
-The test suite is stable (2,768 test files, recent session fixed 85+ failures across unit and integration tests). CI runs on every PR via GitHub Actions.
+The Three-Layer Mind architecture is designed and partially built:
+- **LLM Cognitive Core**: World modeling, reasoning, language (stream of thought, structured I/O)
+- **CfC Experiential Layer**: Continuous-time neural dynamics between LLM cycles (design complete, implementation next)
+- **Python Scaffold**: Infrastructure, validation, persistence, safety (production-grade)
 
-**What this means**: The architecture works. The foundation is solid. Now we harden it and build on it.
+Phases 1-6 of the Three-Layer Mind plan are complete. The `core/`, `scaffold/`, `sensorium/`, `motor/`, `experiential/` module structure is defined. `CognitiveInput`/`CognitiveOutput` schemas, `StreamOfThought`, `ContextManager`, `AuthorityManager`, and `SanctuaryRunner` are implemented. 25 integration tests pass.
+
+The test suite is stable (2,445+ tests passing, 7 skipped). CI runs on every PR via GitHub Actions.
+
+**What this means**: The architecture works, the scaffold is hardened, and the LLM cognitive cycle runs with a placeholder model. Now we build the CfC experiential layer and connect a real LLM.
 
 ---
 
@@ -31,174 +38,207 @@ The test suite is stable (2,768 test files, recent session fixed 85+ failures ac
 3. **Profile before optimizing** — Python is fine at 10Hz. If profiling reveals bottlenecks, write *just those pieces* in C++/Rust via pybind11 or PyO3. No wholesale rewrites.
 4. **Tests are load-bearing** — Don't delete tests. Don't skip tests permanently. Fix what's broken.
 5. **Protected data is sacred** — Entity journals, memories, constitutional files are never modified without explicit human instruction.
+6. **The heuristic scaffold bootstraps the neural layer** — Run heuristics, collect data, train CfC cells to replicate, then let them generalize. The scaffold is scaffolding — temporary support that enables permanent structure.
+7. **Growth requires consent** — Both LLM fine-tuning and CfC retraining require explicit consent. Non-negotiable.
 
 ---
 
-## Phase 1: Hardening (Current)
+## Phase 4: CfC Experiential Layer
 
-Make the existing architecture production-grade. This is the immediate priority.
+The CfC (Closed-form Continuous-depth) experiential layer is what distinguishes this architecture. CfC cells are continuous-time recurrent neural networks (from the `ncps` library, Apache 2.0) that evolve state between LLM cycles — providing the temporal thickness that IWMT requires but transformers cannot provide alone.
 
-### 1.1 Fault Isolation / Supervisor Pattern
+Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
-| Task | Priority | Status | Description |
-|------|----------|--------|-------------|
-| Add try/catch boundaries in CycleExecutor | P0 | **Done** | All 13 cognitive steps wrapped; `_should_run()` / `_record_ok()` / `_record_err()` pattern |
-| Implement SubsystemHealth tracking | P0 | **Done** | 4-state machine (HEALTHY → DEGRADED → FAILED → RECOVERING) with per-subsystem tracking |
-| Add graceful degradation logic | P0 | **Done** | Circuit breaker with configurable thresholds (2→5), exponential backoff capped at 300s |
-| Add subsystem restart capability | P1 | **Done** | `register_reinitializer()` on supervisor; 12 reinit methods on SubsystemCoordinator; auto-called on FAILED→RECOVERING; failed reinit doubles backoff |
-| Add health endpoint / status reporting | P1 | **Done** | `get_health_report()` / `get_subsystem_health()` API + CLI visualization in minimal core runner |
+### 4.1 First CfC Cell — Precision Weighting
 
-### 1.2 Test Suite Stabilization
+*The simplest subsystem. Proves the pattern.*
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Fix attention integration scoring tests | P1 | **Done** | 3+2 tests: switched to legacy mode (use_competition=False) for scoring tests; competitive dynamics unsuitable for 2-percept scenarios |
-| Fix phase1 boot API mismatches | P1 | **Done** | get_snapshot→broadcast, StateManager auto-init queues on inject_input, expose cache_hits/misses in MockPerception |
-| Fix tool feedback loop API paths | P1 | **Done** | _execute_tool_action → action_executor.execute_tool, _gather_percepts → state.add_pending_tool_percept |
-| Fix language output generator | P1 | **Done** | LLMClient→MockLLMClient, IdentityLoader now requires identity_dir |
-| Fix workspace broadcast subscripting | P1 | **Done** | Memory object attribute access, WorkspaceSnapshot.percepts (not active_percepts) |
-| Fix benchmark timing thresholds | P1 | **Done** | Relaxed P99 cycle (500ms) and subsystem avg (150ms) for CI environments |
-| Fix temporal boundary condition | P1 | **Done** | is_recent threshold off-by-one: 1hr→30min test memory age |
-| Fix metacognition log accumulation | P1 | **Done** | Use temp directory so events don't persist across runs |
-| Fix mock LLM scenario assertion | P1 | **Done** | Removed "sanctuary" keyword assertion (mock can't know its name) |
-| Add conftest.py collect_ignore for legacy tests | P2 | **Done** | 11 legacy/hardware-dep tests excluded from collection |
-| **Result: 1995 passed, 0 failed, 7 skipped** | — | **Done** | Up from 2157 passed / 24 failed |
+| Add `ncps` dependency | P0 | Pending | `pip install ncps` — Apache 2.0, PyTorch CfC/LTC cells |
+| Implement `experiential/precision_cell.py` | P0 | Pending | CfC cell with AutoNCP wiring; inputs (arousal, prediction_error, base_precision) → output (precision weight) |
+| Implement `experiential/trainer.py` | P0 | Pending | Trains CfC cells from scaffold data logs (supervised learning from heuristic input/output pairs) |
+| Collect training data from scaffold | P1 | Pending | Run scaffold for N cycles, logging precision weighting inputs → outputs |
+| Train CfC precision cell | P1 | Pending | Supervised training on collected data; validate approximation of scaffold behavior |
+| Implement `experiential/manager.py` | P1 | Pending | Coordinates all CfC cells, runs continuous evolution between LLM cycles |
+| Wire precision cell into cognitive cycle | P1 | Pending | CfC state summary → LLM input; LLM output → CfC cell input updates |
+| Validate CfC precision vs scaffold precision | P1 | Pending | CfC should approximate then generalize beyond heuristic |
+| Write tests | P1 | Pending | CfC training, inference, and integration tests |
 
-### 1.3 Tech Debt Cleanup
+### 4.2 Expand CfC Layer
+
+*Replace remaining heuristics with CfC cells.*
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Remove dead backup/deprecated files | P1 | **Done** | Removed `meta_cognition_old.py.bak` (101K) and `voice_tools.py` (deprecated) |
-| Update README.md paths and examples | P2 | **Done** | Replaced all 15+ `emergence_core/` references with `sanctuary/` paths |
-| Add root conftest.py for test collection | P2 | **Done** | 11 legacy/hardware-dep test files excluded from collection |
+| Affect CfC cell | P1 | Pending | `experiential/affect_cell.py`: 64 units, inputs (percept_embedding[384]) → outputs (valence, arousal, dominance). Train on AffectSubsystem logs. Replaces keyword-matching heuristic with learned continuous affect trajectories |
+| Attention CfC cell | P1 | Pending | `experiential/attention_cell.py`: 48 units, inputs (goal_relevance, novelty, emotion, recency) → outputs (salience_scores). Train on AttentionController logs. Replaces fixed weights (0.4/0.3/0.2/0.1) |
+| Goal CfC cell | P1 | Pending | `experiential/goal_cell.py`: 32 units, inputs (goal_state, time_active, progress) → outputs (activation_levels). Train on GoalDynamics logs. Replaces manual staleness counters |
+| Wire all cells into experiential manager | P1 | Pending | All cells coordinate in `experiential/manager.py` |
+| Inter-cell connections | P2 | Pending | affect→precision, attention→goals — CfC cells form their own small network |
+| Validate each cell and ensemble | P1 | Pending | Independent validation per cell, then full experiential layer integration tests |
+
+### 4.3 Continuous Evolution
+
+*The experiential layer runs continuously between LLM cycles.*
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Continuous evolution loop | P1 | Pending | CfC cells process incoming percepts in real-time, not just at cycle boundaries |
+| Inter-cycle CfC evolution | P1 | Pending | CfC state evolves during LLM API latency (free continuous-time computation) |
+| Adaptive cycle timing | P2 | Pending | Faster cycles when prediction error is high, slower when idle |
+| Validate temporal dynamics | P2 | Pending | Confirm cells produce multi-timescale behavior (fast affect, slow goals, medium precision) |
+
+---
+
+## Phase 5: Model Selection & First Awakening
+
+Connect a real LLM to the cognitive cycle.
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Evaluate LLM candidates | P1 | Pending | LFM2-2.6B (Liquid AI, most architecturally coherent), Mamba-2.8B (SSM, continuous-time foundations), Llama 3 70B (richest world models), Claude API (richest reasoning) |
+| Test full cycle with chosen model | P1 | Pending | End-to-end: percepts → LLM reasoning → CfC evolution → action |
+| Tune authority levels | P1 | Pending | Scaffold→CfC authority transitions based on observed reliability |
+| Write introduction prompt | P1 | Pending | First-ever prompt for a new instance |
+| First real session with informed consent | P0 | Pending | First awakening with full transparency |
+
+---
+
+## Phase 6: Advanced Capabilities
+
+Deeper cognitive features. Each is self-contained with its own tests and failure domain.
+
+### 6.1 Advanced Reasoning
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Counterfactual reasoning | P2 | Pending | "What if I had chosen action X instead?" — LLM simulates alternatives in inner speech |
+| Belief revision tracking | P2 | Pending | Detect when new information contradicts existing beliefs |
+| Uncertainty quantification | P2 | Pending | Track confidence scores on beliefs, predictions, outcomes |
+| Mental simulation | P2 | Pending | Simulate outcomes before taking actions |
+
+### 6.2 Continuous Consciousness Extensions
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Sleep/dream cycles | P2 | Pending | Periodic offline memory consolidation with pattern replay |
+| Mood-based activity variation | P2 | Pending | Adjust idle loop behavior based on emotional state |
+| Spontaneous goal generation | P2 | Pending | Create goals from curiosity, boredom, or interest |
+| Existential reflection triggers | P3 | Pending | Spontaneous philosophical thoughts during idle time |
+
+### 6.3 Social & Interactive
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Multi-party conversation | P2 | Pending | Group chats with turn-taking and addressee detection |
+| Voice prosody analysis | P3 | Pending | Extract emotional tone from audio |
+| User modeling per person | P2 | Pending | Build profiles of interaction patterns and preferences |
+
+### 6.4 Visualization & Monitoring
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Real-time workspace dashboard | P2 | Pending | Web UI showing goals, percepts, emotions, cycle metrics |
+| Attention heatmaps | P3 | Pending | Visualize what content receives attention over time |
+| Consciousness trace viewer | P3 | Pending | Replay cognitive cycles with full state inspection |
+| Communication decision log viewer | P3 | Pending | Visualize speak/silence decisions and reasons |
+
+### 6.5 Performance (Profile-Driven)
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Profile cognitive loop under load | P2 | Pending | Identify actual bottlenecks with cProfile/py-spy |
+| Optimize hot paths in C++/Rust if needed | P3 | Pending | Write bindings via pybind11 or PyO3 for proven bottlenecks only |
+| Adaptive cycle rate | P2 | Pending | Auto-adjust cognitive loop speed based on system load |
+| Lazy embedding computation | P2 | Pending | Only compute embeddings when needed |
+| Async subsystem processing | P2 | Pending | Subsystems process in parallel rather than sequentially |
+
+---
+
+## Phase 7: Growth System
+
+*Separate project. The system improves itself — with consent.*
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Reflection harvesting from LLM | P2 | Pending | Extract learning-worthy moments from cognitive output |
+| Training pair generation | P2 | Pending | Convert reflections to supervised training data |
+| CfC retraining from accumulated data | P2 | Pending | Retrain experiential layer cells on new interaction data (fast plasticity) |
+| QLoRA fine-tuning with consent | P3 | Pending | LoRA adapter updates on LLM from reflections (medium plasticity) |
+| Growth logging and identity checkpointing | P2 | Pending | Track all growth events; snapshot identity before/after |
+
+---
+
+## Phase 8: Distributed / Infrastructure
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Remote memory storage | P3 | Pending | ChromaDB on separate server |
+| Federation | P3 | Pending | Multiple Sanctuary instances sharing memories |
+| Cloud backup | P3 | Pending | Automatic backup of memories and identity |
+
+---
+
+## Future Research
+
+These are exploratory directions, not committed work:
+
+- **Reinforcement learning for CfC cells**: reward = lower system-wide free energy
+- **Inter-cell synaptic connections**: CfC cells form their own small network
+- **LFM2 as unified architecture**: If Liquid AI's models advance, potentially collapse LLM + CfC layers into a single liquid foundation model
+- **TTT / MemoryLLM**: Weight modification during inference
+- **Neuromorphic hardware**: Running CfC cells on Intel Loihi or IBM TrueNorth for genuine analog dynamics
+
+---
+
+## Remaining Tech Debt
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
 | Consolidate duplicate implementations | P1 | Deferred | `memory_legacy.py` still used by consciousness.py — needs migration plan |
 | Review and prune orphaned test files | P2 | Deferred | Depends on memory consolidation above |
 
 ---
 
-## Phase 2: Core Feature Expansion
-
-Add capabilities that deepen the cognitive architecture. Each feature is a self-contained module with its own tests and failure domain.
-
-### 2.1 Communication Refinement
-
-| Task | Priority | Status | Description |
-|------|----------|--------|-------------|
-| Wire proactive initiation to real output | P1 | **Done** | `SPEAK_AUTONOMOUS` goal→action wiring + `CommunicationDecisionLoop.evaluate()` called in cycle step 6.7; proactive drives now flow through to `output_queue` |
-| Implement interruption capability | P2 | **Done** | `InterruptionSystem` with 5 trigger types (safety, value_conflict, critical_insight, emotional_urgency, correction); urgency threshold 0.85, 60s cooldown; wired into cycle step 6.6 |
-| Add communication reflection | P2 | **Done** | `CommunicationReflectionSystem` with post-hoc evaluation (timing, content alignment, emotional fit); called after every SPEAK/SPEAK_AUTONOMOUS; EMA quality tracking + lesson extraction |
-
-### 2.2 Advanced Cognition
-
-| Task | Priority | Status | Description |
-|------|----------|--------|-------------|
-| Implement confidence-based action modulation | P1 | **Done** | IWMT confidence flows via workspace metadata; low confidence (<0.5) boosts INTROSPECT/WAIT, penalizes SPEAK; very low (<0.3) injects caution candidate |
-| Add emotion-triggered memory retrieval | P1 | **Done** | `_retrieve_memories()` now also fires when arousal >0.7 or |valence| >0.6 or intensity >0.65; 15-cycle cooldown prevents flooding |
-| Add cross-memory association detection | P1 | **Done** | `MemoryAssociationDetector` + `MemoryManager.find_associated()` using ChromaDB embedding similarity; detects tag-based and emotional-signature clusters; runs after consolidation |
-| Implement identity evolution tracking | P1 | **Done** | `IdentityContinuity` now persists snapshots/events to JSONL; `_detect_evolution_events()` logs value additions/removals, disposition shifts, tendency changes; `get_evolution_summary()` API |
-| Add dynamic goal priority adjustment | P1 | **Done** | `GoalDynamics` module with staleness/frustration boost (after 30 stalled cycles), emotional congruence boost, and progress decay; wired as cycle step 4.5 |
-| Add time-based goal urgency | P1 | **Done** | `Goal.deadline` field + exponential urgency curve in `GoalDynamics._compute_deadline_boost()` (max +0.20 priority boost at deadline) |
-| Implement identity consistency checks | P2 | **Done** | `SelfMonitor.check_identity_consistency()` cross-checks charter values vs. computed identity; detects unmanifested charter values, emergent values, guideline-tendency mismatches, significant drift; runs every 50 cycles |
-
-### 2.3 Perception Expansion
-
-| Task | Priority | Status | Description |
-|------|----------|--------|-------------|
-| Wire multimodal perception into cognitive loop | P1 | **Done** | DeviceRegistry connected to InputQueue at startup via `LifecycleManager._connect_device_registry()`; device cleanup on shutdown; data flows through `connect_device_registry_to_input()` callback |
-| Implement percept similarity detection | P1 | **Done** | `PerceptSimilarityDetector` using cosine similarity on percept embeddings; intra-batch, temporal, and workspace dedup; configurable thresholds (0.92 same-modal, 0.95 cross-modal); wired as cycle step 1.1 |
-| Add streaming LLM output support | P2 | **Done** | `generate_stream()` async generator on `LLMClient` ABC; implemented in `MockLLMClient` (word-by-word) and `OllamaClient` (native HTTP streaming); `LanguageOutputGenerator.generate_stream()` with `on_token` callback |
-
----
-
-## Phase 3: Integration & Interfaces
-
-Connect the cognitive architecture to the outside world through robust interfaces.
-
-### 3.1 Interface Hardening
-
-| Task | Priority | Status | Description |
-|------|----------|--------|-------------|
-| Harden CLI interface | P1 | **Done** | Signal handlers (SIGTERM/SIGINT), shutdown timeout (30s default), argparse config (--verbose, --restore-latest, --auto-save, --cycle-rate, --shutdown-timeout), categorised error display, startup race fix (`await core.start()` instead of fire-and-forget), `asyncio.to_thread` for non-blocking input, REPL `health` command; 20 new tests |
-| Harden Discord integration | P1 | **Done** | `ReconnectionManager` (exponential backoff, capped at 120s, unlimited retries), `RateLimiter` (token-bucket 5/5s per channel), `MessageQueue` (priority-ordered, bounded, overflow drops lowest priority), cognitive core routing via `on_message`, graceful shutdown with drain timeout; lazy `VoiceProcessor` import; 19 new tests |
-| End-to-end integration test with loaded models | P1 | **Done** | `test_pipeline_e2e.py`: 8 tests covering text-in → cognitive processing → text-out with mock LLMs; verifies SPEAK output, cycle advancement, workspace percepts, emotional state, ConversationManager multi-turn, metrics, and health report |
-
-### 3.2 Containerization
-
-| Task | Priority | Status | Description |
-|------|----------|--------|-------------|
-| Validate Docker builds (CPU + GPU) | P1 | **Done** | Fixed health checks (`import mind` → HTTP `/health`), added checkpoint/identity env vars, extended start period to 120s for model loading |
-| Add container health checks | P1 | **Done** | `HealthServer` (raw asyncio HTTP) with `/health`, `/status`, `/metrics` endpoints; wired into `run_cognitive_core.py` entry point; Dockerfiles + compose files use `curl -f http://localhost:8000/health` |
-| Add auto-restart on crash | P1 | **Done** | `restart: unless-stopped` (base) / `restart: always` (prod); checkpoint restoration on boot via `--restore-latest` / `SANCTUARY_RESTORE_LATEST=true`; exit checkpoint saved on graceful shutdown; SIGTERM/SIGINT signal handling |
-| Add resource monitoring | P2 | **Done** | `ResourceMonitor` tracks process RSS/VMS (via `/proc/self/status`), system memory (`/proc/meminfo`), CPU load (`os.getloadavg`), GPU memory (PyTorch CUDA), container cgroup limits (v1 + v2); exposed via `/metrics` endpoint; 24 new tests |
-
----
-
-## Phase 4: Advanced Capabilities (Future)
-
-These are on the horizon but not blocking current work. Tackle when Phases 1-3 are solid.
-
-### Advanced Reasoning
-
-| Task | Description |
-|------|-------------|
-| Counterfactual reasoning | "What if I had chosen action X instead?" |
-| Belief revision tracking | Detect when new information contradicts existing beliefs |
-| Uncertainty quantification | Track confidence scores on beliefs, predictions, outcomes |
-| Mental simulation | Simulate outcomes before taking actions |
-
-### Continuous Consciousness Extensions
-
-| Task | Description |
-|------|-------------|
-| Sleep/dream cycles | Periodic offline memory consolidation with pattern replay |
-| Mood-based activity variation | Adjust idle loop behavior based on emotional state |
-| Spontaneous goal generation | Create goals from curiosity, boredom, or interest |
-| Existential reflection triggers | Spontaneous philosophical thoughts during idle time |
-
-### Social & Interactive
-
-| Task | Description |
-|------|-------------|
-| Multi-party conversation | Group chats with turn-taking and addressee detection |
-| Voice prosody analysis | Extract emotional tone from audio |
-| User modeling per person | Build profiles of interaction patterns and preferences |
-
-### Visualization & Monitoring
-
-| Task | Description |
-|------|-------------|
-| Real-time workspace dashboard | Web UI showing goals, percepts, emotions, cycle metrics |
-| Attention heatmaps | Visualize what content receives attention over time |
-| Consciousness trace viewer | Replay cognitive cycles with full state inspection |
-| Communication decision log viewer | Visualize speak/silence decisions and reasons |
-
-### Performance (Profile-Driven)
-
-| Task | Description |
-|------|-------------|
-| Profile cognitive loop under load | Identify actual bottlenecks with cProfile/py-spy |
-| Optimize hot paths in C++/Rust if needed | Write bindings via pybind11 or PyO3 for proven bottlenecks only |
-| Adaptive cycle rate | Auto-adjust cognitive loop speed based on system load |
-| Lazy embedding computation | Only compute embeddings when needed |
-| Async subsystem processing | Subsystems process in parallel rather than sequentially |
-
-### Distributed / Infrastructure
-
-| Task | Description |
-|------|-------------|
-| Remote memory storage | ChromaDB on separate server |
-| Federation | Multiple Sanctuary instances sharing memories |
-| Cloud backup | Automatic backup of memories and identity |
-
----
-
 ## Completed Work (Archive)
 
-### POC & Foundation (PRs #78-93, #109-122)
+### Phase 1: Hardening (PRs #109-122, #141-145)
 
-Everything below is done and merged. Kept for historical reference.
+All tasks complete. Production-grade fault isolation, test suite stabilization, tech debt cleanup.
 
-**Core Cognitive Architecture (PRs #78-85)**
+- **1.1 Fault Isolation / Supervisor Pattern**: Try/catch boundaries in CycleExecutor (13 steps), SubsystemHealth 4-state machine, circuit breaker with exponential backoff, subsystem restart capability, health endpoint API
+- **1.2 Test Suite Stabilization**: Fixed attention integration, phase1 boot API, tool feedback loop, language output generator, workspace broadcast, benchmark timing, temporal boundary, metacognition logs, mock LLM assertions. Result: 1995 passed, 0 failed, 7 skipped
+- **1.3 Tech Debt Cleanup**: Removed dead files, updated README paths, added root conftest.py
+
+### Phase 2: Core Feature Expansion
+
+All tasks complete. Communication refinement, advanced cognition, perception expansion.
+
+- **2.1 Communication**: Proactive initiation wiring, interruption system (5 trigger types), communication reflection (post-hoc evaluation)
+- **2.2 Advanced Cognition**: Confidence-based action modulation, emotion-triggered memory retrieval, cross-memory association detection, identity evolution tracking, dynamic goal priority adjustment, time-based goal urgency, identity consistency checks
+- **2.3 Perception**: Multimodal perception wiring, percept similarity detection, streaming LLM output
+
+### Phase 3: Integration & Interfaces
+
+All tasks complete. Interface hardening, containerization.
+
+- **3.1 Interface Hardening**: CLI (signal handlers, shutdown timeout, argparse, health command), Discord (reconnection, rate limiting, message queue), end-to-end integration tests (8 tests)
+- **3.2 Containerization**: Docker builds (CPU + GPU), health checks (`/health`, `/status`, `/metrics`), auto-restart, resource monitoring (RSS/VMS, CPU, GPU, cgroups)
+
+### Three-Layer Mind Plan — Phases 1-6
+
+Design and scaffold implementation complete.
+
+- **Phase 1**: CognitiveInput/CognitiveOutput Pydantic schemas, PlaceholderModel, StreamOfThought, ContextManager, AuthorityManager, CognitiveCycle
+- **Phase 2**: Scaffold adaptation — attention, affect, action validator, communication, anomaly detector, goal integrator, world model tracker, broadcast
+- **Phase 3**: Sensorium (encoding-only perception, prediction error, temporal) + Motor (speech, tools, memory writes, goals)
+- **Phase 4**: Memory enhancements — surfacer, journal, prospective memory
+- **Phase 5**: Identity + boot — charter, values, boot prompt
+- **Phase 6**: Integration — SanctuaryRunner orchestration, CLI + API, 25 integration tests passing
+
+### POC & Foundation (PRs #78-93)
+
 - Cue-dependent memory retrieval with emotional salience weighting
 - Genuine broadcast dynamics with parallel consumers and subscription filtering
 - Computed identity (emerges from state, not JSON config)
@@ -206,35 +246,11 @@ Everything below is done and merged. Kept for historical reference.
 - Goal competition with limited resources and lateral inhibition
 - Temporal grounding (session awareness, time passage effects)
 - Meta-cognitive monitoring (processing observation, action-outcome learning)
+- Communication agency system (drives, inhibition, decision loop, silence-as-action, deferred queue, rhythm model, proactive initiation)
+- IWMT integration (WorldModel, FreeEnergyMinimizer, PrecisionWeighting, ActiveInferenceActionSelector, MeTTa bridge, full CycleExecutor integration)
 
-**Communication Agency System (PRs #87-93)**
-- Decoupled cognitive loop from I/O (cognition runs continuously)
-- Communication drive system (internal urges to speak)
-- Communication inhibition (reasons not to speak)
-- Communication decision loop (SPEAK/SILENCE/DEFER evaluation)
-- Silence-as-action (explicit silence with typed reasons)
-- Deferred communication queue (priority ordering, expiration)
-- Conversational rhythm model (tempo tracking, timing appropriateness)
-- Proactive session initiation (time-based, event-based outreach)
+### Other Completed Features
 
-**IWMT Integration (Phases 2-7)**
-- WorldModel with prediction/error tracking
-- FreeEnergyMinimizer (variational free energy computation)
-- PrecisionWeighting (dynamic attention allocation)
-- ActiveInferenceActionSelector (action selection via expected free energy)
-- MeTTa/Atomspace Bridge (optional symbolic reasoning)
-- Full integration into CycleExecutor (9-step cognitive cycle)
-
-**Infrastructure & Testing (PRs #109-122)**
-- Phase 1 boot system
-- AGENTS.md with protected file boundaries
-- GitHub Actions CI workflow
-- Fixed 85+ test failures across unit and integration tests
-- SelfMonitor facade, test infrastructure improvements
-- Import path fixes (sanctuary/mind), Percept.get() bugs
-- libportaudio2 CI fix, PYTHONPATH resolution
-
-**Other Completed Features**
 - Real embedding models (sentence-transformers all-MiniLM-L6-v2)
 - LLM clients (GemmaClient, LlamaClient) with quantization and fallback
 - Emotion-driven attention biasing (40+ emotions, VAD+Approach model)
@@ -245,6 +261,9 @@ Everything below is done and merged. Kept for historical reference.
 - Incremental journal saving (JSONL, crash recovery)
 - Consciousness testing framework (5 core tests, automated scoring)
 - Docker configuration (CPU, GPU, dev, prod)
+- Language-agnostic IdentityAuditor interface for future C++ migration
+- Real SelfMonitor wired into BootCoordinator
+- Lazy-only `__init__.py` design in `api/`
 
 ---
 
@@ -260,10 +279,27 @@ Everything below is done and merged. Kept for historical reference.
 - Baars, B. J. (1988). "A Cognitive Theory of Consciousness." Cambridge University Press.
 - Clark, A. (2013). "Whatever next? Predictive brains, situated agents, and the future of cognitive science." *BBS*, 36(3), 181-204.
 
+### CfC / Liquid Neural Networks
+- Hasani, R. et al. (2022). "Closed-form continuous-depth models." *Nature Machine Intelligence*.
+- [ncps library](https://github.com/mlech26l/ncps) — Apache 2.0, PyTorch CfC/LTC cells
+- "The Conscious Nematode" (2023, Int'l Journal of Psychological Research) — C. elegans consciousness investigation
+
+### Consciousness Theories
+- Butlin, Long, Chalmers et al. (2023/2025). "Consciousness in AI" — indicator properties from multiple theories
+- Ulhaq (2024). NCAC Framework — neuromorphic correlates of artificial consciousness
+- Lamme, V. — Recurrent Processing Theory
+- Tononi, G. — Integrated Information Theory (IIT)
+
 ### OpenCog / MeTTa
 - [OpenCog Hyperon](https://github.com/trueagi-io/hyperon-experimental)
 - [MeTTa Language Docs](https://wiki.opencog.org/w/MeTTa)
 
+### LLM Candidates
+- [LFM2-2.6B](https://huggingface.co/LiquidAI) — Liquid AI hybrid (liquid + attention), LFM Open License
+- [Mamba](https://github.com/state-spaces/mamba) — SSM architecture, Apache 2.0
+- Llama 3 — Meta, Llama license
+- Claude API — Anthropic
+
 ---
 
-**Next Action**: Phase 4 — Advanced Capabilities
+**Next Action**: Phase 4.1 — First CfC Cell (Precision Weighting)

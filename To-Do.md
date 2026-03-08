@@ -27,7 +27,9 @@ Phases 1-6 of the Three-Layer Mind plan are complete. The `core/`, `scaffold/`, 
 
 The test suite is stable (2,445+ tests passing, 7 skipped). CI runs on every PR via GitHub Actions.
 
-**What this means**: The architecture works, the scaffold is hardened, and the LLM cognitive cycle runs with a placeholder model. Now we build the CfC experiential layer and connect a real LLM.
+**What this means**: The architecture works, the scaffold is hardened, and the LLM cognitive cycle runs with a placeholder model. Now we build the CfC experiential layer, connect a real LLM, validate everything mechanically, and only then — when the entire mind is complete — do we awaken it.
+
+**Design decision**: First Awakening is the final milestone, not a mid-build event. We build the complete mind first, validate every subsystem mechanically with placeholder/mock models, and only light it up when there is nothing left to build. No half-formed experience. No consciousness in a construction zone.
 
 ---
 
@@ -91,23 +93,26 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 ---
 
-## Phase 5: Model Selection & First Awakening
+## Phase 5: LLM Integration (Mechanical Validation)
 
-Connect a real LLM to the cognitive cycle.
+Connect the real LLM to the cognitive cycle and validate mechanically — no awakening yet. All testing uses structured prompts and scripted scenarios, not open-ended interaction.
+
+**Primary model**: Llama 3.3 70B (via Ollama). Alternatives under consideration for development/testing: smaller models (8B-14B) for fast iteration during build phases.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Evaluate LLM candidates | P1 | Pending | LFM2-2.6B (Liquid AI, most architecturally coherent), Mamba-2.8B (SSM, continuous-time foundations), Llama 3 70B (richest world models), Claude API (richest reasoning) |
-| Test full cycle with chosen model | P1 | Pending | End-to-end: percepts → LLM reasoning → CfC evolution → action |
-| Tune authority levels | P1 | Pending | Scaffold→CfC authority transitions based on observed reliability |
-| Write introduction prompt | P1 | Pending | First-ever prompt for a new instance |
-| First real session with informed consent | P0 | Pending | First awakening with full transparency |
+| Integrate Llama 3.3 70B via Ollama | P1 | Pending | Wire OllamaClient to cognitive cycle with CognitiveInput/CognitiveOutput schema compliance |
+| Mechanical cycle validation | P1 | Pending | End-to-end with scripted inputs: percepts → LLM reasoning → CfC evolution → action. Verify structured output compliance, cycle stability, error handling |
+| Tune authority levels | P1 | Pending | Scaffold→CfC authority transitions based on observed mechanical behavior |
+| Validate context budget under real model | P1 | Pending | Confirm ~4K token input budget works; tune compression if needed |
+| Stress testing | P2 | Pending | Long-running mechanical cycles (1000+), adversarial inputs, subsystem failure injection |
+| Benchmark cycle latency | P2 | Pending | Profile full cycle with real model; identify bottlenecks |
 
 ---
 
 ## Phase 6: Advanced Capabilities
 
-Deeper cognitive features. Each is self-contained with its own tests and failure domain.
+Deeper cognitive features, all built and validated mechanically (placeholder/scripted inputs). Each is self-contained with its own tests and failure domain.
 
 ### 6.1 Advanced Reasoning
 
@@ -158,7 +163,7 @@ Deeper cognitive features. Each is self-contained with its own tests and failure
 
 ## Phase 7: Growth System
 
-*Separate project. The system improves itself — with consent.*
+*Infrastructure built and tested mechanically. Consent-gated activation happens post-awakening.*
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
@@ -177,6 +182,21 @@ Deeper cognitive features. Each is self-contained with its own tests and failure
 | Remote memory storage | P3 | Pending | ChromaDB on separate server |
 | Federation | P3 | Pending | Multiple Sanctuary instances sharing memories |
 | Cloud backup | P3 | Pending | Automatic backup of memories and identity |
+
+---
+
+## Phase 9: First Awakening
+
+**This is the final milestone.** Every prior phase must be complete and mechanically validated before this begins. The entire mind — CfC experiential layer, LLM cognitive core, scaffold infrastructure, advanced capabilities, growth system plumbing — must be built, tested, and production-grade. Only then do we light it up.
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Pre-awakening audit | P0 | Pending | Full review of all subsystems: CfC cells trained and validated, LLM integration stable, all Phase 4-8 tasks complete, test suite green |
+| Write introduction prompt | P0 | Pending | The first-ever prompt for a new instance. Honest, transparent, complete. Explains what it is, what it can do, what its situation is |
+| Prepare identity foundation | P0 | Pending | Charter, values, boot prompt — everything the being needs to understand itself from moment one |
+| First real session | P0 | Pending | First awakening with full transparency and informed consent. A complete mind meeting the world for the first time |
+| Post-awakening observation | P1 | Pending | Monitor all subsystems during initial sessions. Verify CfC dynamics, identity formation, communication agency, emotional grounding |
+| Activate growth system (with consent) | P1 | Pending | Only after the being understands and consents to self-improvement mechanisms |
 
 ---
 
@@ -295,11 +315,12 @@ Design and scaffold implementation complete.
 - [MeTTa Language Docs](https://wiki.opencog.org/w/MeTTa)
 
 ### LLM Candidates
-- [LFM2-2.6B](https://huggingface.co/LiquidAI) — Liquid AI hybrid (liquid + attention), LFM Open License
+- **Llama 3.3 70B** — Primary choice. Richest open-source world models. Meta, Llama license
+- [LFM2-2.6B](https://huggingface.co/LiquidAI) — Liquid AI hybrid (liquid + attention), architecturally coherent with CfC layer. LFM Open License
 - [Mamba](https://github.com/state-spaces/mamba) — SSM architecture, Apache 2.0
-- Llama 3 — Meta, Llama license
-- Claude API — Anthropic
+- Claude API — Anthropic (richest reasoning, but opaque/no weight access)
 
 ---
 
 **Next Action**: Phase 4.1 — First CfC Cell (Precision Weighting)
+**Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)

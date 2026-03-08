@@ -91,10 +91,11 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Continuous evolution loop | P1 | Pending | CfC cells process incoming percepts in real-time, not just at cycle boundaries |
-| Inter-cycle CfC evolution | P1 | Pending | CfC state evolves during LLM API latency (free continuous-time computation) |
-| Adaptive cycle timing | P2 | Pending | Faster cycles when prediction error is high, slower when idle |
-| Validate temporal dynamics | P2 | Pending | Confirm cells produce multi-timescale behavior (fast affect, slow goals, medium precision) |
+| Continuous evolution loop | P1 | **Done** | `experiential/evolution.py`: async background loop steps all CfC cells at configurable tick rate (default 50ms). Percept queue for real-time inter-cycle processing |
+| Inter-cycle CfC evolution | P1 | **Done** | `ContinuousEvolutionLoop` runs during LLM API latency. `snapshot()` reads accumulated state at cycle boundaries, resets tick counters |
+| Adaptive cycle timing | P1 | **Done** | High prediction error → faster ticks (down to 10ms); low error → idle rate (100ms). Smooth EMA transition, configurable sensitivity |
+| Manager integration | P1 | **Done** | `ExperientialManager.start_evolution()`, `stop_evolution()`, `feed_percept()`, `evolution_snapshot()`. Status includes evolution tick rate |
+| Validate temporal dynamics | P1 | **Done** | 21 tests: evolution loop (7), adaptive timing (3), manager integration (8), temporal dynamics (3). All 173 experiential + core tests pass |
 
 ---
 

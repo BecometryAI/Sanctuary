@@ -22,6 +22,12 @@ from typing import Optional
 from sanctuary.core.authority import AuthorityLevel, AuthorityManager
 from sanctuary.experiential.affect_cell import AffectCell, AffectCellConfig
 from sanctuary.experiential.attention_cell import AttentionCell, AttentionCellConfig
+from sanctuary.experiential.evolution import (
+    ContinuousEvolutionLoop,
+    EvolutionConfig,
+    EvolutionSnapshot,
+    PerceptEvent,
+)
 from sanctuary.experiential.goal_cell import GoalCell, GoalCellConfig
 from sanctuary.experiential.precision_cell import PrecisionCell, PrecisionCellConfig
 
@@ -73,6 +79,7 @@ class ExperientialManager:
         affect_config: Optional[AffectCellConfig] = None,
         attention_config: Optional[AttentionCellConfig] = None,
         goal_config: Optional[GoalCellConfig] = None,
+        evolution_config: Optional[EvolutionConfig] = None,
     ):
         self.authority = authority or AuthorityManager()
 
@@ -81,6 +88,10 @@ class ExperientialManager:
         self.affect_cell = AffectCell(affect_config)
         self.attention_cell = AttentionCell(attention_config)
         self.goal_cell = GoalCell(goal_config)
+
+        # Continuous evolution loop (optional, started explicitly)
+        self._evolution_config = evolution_config
+        self._evolution_loop: Optional[ContinuousEvolutionLoop] = None
 
         self._initialized = True
 
@@ -236,6 +247,47 @@ class ExperientialManager:
     def demote_precision(self, reason: str = "") -> AuthorityLevel:
         return self.demote("precision", reason)
 
+    # -- Continuous evolution --
+
+    async def start_evolution(self, config: Optional[EvolutionConfig] = None):
+        """Start the continuous evolution background loop.
+
+        CfC cells will evolve between LLM cycles at adaptive tick rates.
+        """
+        if self._evolution_loop is not None and self._evolution_loop.running:
+            return
+        cfg = config or self._evolution_config
+        self._evolution_loop = ContinuousEvolutionLoop(self, cfg)
+        await self._evolution_loop.start()
+
+    async def stop_evolution(self):
+        """Stop the continuous evolution loop."""
+        if self._evolution_loop is not None:
+            await self._evolution_loop.stop()
+
+    def feed_percept(self, event: PerceptEvent):
+        """Feed a percept event to the evolution loop for inter-cycle processing."""
+        if self._evolution_loop is not None and self._evolution_loop.running:
+            self._evolution_loop.feed_percept(event)
+
+    def update_evolution_context(self, **kwargs):
+        """Update scaffold context for the evolution loop after each LLM cycle."""
+        if self._evolution_loop is not None:
+            self._evolution_loop.update_context(**kwargs)
+
+    def evolution_snapshot(self) -> Optional[EvolutionSnapshot]:
+        """Read accumulated CfC state from the evolution loop.
+
+        Returns None if the evolution loop is not running.
+        """
+        if self._evolution_loop is not None and self._evolution_loop.running:
+            return self._evolution_loop.snapshot()
+        return None
+
+    @property
+    def evolution_running(self) -> bool:
+        return self._evolution_loop is not None and self._evolution_loop.running
+
     def reset(self):
         """Reset all CfC cell hidden states."""
         self.precision_cell.reset_hidden()
@@ -246,13 +298,19 @@ class ExperientialManager:
 
     def get_status(self) -> dict:
         """Status of all experiential cells for monitoring."""
-        return {
+        status = {
             name: {
                 "authority": self.authority.level(func).name,
                 "summary": getattr(self, f"{name}_cell").get_summary(),
             }
             for name, func in _AUTH.items()
         }
+        if self._evolution_loop is not None:
+            status["evolution"] = {
+                "running": self._evolution_loop.running,
+                "tick_ms": self._evolution_loop.current_tick_ms,
+            }
+        return status
 
     def save(self, directory: Path):
         """Save all cell states to directory."""

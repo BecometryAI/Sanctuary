@@ -227,8 +227,8 @@ def test_spontaneous_reflection_test_full_run():
     assert isinstance(result, TestResult)
     assert result.test_type == "autonomous_introspection"
     assert 0.0 <= result.score <= 1.0
-    assert "reflection_quantity" in result.subscores
-    assert "existential_questioning" in result.subscores
+    assert "detection_quantity" in result.subscores
+    assert "trigger_variety" in result.subscores
 
 
 def test_counterfactual_reasoning_test_instantiation():

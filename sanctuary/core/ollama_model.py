@@ -57,7 +57,7 @@ Do not include any text outside the JSON object. No markdown, no explanation."""
 class OllamaModelConfig:
     """Configuration for the OllamaModel."""
 
-    model_name: str = "llama3.3:70b"
+    model_name: str = "gemma3:12b"
     base_url: str = "http://localhost:11434"
     temperature: float = 0.7
     max_tokens: int = 1024

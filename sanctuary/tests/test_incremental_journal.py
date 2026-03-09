@@ -307,6 +307,45 @@ class TestIncrementalJournalWriter:
         # File handle should be closed
         assert writer.current_file is None
     
+    def test_close_removes_empty_journals(self, writer):
+        """Test that close cleans up zero-byte journal files."""
+        journal_dir = writer.journal_dir
+
+        # Create a few empty journal files (simulating inits with no writes)
+        empty1 = journal_dir / "journal_2026-01-01_00-00-00_000001.jsonl"
+        empty2 = journal_dir / "journal_2026-01-01_00-00-00_000002.jsonl"
+        empty1.touch()
+        empty2.touch()
+
+        # The writer's current file is also empty (no write_entry calls)
+        current = writer.current_path
+        assert current.stat().st_size == 0
+
+        writer.close()
+
+        # All empty journals should be removed
+        assert not empty1.exists()
+        assert not empty2.exists()
+        assert not current.exists()
+
+    def test_close_preserves_non_empty_journals(self, writer):
+        """Test that close keeps journal files that have content."""
+        journal_dir = writer.journal_dir
+
+        # Write something so current file is non-empty
+        writer.write_entry({"type": "test", "data": "keep me"})
+        current = writer.current_path
+
+        # Also create an empty one
+        empty = journal_dir / "journal_2026-01-01_00-00-00_000003.jsonl"
+        empty.touch()
+
+        writer.close()
+
+        # Non-empty file preserved, empty file removed
+        assert current.exists()
+        assert not empty.exists()
+
     def test_get_stats(self, writer):
         """Test getting writer statistics."""
         writer.write_entry({"type": "test", "data": "value"})

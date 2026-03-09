@@ -127,6 +127,7 @@ class ContextManager:
             self_model=self_model,
             world_model=world_model,
             scaffold_signals=scaffold,
+            experiential_state=cognitive_input.experiential_state,
         )
 
     def get_last_stats(self) -> Optional[CompressionStats]:

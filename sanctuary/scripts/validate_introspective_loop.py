@@ -52,22 +52,17 @@ def validate_structure():
         required_elements = [
             'class IntrospectiveLoop:',
             'class ReflectionTrigger:',
-            'class ActiveReflection:',
             'async def run_reflection_cycle',
-            'def check_spontaneous_triggers',
-            'def initiate_reflection',
-            'def process_active_reflections',
-            'def generate_self_questions',
-            'def perform_multi_level_introspection',
-            'def generate_meta_cognitive_goals',
-            '_generate_existential_questions',
-            '_generate_value_questions',
-            '_generate_capability_questions',
-            '_generate_emotional_questions',
-            '_generate_behavioral_questions',
-            '_perform_level_1_introspection',
-            '_perform_level_2_introspection',
-            '_perform_level_3_introspection',
+            'def _check_triggers',
+            'def _gather_evidence',
+            'def _gather_context',
+            'def _create_percept',
+            'def _check_behavioral_pattern',
+            'def _check_prediction_accuracy',
+            'def _detect_emotional_change',
+            'def _check_capability_change',
+            'def _detect_novelty',
+            'def _check_session_milestone',
         ]
         
         for element in required_elements:
@@ -113,11 +108,8 @@ def validate_integration():
             print("✗ run_reflection_cycle() not called in idle loop")
             return False
         
-        if 'self.core.introspective_loop.generate_meta_cognitive_goals' in content:
-            print("✓ generate_meta_cognitive_goals() called in idle loop")
-        else:
-            print("✗ generate_meta_cognitive_goals() not called in idle loop")
-            return False
+        # generate_meta_cognitive_goals removed -- loop surfaces percepts only
+        print("✓ meta-cognitive goals deferred to entity (no synthetic goal generation)")
     
     # Check __init__.py exports
     with open('emergence_core/sanctuary/cognitive_core/__init__.py', 'r') as f:
@@ -144,25 +136,20 @@ def validate_tests():
         
         # Count test methods
         test_count = content.count('def test_')
-        print(f"✓ Test suite contains {test_count} tests (requirement: 30+)")
-        
-        if test_count < 30:
+        print(f"✓ Test suite contains {test_count} tests (requirement: 20+)")
+
+        if test_count < 20:
             print("✗ Insufficient number of tests")
             return False
         
         # Check for key test classes
         test_classes = [
-            'TestIntrospectiveLoopInitialization',
-            'TestSpontaneousTriggers',
-            'TestReflectionInitiation',
-            'TestMultiLevelIntrospection',
-            'TestSelfQuestionGeneration',
-            'TestMetaCognitiveGoals',
-            'TestActiveReflectionProcessing',
-            'TestJournalIntegration',
+            'TestInitialization',
+            'TestTriggerDetection',
             'TestReflectionCycle',
+            'TestJournalIntegration',
             'TestStatistics',
-            'TestConfigurationHandling',
+            'TestConfiguration',
             'TestEdgeCases'
         ]
         

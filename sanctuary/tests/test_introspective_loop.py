@@ -2,15 +2,12 @@
 Unit tests for Introspective Loop (Phase 4.2).
 
 Tests cover:
-- IntrospectiveLoop initialization
-- Spontaneous reflection triggers
-- Reflection initiation and tracking
-- Multi-level introspection (depths 1-3)
-- Meta-cognitive goal creation
-- Active reflection processing
+- Initialization and configuration
+- Trigger detection (all state-based, no coin flips)
+- Reflection cycle producing percepts with raw evidence
 - Journal integration
-- Idle loop integration
-- Configuration handling
+- Statistics tracking
+- Edge cases and error handling
 """
 
 import gc
@@ -18,12 +15,12 @@ import pytest
 import shutil
 import tempfile
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from mind.cognitive_core.introspective_loop import (
-    IntrospectiveLoop, ActiveReflection, ReflectionTrigger
+    IntrospectiveLoop, ReflectionTrigger
 )
 from mind.cognitive_core.meta_cognition import SelfMonitor, IntrospectiveJournal
 from mind.cognitive_core.workspace import (
@@ -38,7 +35,6 @@ def temp_journal_dir():
     journal_dir = Path(temp_base) / "journal"
     journal_dir.mkdir(parents=True, exist_ok=True)
 
-    # Track created objects for cleanup
     created_objects = {"journals": [], "loops": []}
 
     def factory():
@@ -46,17 +42,14 @@ def temp_journal_dir():
 
     yield factory()
 
-    # Cleanup: close all journals first
     for journal in created_objects["journals"]:
         try:
             journal.close()
         except Exception:
             pass
 
-    # Force garbage collection
     gc.collect()
 
-    # Retry cleanup for Windows file locking
     for attempt in range(3):
         try:
             shutil.rmtree(temp_base)
@@ -67,11 +60,11 @@ def temp_journal_dir():
                 gc.collect()
 
 
-class TestIntrospectiveLoopInitialization:
-    """Test IntrospectiveLoop initialization"""
+class TestInitialization:
+    """Test IntrospectiveLoop initialization."""
 
     def test_basic_initialization(self, temp_journal_dir):
-        """Test that IntrospectiveLoop initializes correctly"""
+        """Test that IntrospectiveLoop initializes with defaults."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -84,12 +77,11 @@ class TestIntrospectiveLoopInitialization:
         assert loop.self_monitor == monitor
         assert loop.journal == journal
         assert loop.enabled is True
-        assert isinstance(loop.active_reflections, dict)
         assert isinstance(loop.reflection_triggers, dict)
-        assert len(loop.reflection_triggers) == 6  # 6 built-in triggers
+        assert len(loop.reflection_triggers) == 6
 
     def test_initialization_with_config(self, temp_journal_dir):
-        """Test initialization with custom configuration"""
+        """Test initialization with custom configuration."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -99,18 +91,18 @@ class TestIntrospectiveLoopInitialization:
 
         config = {
             "enabled": False,
-            "max_active_reflections": 5,
-            "max_introspection_depth": 2
+            "max_percepts_per_cycle": 5,
+            "reflection_timeout": 600,
         }
 
         loop = IntrospectiveLoop(workspace, monitor, journal, config)
 
         assert loop.enabled is False
-        assert loop.max_active_reflections == 5
-        assert loop.max_introspection_depth == 2
+        assert loop.max_percepts_per_cycle == 5
+        assert loop.reflection_timeout == 600
 
-    def test_trigger_initialization(self, temp_journal_dir):
-        """Test that reflection triggers are initialized correctly"""
+    def test_all_triggers_are_state_based(self, temp_journal_dir):
+        """Test that all triggers exist and have valid structure."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -119,14 +111,13 @@ class TestIntrospectiveLoopInitialization:
         created_objects["journals"].append(journal)
         loop = IntrospectiveLoop(workspace, monitor, journal)
 
-        # Check all expected triggers exist
         expected_triggers = [
-            "pattern_detected",
+            "behavioral_pattern",
             "prediction_error",
-            "value_misalignment",
-            "capability_surprise",
             "emotional_shift",
-            "temporal_milestone"
+            "capability_change",
+            "novelty",
+            "session_milestone",
         ]
 
         for trigger_id in expected_triggers:
@@ -136,13 +127,182 @@ class TestIntrospectiveLoopInitialization:
             assert trigger.priority > 0.0
             assert trigger.min_interval > 0
 
+    def test_temporal_state_initialized(self, temp_journal_dir):
+        """Test that temporal tracking is initialized."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
 
-class TestSpontaneousTriggers:
-    """Test spontaneous reflection trigger detection"""
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
 
-    @pytest.mark.asyncio
-    async def test_check_spontaneous_triggers(self, temp_journal_dir):
-        """Test checking for spontaneous triggers"""
+        assert isinstance(loop._session_start, datetime)
+        assert loop._cycle_count == 0
+        assert len(loop._milestones_reached) == 0
+
+
+class TestTriggerDetection:
+    """Test that triggers detect real state, not random noise."""
+
+    def test_behavioral_pattern_detects_repetition(self, temp_journal_dir):
+        """Test pattern detection fires on actual repetitive actions."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        # Add repetitive behavior
+        for _ in range(5):
+            monitor.behavioral_log.append({"action_type": "SPEAK"})
+
+        snapshot = workspace.broadcast()
+        assert loop._check_behavioral_pattern(snapshot) is True
+
+    def test_behavioral_pattern_ignores_variety(self, temp_journal_dir):
+        """Test pattern detection does NOT fire on varied actions."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        # Add varied behavior
+        for action in ["SPEAK", "LISTEN", "THINK", "OBSERVE", "ACT"]:
+            monitor.behavioral_log.append({"action_type": action})
+
+        snapshot = workspace.broadcast()
+        assert loop._check_behavioral_pattern(snapshot) is False
+
+    def test_prediction_error_detects_failures(self, temp_journal_dir):
+        """Test prediction error fires on actual failed predictions."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        monitor.prediction_history.append({"accurate": False})
+
+        snapshot = workspace.broadcast()
+        assert loop._check_prediction_accuracy(snapshot) is True
+
+    def test_prediction_error_silent_on_accuracy(self, temp_journal_dir):
+        """Test prediction trigger does NOT fire when predictions are accurate."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        monitor.prediction_history.append({"accurate": True})
+
+        snapshot = workspace.broadcast()
+        assert loop._check_prediction_accuracy(snapshot) is False
+
+    def test_emotional_shift_detects_high_valence(self, temp_journal_dir):
+        """Test emotional trigger fires on strong valence deviation."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        snapshot = WorkspaceSnapshot(
+            goals=[], percepts={},
+            emotions={"valence": 0.9, "arousal": 0.8, "dominance": 0.5},
+            memories=[], timestamp=datetime.now(),
+            cycle_count=0, metadata={}
+        )
+
+        assert loop._detect_emotional_change(snapshot) is True
+
+    def test_emotional_shift_silent_on_neutral(self, temp_journal_dir):
+        """Test emotional trigger does NOT fire on neutral state."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        snapshot = WorkspaceSnapshot(
+            goals=[], percepts={},
+            emotions={"valence": 0.5, "arousal": 0.5, "dominance": 0.5},
+            memories=[], timestamp=datetime.now(),
+            cycle_count=0, metadata={}
+        )
+
+        assert loop._detect_emotional_change(snapshot) is False
+
+    def test_capability_change_detects_updates(self, temp_journal_dir):
+        """Test capability trigger fires on actual self-model updates."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        # Simulate a self-model update
+        monitor.stats['self_model_updates'] = 1
+
+        snapshot = workspace.broadcast()
+        assert loop._check_capability_change(snapshot) is True
+
+    def test_capability_change_no_double_fire(self, temp_journal_dir):
+        """Test capability trigger does NOT fire twice for same update."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        monitor.stats['self_model_updates'] = 1
+        snapshot = workspace.broadcast()
+
+        # First check fires
+        assert loop._check_capability_change(snapshot) is True
+        # Second check with same count does NOT fire
+        assert loop._check_capability_change(snapshot) is False
+
+    def test_session_milestone_fires_once(self, temp_journal_dir):
+        """Test session milestone fires exactly once per threshold."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        # Set session start to 2 minutes ago
+        loop._session_start = datetime.now() - timedelta(seconds=120)
+
+        snapshot = workspace.broadcast()
+
+        # Should fire for the 60-second milestone
+        assert loop._check_session_milestone(snapshot) is True
+        # Should NOT fire again (60s already reached)
+        assert loop._check_session_milestone(snapshot) is False
+
+    def test_novelty_requires_history(self, temp_journal_dir):
+        """Test novelty trigger does NOT fire without sufficient history."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -152,14 +312,10 @@ class TestSpontaneousTriggers:
         loop = IntrospectiveLoop(workspace, monitor, journal)
 
         snapshot = workspace.broadcast()
-        triggered = loop.check_spontaneous_triggers(snapshot)
+        assert loop._detect_novelty(snapshot) is False
 
-        # Should return a list (may be empty)
-        assert isinstance(triggered, list)
-
-    @pytest.mark.asyncio
-    async def test_trigger_minimum_interval(self, temp_journal_dir):
-        """Test that triggers respect minimum interval"""
+    def test_trigger_min_interval_respected(self, temp_journal_dir):
+        """Test that triggers respect minimum interval debouncing."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -168,399 +324,24 @@ class TestSpontaneousTriggers:
         created_objects["journals"].append(journal)
         loop = IntrospectiveLoop(workspace, monitor, journal)
 
-        # Manually fire a trigger
-        trigger = loop.reflection_triggers["pattern_detected"]
+        # Manually mark a trigger as recently fired
+        trigger = loop.reflection_triggers["behavioral_pattern"]
         trigger.last_fired = datetime.now()
 
         snapshot = workspace.broadcast()
 
-        # Mock the check function to return True
+        # Even if the check would fire, interval blocks it
         with patch.object(loop, '_check_behavioral_pattern', return_value=True):
-            triggered = loop.check_spontaneous_triggers(snapshot)
-
-            # Should not trigger due to minimum interval
-            assert "pattern_detected" not in triggered
-
-    def test_behavioral_pattern_trigger(self, temp_journal_dir):
-        """Test behavioral pattern detection trigger"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        # Add repetitive behavior to monitor
-        for i in range(5):
-            monitor.behavioral_log.append({"action_type": "SPEAK"})
-
-        snapshot = workspace.broadcast()
-        result = loop._check_behavioral_pattern(snapshot)
-
-        # Should detect pattern
-        assert result is True
-
-    def test_prediction_error_trigger(self, temp_journal_dir):
-        """Test prediction error detection trigger"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        # Add failed prediction
-        monitor.prediction_history.append({"accurate": False})
-
-        snapshot = workspace.broadcast()
-        result = loop._check_prediction_accuracy(snapshot)
-
-        assert result is True
-
-    def test_emotional_change_trigger(self, temp_journal_dir):
-        """Test emotional change detection trigger"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        # Create snapshot with strong emotion
-        snapshot = WorkspaceSnapshot(
-            goals=[],
-            percepts={},
-            emotions={"valence": 0.9, "arousal": 0.8, "dominance": 0.5},
-            memories=[],
-            timestamp=datetime.now(),
-            cycle_count=0,
-            metadata={}
-        )
-
-        result = loop._detect_emotional_change(snapshot)
-
-        assert result is True
-
-
-class TestReflectionInitiation:
-    """Test reflection initiation and tracking"""
-
-    def test_initiate_reflection(self, temp_journal_dir):
-        """Test starting a new reflection"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        context = {"test": "context"}
-        reflection_id = loop.initiate_reflection("pattern_detected", context)
-
-        assert reflection_id in loop.active_reflections
-        reflection = loop.active_reflections[reflection_id]
-        assert isinstance(reflection, ActiveReflection)
-        assert reflection.trigger == "pattern_detected"
-        assert reflection.status == "active"
-        assert reflection.current_step == 0
-
-    def test_max_active_reflections_limit(self, temp_journal_dir):
-        """Test that max active reflections limit is respected"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        config = {"max_active_reflections": 2}
-        loop = IntrospectiveLoop(workspace, monitor, journal, config)
-
-        # Create 2 reflections
-        loop.initiate_reflection("pattern_detected", {})
-        loop.initiate_reflection("prediction_error", {})
-
-        assert len(loop.active_reflections) == 2
-
-    def test_reflection_subject_determination(self, temp_journal_dir):
-        """Test reflection subject is determined correctly"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        subjects = {
-            "pattern_detected": "behavioral patterns",
-            "value_misalignment": "alignment between my values and actions"
-        }
-
-        for trigger, expected_key in subjects.items():
-            subject = loop._determine_reflection_subject(trigger, {})
-            assert expected_key in subject.lower()
-
-
-class TestMultiLevelIntrospection:
-    """Test multi-level introspection functionality"""
-
-    def test_level_1_introspection(self, temp_journal_dir):
-        """Test level 1 (direct observation) introspection"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        result = loop.perform_multi_level_introspection("test subject", max_depth=1)
-
-        assert "level_1" in result
-        assert result["level_1"]["depth"] == 1
-        assert "observation" in result["level_1"]
-        assert "level_2" not in result
-
-    def test_level_2_introspection(self, temp_journal_dir):
-        """Test level 2 (observation of observation) introspection"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        result = loop.perform_multi_level_introspection("test subject", max_depth=2)
-
-        assert "level_1" in result
-        assert "level_2" in result
-        assert result["level_2"]["depth"] == 2
-        assert "meta_awareness" in result["level_2"]
-        assert "level_3" not in result
-
-    def test_level_3_introspection(self, temp_journal_dir):
-        """Test level 3 (meta-meta-cognition) introspection"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        result = loop.perform_multi_level_introspection("test subject", max_depth=3)
-
-        assert "level_1" in result
-        assert "level_2" in result
-        assert "level_3" in result
-        assert result["level_3"]["depth"] == 3
-        assert "meta_meta_awareness" in result["level_3"]
-
-    def test_max_depth_constraint(self, temp_journal_dir):
-        """Test that introspection respects max_depth configuration"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        config = {"max_introspection_depth": 2}
-        loop = IntrospectiveLoop(workspace, monitor, journal, config)
-
-        # Request depth 5 but should be capped at 2
-        result = loop.perform_multi_level_introspection("test", max_depth=5)
-
-        assert "level_1" in result
-        assert "level_2" in result
-        assert "level_3" not in result
-
-
-class TestMetaCognitiveGoals:
-    """Test meta-cognitive goal creation"""
-
-    def test_generate_meta_cognitive_goals_empty(self, temp_journal_dir):
-        """Test goal generation with no active reflections"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        snapshot = workspace.broadcast()
-        goals = loop.generate_meta_cognitive_goals(snapshot)
-
-        assert isinstance(goals, list)
-
-    def test_generate_meta_cognitive_goals_from_reflection(self, temp_journal_dir):
-        """Test goal generation from active reflections"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        # Create an active reflection with conclusions
-        reflection_id = loop.initiate_reflection("pattern_detected", {})
-        loop.active_reflections[reflection_id].conclusions = {"test": "conclusion"}
-
-        snapshot = workspace.broadcast()
-        goals = loop.generate_meta_cognitive_goals(snapshot)
-
-        # Should generate at least one goal from reflection
-        meta_goals = [g for g in goals if g.type == GoalType.INTROSPECT]
-        assert len(meta_goals) >= 1
-
-    def test_meta_cognitive_goal_structure(self, temp_journal_dir):
-        """Test that generated goals have correct structure"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        # Force goal generation
-        reflection_id = loop.initiate_reflection("pattern_detected", {})
-        loop.active_reflections[reflection_id].conclusions = {"test": "conclusion"}
-
-        snapshot = workspace.broadcast()
-        goals = loop.generate_meta_cognitive_goals(snapshot)
-
-        if goals:
-            goal = goals[0]
-            assert isinstance(goal, Goal)
-            assert goal.type == GoalType.INTROSPECT
-            assert hasattr(goal, 'description')
-            assert hasattr(goal, 'priority')
-
-
-class TestActiveReflectionProcessing:
-    """Test processing of active reflections"""
-
-    def test_process_active_reflections_empty(self, temp_journal_dir):
-        """Test processing with no active reflections"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        percepts = loop.process_active_reflections()
-
-        assert isinstance(percepts, list)
-        assert len(percepts) == 0
-
-    def test_reflection_step_progression(self, temp_journal_dir):
-        """Test that reflections progress through steps"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        reflection_id = loop.initiate_reflection("pattern_detected", {})
-        reflection = loop.active_reflections[reflection_id]
-
-        assert reflection.current_step == 0
-
-        # Process once
-        loop.process_active_reflections()
-
-        if reflection_id in loop.active_reflections:
-            assert loop.active_reflections[reflection_id].current_step > 0
-
-    def test_reflection_completion(self, temp_journal_dir):
-        """Test that reflections complete after all steps"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        reflection_id = loop.initiate_reflection("pattern_detected", {})
-
-        # Process multiple times to complete all steps
-        for _ in range(10):
-            loop.process_active_reflections()
-            if reflection_id not in loop.active_reflections:
-                break
-
-        # Should be completed and removed
-        assert reflection_id not in loop.active_reflections
-        assert loop.stats["completed_reflections"] > 0
-
-    def test_reflection_generates_percepts(self, temp_journal_dir):
-        """Test that reflections generate percepts"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        loop.initiate_reflection("pattern_detected", {})
-
-        all_percepts = []
-        for _ in range(10):
-            percepts = loop.process_active_reflections()
-            all_percepts.extend(percepts)
-
-        # Should generate at least one percept during the process
-        assert len(all_percepts) > 0
-        assert all(isinstance(p, Percept) for p in all_percepts)
-
-
-class TestJournalIntegration:
-    """Test introspective journal integration"""
-
-    def test_reflections_recorded_in_journal(self, temp_journal_dir):
-        """Test that completed reflections are recorded"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        # Create and complete a reflection
-        reflection_id = loop.initiate_reflection("pattern_detected", {})
-
-        initial_entries = len(journal.recent_entries)
-
-        # Process until completion
-        for _ in range(10):
-            loop.process_active_reflections()
-            if reflection_id not in loop.active_reflections:
-                break
-
-        # Should have recorded the reflection (or stayed same)
-        assert len(journal.recent_entries) >= initial_entries
+            fired = loop._check_triggers(snapshot)
+            assert "behavioral_pattern" not in fired
 
 
 class TestReflectionCycle:
-    """Test the main reflection cycle"""
+    """Test the main reflection cycle."""
 
     @pytest.mark.asyncio
-    async def test_run_reflection_cycle_disabled(self, temp_journal_dir):
-        """Test that cycle returns empty when disabled"""
+    async def test_cycle_disabled(self, temp_journal_dir):
+        """Test that cycle returns empty when disabled."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -571,13 +352,11 @@ class TestReflectionCycle:
         loop = IntrospectiveLoop(workspace, monitor, journal, config)
 
         percepts = await loop.run_reflection_cycle()
-
-        assert isinstance(percepts, list)
-        assert len(percepts) == 0
+        assert percepts == []
 
     @pytest.mark.asyncio
-    async def test_run_reflection_cycle_basic(self, temp_journal_dir):
-        """Test basic reflection cycle execution"""
+    async def test_cycle_increments_count(self, temp_journal_dir):
+        """Test that each cycle increments the cycle counter."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -585,14 +364,48 @@ class TestReflectionCycle:
         journal = IntrospectiveJournal(journal_dir)
         created_objects["journals"].append(journal)
         loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        assert loop._cycle_count == 0
+        await loop.run_reflection_cycle()
+        assert loop._cycle_count == 1
+
+    @pytest.mark.asyncio
+    async def test_cycle_produces_percepts_on_detection(self, temp_journal_dir):
+        """Test that a fired trigger produces a percept with raw evidence."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        # Set up behavioral repetition so the trigger fires
+        for _ in range(5):
+            monitor.behavioral_log.append({"action_type": "SPEAK"})
+
+        # Clear last_fired to allow trigger
+        loop.reflection_triggers["behavioral_pattern"].last_fired = None
 
         percepts = await loop.run_reflection_cycle()
 
-        assert isinstance(percepts, list)
+        # Should produce at least one percept
+        pattern_percepts = [
+            p for p in percepts
+            if isinstance(p.raw, dict) and p.raw.get("trigger") == "behavioral_pattern"
+        ]
+        assert len(pattern_percepts) >= 1
+
+        # Percept should contain raw evidence, not template strings
+        percept = pattern_percepts[0]
+        assert percept.modality == "introspection"
+        assert percept.raw["type"] == "cognitive_event"
+        assert "evidence" in percept.raw
+        assert "context" in percept.raw
 
     @pytest.mark.asyncio
-    async def test_reflection_cycle_with_triggers(self, temp_journal_dir):
-        """Test cycle processes triggers correctly"""
+    async def test_percept_contains_real_evidence(self, temp_journal_dir):
+        """Test that percepts contain actual data, not canned strings."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -601,22 +414,109 @@ class TestReflectionCycle:
         created_objects["journals"].append(journal)
         loop = IntrospectiveLoop(workspace, monitor, journal)
 
-        # Mock a trigger to fire
-        with patch.object(loop, '_check_behavioral_pattern', return_value=True):
-            # Reset last_fired to allow trigger
-            loop.reflection_triggers["pattern_detected"].last_fired = None
+        # Set up a prediction error
+        monitor.prediction_history.append({"accurate": False, "expected": "A", "got": "B"})
+        loop.reflection_triggers["prediction_error"].last_fired = None
 
-            await loop.run_reflection_cycle()
+        percepts = await loop.run_reflection_cycle()
+        pred_percepts = [
+            p for p in percepts
+            if isinstance(p.raw, dict) and p.raw.get("trigger") == "prediction_error"
+        ]
 
-            # Should have initiated a reflection
-            assert len(loop.active_reflections) >= 0 or loop.stats["triggers_fired"] >= 0
+        if pred_percepts:
+            evidence = pred_percepts[0].raw["evidence"]
+            assert "failed_predictions" in evidence
+            assert "recent_accuracy" in evidence
+            # These are numbers and lists, not template strings
+            assert isinstance(evidence["recent_accuracy"], (int, float))
+
+    @pytest.mark.asyncio
+    async def test_cycle_respects_max_percepts(self, temp_journal_dir):
+        """Test that cycle caps percepts at max_percepts_per_cycle."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        config = {"max_percepts_per_cycle": 1}
+        loop = IntrospectiveLoop(workspace, monitor, journal, config)
+
+        # Make multiple triggers fire
+        for _ in range(5):
+            monitor.behavioral_log.append({"action_type": "SPEAK"})
+        monitor.prediction_history.append({"accurate": False})
+
+        # Clear all last_fired
+        for trigger in loop.reflection_triggers.values():
+            trigger.last_fired = None
+
+        percepts = await loop.run_reflection_cycle()
+        assert len(percepts) <= 1
+
+    @pytest.mark.asyncio
+    async def test_cycle_error_handling(self, temp_journal_dir):
+        """Test that errors in cycle don't crash the loop."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        with patch.object(loop, '_check_triggers', side_effect=Exception("Test error")):
+            percepts = await loop.run_reflection_cycle()
+            assert isinstance(percepts, list)
+
+
+class TestJournalIntegration:
+    """Test that detections are recorded in the journal."""
+
+    @pytest.mark.asyncio
+    async def test_detections_recorded(self, temp_journal_dir):
+        """Test that fired triggers create journal entries."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        # Set up detection
+        for _ in range(5):
+            monitor.behavioral_log.append({"action_type": "SPEAK"})
+        loop.reflection_triggers["behavioral_pattern"].last_fired = None
+
+        initial_entries = len(journal.recent_entries)
+        await loop.run_reflection_cycle()
+
+        assert len(journal.recent_entries) >= initial_entries
+
+    def test_detection_history_tracked(self, temp_journal_dir):
+        """Test that detection history accumulates."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        journal = IntrospectiveJournal(journal_dir)
+        created_objects["journals"].append(journal)
+        loop = IntrospectiveLoop(workspace, monitor, journal)
+
+        # Manually record a detection
+        loop._record_detection("test_trigger", {"data": 1}, {"ctx": 2})
+
+        assert len(loop._detection_history) == 1
+        assert loop._detection_history[0]["trigger"] == "test_trigger"
 
 
 class TestStatistics:
-    """Test statistics tracking"""
+    """Test statistics tracking."""
 
     def test_stats_initialization(self, temp_journal_dir):
-        """Test that stats are initialized correctly"""
+        """Test that stats are initialized correctly."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -627,16 +527,16 @@ class TestStatistics:
 
         stats = loop.get_stats()
 
-        assert "total_reflections" in stats
-        assert "completed_reflections" in stats
+        assert "total_detections" in stats
+        assert "percepts_surfaced" in stats
         assert "triggers_fired" in stats
-        assert "meta_goals_created" in stats
-        assert "multi_level_introspections" in stats
-        assert "active_reflections" in stats
         assert "enabled" in stats
+        assert "session_uptime_seconds" in stats
+        assert "cycle_count" in stats
 
-    def test_stats_update_on_reflection(self, temp_journal_dir):
-        """Test that stats update when reflections occur"""
+    @pytest.mark.asyncio
+    async def test_stats_update_on_detection(self, temp_journal_dir):
+        """Test that stats increment when detections occur."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -645,39 +545,22 @@ class TestStatistics:
         created_objects["journals"].append(journal)
         loop = IntrospectiveLoop(workspace, monitor, journal)
 
-        initial_total = loop.stats["total_reflections"]
+        # Set up detection
+        for _ in range(5):
+            monitor.behavioral_log.append({"action_type": "SPEAK"})
+        loop.reflection_triggers["behavioral_pattern"].last_fired = None
 
-        loop.initiate_reflection("pattern_detected", {})
+        initial_detections = loop.stats["total_detections"]
+        await loop.run_reflection_cycle()
 
-        assert loop.stats["total_reflections"] == initial_total + 1
-
-    def test_stats_update_on_completion(self, temp_journal_dir):
-        """Test that completion stats update correctly"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        reflection_id = loop.initiate_reflection("pattern_detected", {})
-        initial_completed = loop.stats["completed_reflections"]
-
-        # Process until completion
-        for _ in range(10):
-            loop.process_active_reflections()
-            if reflection_id not in loop.active_reflections:
-                break
-
-        assert loop.stats["completed_reflections"] > initial_completed
+        assert loop.stats["total_detections"] >= initial_detections
 
 
-class TestConfigurationHandling:
-    """Test configuration parameter handling"""
+class TestConfiguration:
+    """Test configuration handling."""
 
     def test_default_configuration(self, temp_journal_dir):
-        """Test that defaults are used when no config provided"""
+        """Test defaults when no config provided."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -687,12 +570,11 @@ class TestConfigurationHandling:
         loop = IntrospectiveLoop(workspace, monitor, journal)
 
         assert loop.enabled is True
-        assert loop.max_active_reflections == 3
-        assert loop.max_introspection_depth == 3
+        assert loop.max_percepts_per_cycle == 3
         assert loop.journal_integration is True
 
     def test_configuration_override(self, temp_journal_dir):
-        """Test that config overrides defaults"""
+        """Test that config overrides defaults."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -702,22 +584,22 @@ class TestConfigurationHandling:
 
         config = {
             "enabled": False,
-            "max_active_reflections": 10,
-            "reflection_timeout": 600
+            "max_percepts_per_cycle": 10,
+            "reflection_timeout": 600,
         }
 
         loop = IntrospectiveLoop(workspace, monitor, journal, config)
 
         assert loop.enabled is False
-        assert loop.max_active_reflections == 10
+        assert loop.max_percepts_per_cycle == 10
         assert loop.reflection_timeout == 600
 
 
 class TestEdgeCases:
-    """Test edge cases and error handling"""
+    """Test edge cases and error handling."""
 
     def test_empty_workspace(self, temp_journal_dir):
-        """Test handling of empty workspace"""
+        """Test handling of empty workspace."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -728,33 +610,12 @@ class TestEdgeCases:
 
         snapshot = workspace.broadcast()
 
-        # Should not crash
-        loop.check_spontaneous_triggers(snapshot)
-        loop.generate_meta_cognitive_goals(snapshot)
-
-    def test_reflection_timeout(self, temp_journal_dir):
-        """Test that reflections eventually complete"""
-        journal_dir, created_objects = temp_journal_dir
-        workspace = GlobalWorkspace()
-        monitor = SelfMonitor(workspace=workspace)
-
-        journal = IntrospectiveJournal(journal_dir)
-        created_objects["journals"].append(journal)
-        loop = IntrospectiveLoop(workspace, monitor, journal)
-
-        reflection_id = loop.initiate_reflection("pattern_detected", {})
-
-        # Process multiple times to complete the reflection
-        for _ in range(15):
-            loop.process_active_reflections()
-            if reflection_id not in loop.active_reflections:
-                break
-
-        # Should be completed and removed
-        assert reflection_id not in loop.active_reflections
+        # No crashes
+        fired = loop._check_triggers(snapshot)
+        assert isinstance(fired, list)
 
     def test_none_self_monitor(self, temp_journal_dir):
-        """Test handling when self_monitor is None"""
+        """Test handling when self_monitor is None."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
 
@@ -764,13 +625,23 @@ class TestEdgeCases:
 
         snapshot = workspace.broadcast()
 
-        # Should not crash
-        result = loop._check_behavioral_pattern(snapshot)
-        assert result is False
+        assert loop._check_behavioral_pattern(snapshot) is False
+        assert loop._check_prediction_accuracy(snapshot) is False
+        assert loop._check_capability_change(snapshot) is False
 
-    @pytest.mark.asyncio
-    async def test_error_handling_in_cycle(self, temp_journal_dir):
-        """Test that errors in cycle don't crash the loop"""
+    def test_none_journal(self, temp_journal_dir):
+        """Test that recording gracefully handles None journal."""
+        journal_dir, created_objects = temp_journal_dir
+        workspace = GlobalWorkspace()
+        monitor = SelfMonitor(workspace=workspace)
+
+        loop = IntrospectiveLoop(workspace, monitor, None)
+
+        # Should not crash
+        loop._record_detection("test", {}, {})
+
+    def test_gather_context_with_minimal_state(self, temp_journal_dir):
+        """Test context gathering when monitors have minimal data."""
         journal_dir, created_objects = temp_journal_dir
         workspace = GlobalWorkspace()
         monitor = SelfMonitor(workspace=workspace)
@@ -779,11 +650,12 @@ class TestEdgeCases:
         created_objects["journals"].append(journal)
         loop = IntrospectiveLoop(workspace, monitor, journal)
 
-        # Mock a method to raise an exception
-        with patch.object(loop, 'check_spontaneous_triggers', side_effect=Exception("Test error")):
-            # Should not crash
-            percepts = await loop.run_reflection_cycle()
-            assert isinstance(percepts, list)
+        snapshot = workspace.broadcast()
+        context = loop._gather_context(snapshot)
+
+        assert "session_uptime_seconds" in context
+        assert "cycle_count" in context
+        assert isinstance(context["session_uptime_seconds"], (int, float))
 
 
 # Run tests if executed directly

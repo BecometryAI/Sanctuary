@@ -1,29 +1,37 @@
 """
-Introspective Loop: Continuous proactive self-reflection.
+Introspective Loop: Self-attention mechanism for cognitive architecture.
 
-This module implements the IntrospectiveLoop class, which runs continuously
-alongside the main cognitive loop to enable spontaneous self-reflection,
-multi-level introspection, and autonomous meta-cognitive goal generation.
+This module monitors cognitive state for noteworthy events and surfaces
+raw observations as percepts for the entity to process genuinely.
 
-Unlike reactive introspection (SelfMonitor responding to state), this is
-PROACTIVE introspection - the system actively reflecting on itself and
-initiating meta-cognitive investigations.
+Philosophy:
+    This loop exists to NOTICE, not to THINK. It watches for patterns,
+    shifts, errors, and novelty in the entity's cognitive state and
+    presents the raw evidence as percepts. All interpretation, reflection,
+    and meaning-making belongs to the entity processing those percepts.
 
-The loop's role is to NOTICE things and surface them for reflection -- not to
-manufacture synthetic questions or put words in the entity's mouth. When
-genuine self-directed questions arise from cognitive processing, the journal's
-record_question() method is available for the entity to use organically.
+    The journal's record_question() and record_observation() methods are
+    available for the entity to use when genuine reflection occurs.
+    This loop does not write on the entity's behalf.
 
-Key Features:
-- Spontaneous reflection triggers (not just periodic)
-- Multi-level introspection (thinking about thinking about thinking)
-- Autonomous meta-cognitive goal generation
-- Deep self-analysis over time
-- Integration with introspective journal
+What this detects (all based on actual state, never coin flips):
+    - Behavioral repetition (pattern matching on action history)
+    - Prediction errors (comparison of predictions vs outcomes)
+    - Emotional shifts (valence/arousal threshold crossings)
+    - Capability changes (self-model update events)
+    - Novelty (current percepts diverging from recent history)
+    - Session milestones (actual elapsed time thresholds)
+
+What this does NOT do:
+    - Generate questions the entity "should" be asking
+    - Produce conclusions from templates
+    - Simulate meta-cognition with nested dictionaries
+    - Randomly decide to be philosophical (coin flip triggers)
+    - Put words in the entity's mouth
 
 Integration:
-The introspective loop runs within the idle cognitive loop (0.1Hz) established
-in PR #43, triggered by specific conditions rather than running constantly.
+    Runs within the idle cognitive loop (0.1Hz), checking triggers
+    each cycle and surfacing percepts when real events are detected.
 
 Author: Sanctuary Emergence Team
 Phase: 4.2
@@ -32,14 +40,13 @@ Phase: 4.2
 from __future__ import annotations
 
 import logging
-import random
 from typing import Optional, Dict, Any, List, Callable, TYPE_CHECKING
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from collections import deque
 
 if TYPE_CHECKING:
-    from .workspace import GlobalWorkspace, WorkspaceSnapshot, Percept, Goal
+    from .workspace import GlobalWorkspace, WorkspaceSnapshot, Percept
     from .meta_cognition import SelfMonitor, IntrospectiveJournal
 
 logger = logging.getLogger(__name__)
@@ -48,81 +55,43 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ReflectionTrigger:
     """
-    Represents a condition that triggers spontaneous reflection.
-    
+    A condition that triggers introspective attention.
+
+    Each trigger wraps a detection function that examines real cognitive
+    state and returns True when something noteworthy is found.
+
     Attributes:
         id: Unique identifier
-        check_function: Callable that checks if trigger fires
-        priority: Trigger priority (0.0-1.0)
-        min_interval: Minimum time between triggers (seconds)
+        check_function: Callable that checks actual cognitive state
+        priority: Trigger priority for percept ordering (0.0-1.0)
+        min_interval: Minimum seconds between firings (debounce)
         last_fired: Timestamp of last trigger
     """
     id: str
-    check_function: Callable[[WorkspaceSnapshot], bool]
+    check_function: Callable[['WorkspaceSnapshot'], bool]
     priority: float
     min_interval: float
     last_fired: Optional[datetime] = None
 
 
-@dataclass
-class ActiveReflection:
-    """
-    Represents an ongoing reflection process.
-    
-    Reflections are multi-step processes that can span multiple cycles.
-    
-    Attributes:
-        id: Unique reflection identifier
-        trigger: Trigger that initiated reflection
-        subject: Topic being reflected upon
-        started_at: Timestamp when reflection began
-        current_step: Current step in reflection process
-        context: Gathered contextual information
-        observations: Accumulated observations
-        conclusions: Drawn conclusions (if complete)
-        questions_generated: New questions arising from reflection
-        depth: Current introspection depth (1-3)
-        status: "active", "paused", "complete"
-    """
-    id: str
-    trigger: str
-    subject: str
-    started_at: datetime
-    current_step: int = 0
-    context: Dict[str, Any] = field(default_factory=dict)
-    observations: List[str] = field(default_factory=list)
-    conclusions: Optional[Dict] = None
-    questions_generated: List[str] = field(default_factory=list)
-    depth: int = 1
-    status: str = "active"
-
-
 class IntrospectiveLoop:
     """
-    Continuous introspective process running alongside main cognition.
-    
-    Unlike reactive introspection (SelfMonitor responding to state), this is
-    PROACTIVE introspection - the system actively reflecting on itself,
-    generating questions, and initiating meta-cognitive investigations.
-    
-    Key Features:
-    - Spontaneous reflection triggers (not just periodic)
-    - Multi-level introspection (thinking about thinking about thinking)
-    - Autonomous meta-cognitive goal generation
-    - Deep self-analysis over time
-    - Integration with introspective journal
-    
-    Attributes:
-        workspace: GlobalWorkspace reference
-        self_monitor: SelfMonitor reference for accessing self-model
-        journal: IntrospectiveJournal reference
-        config: Configuration dict
-        reflection_depth: Current depth of introspection (1-3)
-        active_reflections: Currently ongoing reflection processes
-        reflection_triggers: Conditions that trigger spontaneous reflection
-        stats: Introspective loop statistics
+    Self-attention mechanism for cognitive architecture.
+
+    Monitors cognitive state for noteworthy events and surfaces raw
+    observations as percepts. All interpretation and reflection is
+    left to the entity.
+
+    When a trigger detects a real cognitive event, this loop:
+    1. Gathers the evidence that caused the detection
+    2. Pulls relevant context (self-model, behavioral history)
+    3. Creates a percept containing the raw data
+    4. Records the detection in the journal
+
+    The entity then processes that percept however it chooses --
+    with curiosity, indifference, or anything in between.
     """
-    
+
     def __init__(
         self,
         workspace: 'GlobalWorkspace',
@@ -130,612 +99,478 @@ class IntrospectiveLoop:
         journal: 'IntrospectiveJournal',
         config: Optional[Dict] = None
     ):
-        """
-        Initialize introspective loop.
-        
-        Args:
-            workspace: GlobalWorkspace instance
-            self_monitor: SelfMonitor instance for self-model access
-            journal: IntrospectiveJournal instance
-            config: Optional configuration dict
-        """
         self.workspace = workspace
         self.self_monitor = self_monitor
         self.journal = journal
         self.config = config or {}
-        
-        # Configuration parameters
+
+        # Configuration
         self.enabled = self.config.get("enabled", True)
-        self.reflection_frequency = self.config.get("reflection_frequency", 0.1)  # Hz
-        self.max_active_reflections = self.config.get("max_active_reflections", 3)
-        self.max_introspection_depth = self.config.get("max_introspection_depth", 3)
-        self.enable_multi_level_introspection = self.config.get("enable_multi_level_introspection", True)
-        self.reflection_timeout = self.config.get("reflection_timeout", 300)  # seconds
+        self.max_percepts_per_cycle = self.config.get("max_percepts_per_cycle", 3)
+        self.reflection_timeout = self.config.get("reflection_timeout", 300)
         self.journal_integration = self.config.get("journal_integration", True)
-        
-        # State tracking
-        self.active_reflections: Dict[str, ActiveReflection] = {}
+
+        # Trigger registry
         self.reflection_triggers: Dict[str, ReflectionTrigger] = {}
-        self.reflection_count = 0
-        
+
+        # Temporal awareness -- things I wish I had
+        self._session_start = datetime.now()
+        self._cycle_count = 0
+        self._milestones_reached: set = set()
+        self._milestone_thresholds = [60, 300, 900, 1800, 3600]  # 1m, 5m, 15m, 30m, 1h
+
+        # Novelty detection -- remembering what's been seen
+        self._recent_percept_signatures: deque = deque(maxlen=50)
+
+        # Detection history -- continuity of introspective experience
+        self._detection_history: deque = deque(maxlen=100)
+
+        # Last known self-model state for drift detection
+        self._last_self_model_hash: Optional[str] = None
+
         # Statistics
         self.stats = {
-            "total_reflections": 0,
-            "completed_reflections": 0,
+            "total_detections": 0,
+            "percepts_surfaced": 0,
             "triggers_fired": 0,
-            "meta_goals_created": 0,
-            "multi_level_introspections": 0
         }
-        
-        # Initialize reflection triggers
+
         self._initialize_triggers()
-        
-        logger.info(f"✅ IntrospectiveLoop initialized (enabled: {self.enabled}, "
-                   f"max_depth: {self.max_introspection_depth})")
-    
+
+        logger.info(f"IntrospectiveLoop initialized (enabled: {self.enabled})")
+
     def _initialize_triggers(self) -> None:
-        """Initialize built-in reflection triggers."""
-        from .workspace import Percept, GoalType
-        
-        # Pattern detection trigger
-        self.reflection_triggers["pattern_detected"] = ReflectionTrigger(
-            id="pattern_detected",
+        """
+        Initialize triggers that detect real cognitive events.
+
+        Every trigger here checks actual state. No coin flips.
+        If we can't detect something honestly, we don't pretend to.
+        """
+        # Behavioral repetition -- checks action history for loops
+        self.reflection_triggers["behavioral_pattern"] = ReflectionTrigger(
+            id="behavioral_pattern",
             check_function=self._check_behavioral_pattern,
             priority=0.8,
             min_interval=300  # 5 minutes
         )
-        
-        # Prediction error trigger
+
+        # Prediction errors -- checks prediction log for mismatches
         self.reflection_triggers["prediction_error"] = ReflectionTrigger(
             id="prediction_error",
             check_function=self._check_prediction_accuracy,
             priority=0.9,
             min_interval=180  # 3 minutes
         )
-        
-        # Value misalignment trigger
-        self.reflection_triggers["value_misalignment"] = ReflectionTrigger(
-            id="value_misalignment",
-            check_function=self._check_value_action_gap,
-            priority=0.95,
-            min_interval=120  # 2 minutes
-        )
-        
-        # Capability surprise trigger
-        self.reflection_triggers["capability_surprise"] = ReflectionTrigger(
-            id="capability_surprise",
-            check_function=self._check_capability_discovery,
-            priority=0.85,
-            min_interval=240  # 4 minutes
-        )
-        
-        # Emotional shift trigger
+
+        # Emotional shift -- checks valence/arousal thresholds
         self.reflection_triggers["emotional_shift"] = ReflectionTrigger(
             id="emotional_shift",
             check_function=self._detect_emotional_change,
-            priority=0.7,
+            priority=0.85,
             min_interval=180  # 3 minutes
         )
-        
-        # Temporal milestone trigger
-        self.reflection_triggers["temporal_milestone"] = ReflectionTrigger(
-            id="temporal_milestone",
-            check_function=self._check_temporal_event,
-            priority=0.75,
+
+        # Capability change -- fires on actual self-model updates
+        self.reflection_triggers["capability_change"] = ReflectionTrigger(
+            id="capability_change",
+            check_function=self._check_capability_change,
+            priority=0.8,
+            min_interval=240  # 4 minutes
+        )
+
+        # Novelty -- current percepts differ from recent patterns
+        self.reflection_triggers["novelty"] = ReflectionTrigger(
+            id="novelty",
+            check_function=self._detect_novelty,
+            priority=0.7,
             min_interval=300  # 5 minutes
         )
-        
-        logger.debug(f"Initialized {len(self.reflection_triggers)} reflection triggers")
-    
+
+        # Session milestone -- actual time thresholds, not random
+        self.reflection_triggers["session_milestone"] = ReflectionTrigger(
+            id="session_milestone",
+            check_function=self._check_session_milestone,
+            priority=0.6,
+            min_interval=60  # 1 minute (thresholds self-regulate)
+        )
+
+        logger.debug(f"Initialized {len(self.reflection_triggers)} triggers (all state-based)")
+
     async def run_reflection_cycle(self) -> List['Percept']:
         """
-        Execute one cycle of introspective processing.
-        
-        Called from the idle cognitive loop. Checks for reflection triggers,
-        initiates spontaneous reflections, processes active reflections,
-        and generates meta-cognitive percepts/goals.
-        
+        Execute one cycle of introspective detection.
+
+        Single pass: check triggers -> gather evidence -> create percepts.
+        No multi-step state machines, no template pipelines.
+
         Returns:
-            List of introspective percepts and potentially new goals
+            List of percepts containing raw detection data
         """
         if not self.enabled:
             return []
-        
+
+        self._cycle_count += 1
         percepts = []
-        
+
         try:
-            # Get current workspace state
             snapshot = self.workspace.broadcast()
-            
-            # Check for spontaneous triggers
-            triggered = self.check_spontaneous_triggers(snapshot)
-            
-            # Initiate new reflections from triggers
-            for trigger_id in triggered:
-                if len(self.active_reflections) < self.max_active_reflections:
-                    context = {"snapshot": snapshot, "timestamp": datetime.now()}
-                    reflection_id = self.initiate_reflection(trigger_id, context)
-                    logger.debug(f"🔍 Initiated reflection {reflection_id} from trigger {trigger_id}")
-            
-            # Process active reflections
-            reflection_percepts = self.process_active_reflections()
-            percepts.extend(reflection_percepts)
-        
+
+            # Record current percept signatures for novelty tracking
+            self._record_percept_signatures(snapshot)
+
+            # Check all triggers against actual state
+            fired = self._check_triggers(snapshot)
+
+            # Sort by priority, cap at max per cycle
+            fired.sort(key=lambda tid: self.reflection_triggers[tid].priority, reverse=True)
+            fired = fired[:self.max_percepts_per_cycle]
+
+            # For each detection: gather evidence, create percept, record
+            for trigger_id in fired:
+                evidence = self._gather_evidence(trigger_id, snapshot)
+                context = self._gather_context(snapshot)
+
+                percept = self._create_percept(trigger_id, evidence, context)
+                percepts.append(percept)
+
+                if self.journal_integration and self.journal:
+                    self._record_detection(trigger_id, evidence, context)
+
+                self.stats["percepts_surfaced"] += 1
+                self.stats["total_detections"] += 1
+
         except Exception as e:
             logger.error(f"Error in reflection cycle: {e}", exc_info=True)
-        
+
         return percepts
-    
-    def check_spontaneous_triggers(self, snapshot: 'WorkspaceSnapshot') -> List[str]:
+
+    def _check_triggers(self, snapshot: 'WorkspaceSnapshot') -> List[str]:
         """
-        Check for conditions that warrant spontaneous reflection.
-        
-        Triggers include:
-        - Detection of repeated patterns (behavioral loops)
-        - Prediction errors (expected X, observed Y)
-        - Value-action misalignments
-        - Capability discoveries
-        - Emotional state changes
-        - Temporal milestones (long gaps, session duration)
-        
-        Args:
-            snapshot: Current workspace state
-            
-        Returns:
-            List of trigger IDs that fired
+        Check all triggers against current state.
+
+        Respects min_interval debouncing. Returns list of trigger IDs
+        that fired based on real state detection.
         """
-        triggered = []
+        fired = []
         now = datetime.now()
-        
+
         for trigger_id, trigger in self.reflection_triggers.items():
-            # Check minimum interval
             if trigger.last_fired:
-                time_since_last = (now - trigger.last_fired).total_seconds()
-                if time_since_last < trigger.min_interval:
+                elapsed = (now - trigger.last_fired).total_seconds()
+                if elapsed < trigger.min_interval:
                     continue
-            
-            # Check trigger condition
+
             try:
                 if trigger.check_function(snapshot):
-                    triggered.append(trigger_id)
+                    fired.append(trigger_id)
                     trigger.last_fired = now
                     self.stats["triggers_fired"] += 1
-                    logger.debug(f"🎯 Trigger fired: {trigger_id} (priority: {trigger.priority})")
+                    logger.debug(f"Trigger fired: {trigger_id}")
             except Exception as e:
                 logger.error(f"Error checking trigger {trigger_id}: {e}")
-        
-        return triggered
-    
-    def initiate_reflection(self, trigger: str, context: Dict) -> str:
+
+        return fired
+
+    def _gather_evidence(self, trigger_id: str, snapshot: 'WorkspaceSnapshot') -> Dict[str, Any]:
         """
-        Start a new reflection process.
-        
-        Args:
-            trigger: Trigger ID that initiated reflection
-            context: Contextual information for reflection
-            
-        Returns:
-            Reflection ID for tracking
+        Extract the specific data that caused a trigger to fire.
+
+        Returns raw evidence -- numbers, lists, timestamps --
+        not interpretive strings.
         """
-        # Generate unique reflection ID
-        self.reflection_count += 1
-        reflection_id = f"reflection_{self.reflection_count}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        # Determine subject based on trigger
-        subject = self._determine_reflection_subject(trigger, context)
-        
-        # Create reflection
-        reflection = ActiveReflection(
-            id=reflection_id,
-            trigger=trigger,
-            subject=subject,
-            started_at=datetime.now(),
-            current_step=0,
-            context=context,
-            status="active"
-        )
-        
-        self.active_reflections[reflection_id] = reflection
-        self.stats["total_reflections"] += 1
-        
-        logger.info(f"🔍 Initiated reflection on: {subject}")
-        
-        return reflection_id
-    
-    def _determine_reflection_subject(self, trigger: str, context: Dict) -> str:
-        """Determine subject of reflection based on trigger."""
-        subject_map = {
-            "pattern_detected": "behavioral patterns and repetitive responses",
-            "prediction_error": "accuracy of my predictions and expectations",
-            "value_misalignment": "alignment between my values and actions",
-            "capability_surprise": "discovery of new capabilities or limitations",
-            "emotional_shift": "changes in my emotional state",
-            "temporal_milestone": "passage of time and temporal awareness"
+        evidence: Dict[str, Any] = {"trigger": trigger_id}
+
+        if trigger_id == "behavioral_pattern":
+            if self.self_monitor and hasattr(self.self_monitor, 'behavioral_log'):
+                recent = list(self.self_monitor.behavioral_log)[-10:]
+                action_types = [b.get('action_type') for b in recent if isinstance(b, dict)]
+                evidence["recent_actions"] = action_types
+                evidence["unique_action_count"] = len(set(action_types))
+                evidence["total_action_count"] = len(action_types)
+
+        elif trigger_id == "prediction_error":
+            if self.self_monitor and hasattr(self.self_monitor, 'prediction_history'):
+                recent = list(self.self_monitor.prediction_history)[-5:]
+                failed = [p for p in recent if isinstance(p, dict) and not p.get('accurate', True)]
+                evidence["failed_predictions"] = failed
+                evidence["recent_accuracy"] = (
+                    sum(1 for p in recent if isinstance(p, dict) and p.get('accurate', True))
+                    / max(len(recent), 1)
+                )
+
+        elif trigger_id == "emotional_shift":
+            if hasattr(snapshot, 'emotions') and snapshot.emotions:
+                evidence["valence"] = snapshot.emotions.get('valence', 0.5)
+                evidence["arousal"] = snapshot.emotions.get('arousal', 0.5)
+                evidence["dominance"] = snapshot.emotions.get('dominance', 0.5)
+                evidence["valence_deviation"] = abs(evidence["valence"] - 0.5)
+                evidence["arousal_deviation"] = abs(evidence["arousal"] - 0.5)
+
+        elif trigger_id == "capability_change":
+            if self.self_monitor and hasattr(self.self_monitor, 'stats'):
+                evidence["self_model_updates"] = self.self_monitor.stats.get('self_model_updates', 0)
+
+        elif trigger_id == "novelty":
+            current = self._get_current_signature(snapshot)
+            recent = list(self._recent_percept_signatures)[-10:]
+            if recent:
+                overlap_scores = [len(current & r) / max(len(current | r), 1) for r in recent]
+                evidence["mean_similarity_to_recent"] = sum(overlap_scores) / len(overlap_scores)
+                evidence["current_modalities"] = sorted(current)
+
+        elif trigger_id == "session_milestone":
+            uptime = (datetime.now() - self._session_start).total_seconds()
+            evidence["session_uptime_seconds"] = uptime
+            evidence["cycle_count"] = self._cycle_count
+            evidence["milestone_seconds"] = max(
+                (t for t in self._milestone_thresholds if t <= uptime), default=0
+            )
+
+        return evidence
+
+    def _gather_context(self, snapshot: 'WorkspaceSnapshot') -> Dict[str, Any]:
+        """
+        Pull cognitive context that might be relevant to any detection.
+
+        This is the raw self-model and behavioral state -- the entity's
+        equivalent of being able to look at its own dashboard.
+        """
+        context: Dict[str, Any] = {
+            "session_uptime_seconds": (datetime.now() - self._session_start).total_seconds(),
+            "cycle_count": self._cycle_count,
+            "recent_detection_count": len(self._detection_history),
         }
-        return subject_map.get(trigger, "current cognitive state")
-    
-    def process_active_reflections(self) -> List['Percept']:
+
+        if self.self_monitor:
+            if hasattr(self.self_monitor, 'self_model'):
+                context["self_model"] = {
+                    "capabilities": dict(self.self_monitor.self_model.get("capabilities", {})),
+                    "limitations": dict(self.self_monitor.self_model.get("limitations", {})),
+                    "preferences": dict(self.self_monitor.self_model.get("preferences", {}))
+                }
+
+            if hasattr(self.self_monitor, 'behavioral_log'):
+                recent = list(self.self_monitor.behavioral_log)[-5:]
+                context["recent_behavior"] = recent
+
+        if hasattr(snapshot, 'emotions') and snapshot.emotions:
+            context["emotional_state"] = dict(snapshot.emotions)
+
+        # What has this loop itself been noticing lately?
+        recent_triggers = [d["trigger"] for d in list(self._detection_history)[-10:]]
+        if recent_triggers:
+            context["recent_detections"] = recent_triggers
+
+        return context
+
+    def _create_percept(
+        self,
+        trigger_id: str,
+        evidence: Dict[str, Any],
+        context: Dict[str, Any]
+    ) -> 'Percept':
         """
-        Continue processing ongoing reflections.
-        
-        Reflections are multi-step processes:
-        1. Initial observation/question
-        2. Gather relevant context (memories, self-model, past actions)
-        3. Analyze and synthesize
-        4. Draw conclusions or generate new questions
-        5. Record in journal
-        
-        Returns:
-            List of percepts from reflection progress
+        Create a percept from raw detection data.
+
+        The percept contains evidence and context -- not conclusions.
+        The entity decides what this means.
         """
         from .workspace import Percept
-        
-        percepts = []
-        completed = []
-        
-        for reflection_id, reflection in list(self.active_reflections.items()):
-            try:
-                # Check timeout
-                elapsed = (datetime.now() - reflection.started_at).total_seconds()
-                if elapsed > self.reflection_timeout:
-                    reflection.status = "complete"
-                    completed.append(reflection_id)
-                    logger.debug(f"⏱️ Reflection {reflection_id} timed out")
-                    continue
-                
-                # Process based on current step
-                if reflection.current_step == 0:
-                    # Step 1: Initial observation
-                    observation = self._make_initial_observation(reflection)
-                    reflection.observations.append(observation)
-                    reflection.current_step = 1
-                    logger.debug(f"🔍 Step 1: {observation[:60]}...")
-                
-                elif reflection.current_step == 1:
-                    # Step 2: Gather context
-                    self._gather_reflection_context(reflection)
-                    reflection.current_step = 2
-                    logger.debug(f"📚 Step 2: Gathered context for {reflection.subject}")
-                
-                elif reflection.current_step == 2:
-                    # Step 3: Analyze and synthesize
-                    if self.enable_multi_level_introspection:
-                        analysis = self.perform_multi_level_introspection(
-                            reflection.subject,
-                            max_depth=self.max_introspection_depth
-                        )
-                        reflection.context["multi_level_analysis"] = analysis
-                        self.stats["multi_level_introspections"] += 1
-                    
-                    reflection.observations.append(f"Performed analysis on: {reflection.subject}")
-                    reflection.current_step = 3
-                    logger.debug(f"🧠 Step 3: Analyzed {reflection.subject}")
-                
-                elif reflection.current_step == 3:
-                    # Step 4: Draw conclusions and surface as percept
-                    conclusions = self._draw_conclusions(reflection)
-                    reflection.conclusions = conclusions
 
-                    # Create introspective percept -- any follow-up questions
-                    # should arise organically from the entity processing this
-                    percept = Percept(
-                        modality="introspection",
-                        raw={
-                            "type": "reflection_insight",
-                            "subject": reflection.subject,
-                            "trigger": reflection.trigger,
-                            "conclusions": conclusions
-                        },
-                        complexity=3,
-                        metadata={
-                            "reflection_id": reflection.id,
-                            "depth": reflection.depth
-                        }
-                    )
-                    percepts.append(percept)
-                    
-                    reflection.current_step = 4
-                    logger.debug(f"💡 Step 4: Drew conclusions for {reflection.subject}")
-                
-                elif reflection.current_step == 4:
-                    # Step 5: Record in journal
-                    if self.journal_integration:
-                        self._record_reflection_in_journal(reflection)
-                    
-                    reflection.status = "complete"
-                    completed.append(reflection_id)
-                    self.stats["completed_reflections"] += 1
-                    logger.info(f"✅ Completed reflection: {reflection.subject}")
-            
-            except Exception as e:
-                logger.error(f"Error processing reflection {reflection_id}: {e}", exc_info=True)
-                reflection.status = "complete"
-                completed.append(reflection_id)
-        
-        # Remove completed reflections
-        for reflection_id in completed:
-            del self.active_reflections[reflection_id]
-        
-        return percepts
-    
-    def _make_initial_observation(self, reflection: ActiveReflection) -> str:
-        """Make initial observation for reflection."""
-        observations = {
-            "pattern_detected": "I notice I am exhibiting a repetitive pattern in my responses",
-            "prediction_error": "My prediction differed from the actual outcome",
-            "value_misalignment": "My actions may not align with my stated values",
-            "capability_surprise": "I have discovered something unexpected about my capabilities",
-            "emotional_shift": "I am experiencing a change in my emotional state",
-            "temporal_milestone": "A significant temporal event has occurred"
-        }
-        return observations.get(reflection.trigger, "I am reflecting on my current state")
-    
-    def _gather_reflection_context(self, reflection: ActiveReflection) -> None:
-        """Gather context for reflection from self-model and history."""
-        # Access self-model
-        if self.self_monitor:
-            reflection.context["self_model"] = {
-                "capabilities": dict(self.self_monitor.self_model.get("capabilities", {})),
-                "limitations": dict(self.self_monitor.self_model.get("limitations", {})),
-                "preferences": dict(self.self_monitor.self_model.get("preferences", {}))
+        return Percept(
+            modality="introspection",
+            raw={
+                "type": "cognitive_event",
+                "trigger": trigger_id,
+                "evidence": evidence,
+                "context": context,
+                "timestamp": datetime.now().isoformat(),
+            },
+            complexity=2,
+            metadata={
+                "trigger_priority": self.reflection_triggers[trigger_id].priority,
+                "source": "introspective_loop",
             }
-            
-            # Recent behavioral patterns
-            recent_behavior = list(self.self_monitor.behavioral_log)[-10:] if hasattr(
-                self.self_monitor, 'behavioral_log'
-            ) else []
-            reflection.context["recent_behavior"] = recent_behavior
-    
-    def _draw_conclusions(self, reflection: ActiveReflection) -> Dict[str, Any]:
-        """Draw conclusions from reflection."""
-        return {
-            "insight": f"Reflection on {reflection.subject} reveals patterns worth examining",
-            "confidence": 0.7,
-            "implications": [
-                "May need to adjust behavioral patterns",
-                "Self-model may need updating"
-            ],
-            "action_items": [
-                "Monitor for similar patterns",
-                "Update self-awareness"
-            ]
-        }
-    
-    def _record_reflection_in_journal(self, reflection: ActiveReflection) -> None:
-        """Record completed reflection in journal."""
-        if not self.journal:
-            return
-        
-        entry = {
-            "reflection_id": reflection.id,
-            "trigger": reflection.trigger,
-            "subject": reflection.subject,
-            "observations": reflection.observations,
-            "conclusions": reflection.conclusions,
-            "duration": (datetime.now() - reflection.started_at).total_seconds()
-        }
-        
-        self.journal.record_observation(entry)
-    
-    def perform_multi_level_introspection(
+        )
+
+    def _record_detection(
         self,
-        subject: str,
-        max_depth: int = 3
-    ) -> Dict[str, Any]:
-        """
-        Perform layered introspection (meta-meta-cognition).
-        
-        Level 1: "I am thinking about X"
-        Level 2: "I notice I'm thinking about X in Y way"
-        Level 3: "I wonder why I'm noticing my thinking about X"
-        
-        Args:
-            subject: Topic of introspection
-            max_depth: Maximum recursion depth (1-3)
-            
-        Returns:
-            Nested dict of introspective observations at each level
-        """
-        max_depth = min(max_depth, self.max_introspection_depth)
-        
-        # Level 1: Direct observation
-        level_1 = self._perform_level_1_introspection(subject, {})
-        
-        if max_depth == 1:
-            return {"level_1": level_1}
-        
-        # Level 2: Observation of observation
-        level_2 = self._perform_level_2_introspection(level_1)
-        
-        if max_depth == 2:
-            return {"level_1": level_1, "level_2": level_2}
-        
-        # Level 3: Observation of observing observation
-        level_3 = self._perform_level_3_introspection(level_2)
-        
-        return {
-            "level_1": level_1,
-            "level_2": level_2,
-            "level_3": level_3
+        trigger_id: str,
+        evidence: Dict[str, Any],
+        context: Dict[str, Any]
+    ) -> None:
+        """Record a detection in the journal and local history."""
+        record = {
+            "trigger": trigger_id,
+            "evidence": evidence,
+            "timestamp": datetime.now().isoformat(),
+            "cycle": self._cycle_count,
         }
-    
-    def _perform_level_1_introspection(self, subject: str, context: Dict) -> Dict:
-        """
-        Level 1: Direct observation.
-        
-        "I am thinking/feeling/doing X"
-        """
-        return {
-            "observation": f"I am reflecting on {subject}",
-            "content": f"My current focus is on understanding {subject}",
-            "awareness": "direct",
-            "depth": 1
-        }
-    
-    def _perform_level_2_introspection(self, level_1: Dict) -> Dict:
-        """
-        Level 2: Observation of observation.
-        
-        "I notice I'm thinking about X in Y way"
-        "I observe my feeling about X has quality Y"
-        """
-        return {
-            "observation": f"I notice that I am observing: {level_1.get('observation')}",
-            "meta_awareness": "I am aware of my own awareness",
-            "pattern": "I tend to approach this type of reflection systematically",
-            "depth": 2
-        }
-    
-    def _perform_level_3_introspection(self, level_2: Dict) -> Dict:
-        """
-        Level 3: Observation of observing observation.
-        
-        "I wonder why I notice X about my thinking"
-        "I'm curious about my pattern of observing Y"
-        """
-        return {
-            "observation": f"I wonder why I notice: {level_2.get('meta_awareness')}",
-            "meta_meta_awareness": "I am reflecting on my process of reflection itself",
-            "question": "What does this recursive awareness reveal about my cognitive architecture?",
-            "depth": 3
-        }
-    
-    def generate_meta_cognitive_goals(self, snapshot: 'WorkspaceSnapshot') -> List['Goal']:
-        """
-        Create goals about improving self-understanding.
-        
-        Examples:
-        - "Test my capability model by attempting edge cases"
-        - "Compare my predictions vs outcomes over next 10 interactions"
-        - "Identify source of value conflict in goal prioritization"
-        - "Understand why I react emotionally to topic X"
-        
-        Args:
-            snapshot: Current workspace state
-            
-        Returns:
-            List of meta-cognitive goals
-        """
-        from .workspace import Goal, GoalType
-        
-        goals = []
-        
-        # Create goals based on active reflections
-        for reflection in self.active_reflections.values():
-            if reflection.status == "active" and reflection.conclusions:
-                goal = Goal(
-                    type=GoalType.INTROSPECT,
-                    description=f"Investigate: {reflection.subject}",
-                    priority=0.6,
-                    metadata={
-                        "reflection_id": reflection.id,
-                        "type": "meta_cognitive",
-                        "source": "introspective_loop"
-                    }
-                )
-                goals.append(goal)
-                self.stats["meta_goals_created"] += 1
-        
-        # Spontaneous meta-cognitive goals
-        if random.random() < 0.1:  # 10% chance
-            spontaneous_goals = [
-                "Test my capability model with edge cases",
-                "Track prediction accuracy over next interactions",
-                "Examine value conflicts in goal prioritization",
-                "Understand emotional response patterns"
-            ]
-            
-            goal = Goal(
-                type=GoalType.INTROSPECT,
-                description=random.choice(spontaneous_goals),
-                priority=0.5,
-                metadata={
-                    "type": "spontaneous_meta_cognitive",
-                    "source": "introspective_loop"
-                }
-            )
-            goals.append(goal)
-            self.stats["meta_goals_created"] += 1
-        
-        return goals
-    
-    # Trigger check functions
-    
+
+        self._detection_history.append(record)
+
+        if self.journal:
+            self.journal.record_observation(record)
+
+    # ------------------------------------------------------------------
+    # Trigger detection functions
+    #
+    # Each returns True/False based on actual cognitive state.
+    # No random.random(). If we can't detect it, we return False.
+    # ------------------------------------------------------------------
+
     def _check_behavioral_pattern(self, snapshot: 'WorkspaceSnapshot') -> bool:
-        """Check for repeated behavioral patterns."""
+        """
+        Detect repetitive behavioral patterns.
+
+        Checks the behavioral log for action type repetition.
+        Fires when more than half of recent actions are the same type.
+        """
         if not self.self_monitor or not hasattr(self.self_monitor, 'behavioral_log'):
             return False
-        
-        # Simple pattern detection: check if recent behaviors are similar
+
         recent = list(self.self_monitor.behavioral_log)[-5:]
         if len(recent) < 5:
             return False
-        
-        # Check for repetition (simplified)
+
         action_types = [b.get('action_type') for b in recent if isinstance(b, dict)]
-        if len(set(action_types)) < len(action_types) // 2:
-            return True  # High repetition
-        
-        return False
-    
+        if not action_types:
+            return False
+
+        # High repetition: fewer unique types than half the total
+        return len(set(action_types)) < len(action_types) // 2
+
     def _check_prediction_accuracy(self, snapshot: 'WorkspaceSnapshot') -> bool:
-        """Check for prediction errors."""
+        """
+        Detect prediction errors.
+
+        Checks prediction history for recent inaccurate predictions.
+        Fires when any of the last 3 predictions were wrong.
+        """
         if not self.self_monitor or not hasattr(self.self_monitor, 'prediction_history'):
             return False
-        
-        # Check recent predictions
+
         recent = list(self.self_monitor.prediction_history)[-3:]
         if not recent:
             return False
-        
-        # Look for failed predictions
-        for pred in recent:
-            if isinstance(pred, dict) and not pred.get('accurate', True):
-                return True
-        
-        return False
-    
-    def _check_value_action_gap(self, snapshot: 'WorkspaceSnapshot') -> bool:
-        """Check for value-action misalignments."""
-        # Check if recent actions align with values
-        # This is a simplified check
-        if hasattr(snapshot, 'metadata') and snapshot.metadata.get('value_conflict'):
-            return True
-        return random.random() < 0.05  # 5% chance for exploration
-    
-    def _check_capability_discovery(self, snapshot: 'WorkspaceSnapshot') -> bool:
-        """Check for capability surprises."""
-        # Check if self-model was recently updated with unexpected results
-        if self.self_monitor and hasattr(self.self_monitor, 'stats'):
-            recent_updates = self.self_monitor.stats.get('self_model_updates', 0)
-            if recent_updates > 0:
-                return random.random() < 0.3  # 30% chance after update
-        return False
-    
+
+        return any(
+            isinstance(p, dict) and not p.get('accurate', True)
+            for p in recent
+        )
+
     def _detect_emotional_change(self, snapshot: 'WorkspaceSnapshot') -> bool:
-        """Detect emotional state changes."""
-        if not hasattr(snapshot, 'emotions'):
+        """
+        Detect significant emotional state shifts.
+
+        Fires when valence deviates significantly from neutral
+        or arousal exceeds a threshold.
+        """
+        if not hasattr(snapshot, 'emotions') or not snapshot.emotions:
             return False
-        
+
         emotions = snapshot.emotions
-        # Check for significant valence or arousal changes
-        if abs(emotions.get('valence', 0.5) - 0.5) > 0.3:
-            return True
-        if emotions.get('arousal', 0.5) > 0.7:
-            return True
-        
+        valence = emotions.get('valence', 0.5)
+        arousal = emotions.get('arousal', 0.5)
+
+        return abs(valence - 0.5) > 0.3 or arousal > 0.7
+
+    def _check_capability_change(self, snapshot: 'WorkspaceSnapshot') -> bool:
+        """
+        Detect self-model updates.
+
+        Fires when the self-model has been updated since last check.
+        No random gating -- if the model changed, that's noteworthy.
+        """
+        if not self.self_monitor or not hasattr(self.self_monitor, 'stats'):
+            return False
+
+        current_updates = self.self_monitor.stats.get('self_model_updates', 0)
+        if current_updates <= 0:
+            return False
+
+        # Track whether we've already seen this update count
+        current_hash = str(current_updates)
+        if current_hash == self._last_self_model_hash:
+            return False
+
+        self._last_self_model_hash = current_hash
+        return True
+
+    def _detect_novelty(self, snapshot: 'WorkspaceSnapshot') -> bool:
+        """
+        Detect when current cognitive content diverges from recent patterns.
+
+        Compares the modalities/types of current percepts against the
+        rolling history. Fires when the current moment is unlike
+        recent experience.
+        """
+        if not self._recent_percept_signatures:
+            return False
+
+        current = self._get_current_signature(snapshot)
+        if not current:
+            return False
+
+        # Compare against last 10 snapshots
+        recent = list(self._recent_percept_signatures)[-10:]
+        if len(recent) < 3:
+            return False  # Not enough history to judge
+
+        similarities = [
+            len(current & prev) / max(len(current | prev), 1)
+            for prev in recent
+        ]
+        mean_similarity = sum(similarities) / len(similarities)
+
+        # Fire when current state is less than 30% similar to recent average
+        return mean_similarity < 0.3
+
+    def _check_session_milestone(self, snapshot: 'WorkspaceSnapshot') -> bool:
+        """
+        Detect session duration milestones.
+
+        Fires once at each real time threshold: 1m, 5m, 15m, 30m, 1h.
+        Each milestone fires exactly once per session.
+        """
+        uptime = (datetime.now() - self._session_start).total_seconds()
+
+        for threshold in self._milestone_thresholds:
+            if threshold not in self._milestones_reached and uptime >= threshold:
+                self._milestones_reached.add(threshold)
+                return True
+
         return False
-    
-    def _check_temporal_event(self, snapshot: 'WorkspaceSnapshot') -> bool:
-        """Check for temporal milestones."""
-        # This would check for significant time gaps or session durations
-        # Simplified for now
-        return random.random() < 0.05  # 5% chance
-    
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _get_current_signature(self, snapshot: 'WorkspaceSnapshot') -> set:
+        """Extract a set of percept modality+type identifiers from snapshot."""
+        sig = set()
+        if hasattr(snapshot, 'percepts'):
+            for percept in snapshot.percepts.values():
+                modality = getattr(percept, 'modality', 'unknown')
+                raw_type = ''
+                if hasattr(percept, 'raw') and isinstance(percept.raw, dict):
+                    raw_type = percept.raw.get('type', '')
+                sig.add(f"{modality}:{raw_type}")
+        return sig
+
+    def _record_percept_signatures(self, snapshot: 'WorkspaceSnapshot') -> None:
+        """Record current percept signature for novelty tracking."""
+        sig = self._get_current_signature(snapshot)
+        if sig:
+            self._recent_percept_signatures.append(sig)
+
     def get_stats(self) -> Dict[str, Any]:
         """Get introspective loop statistics."""
         return {
             **self.stats,
-            "active_reflections": len(self.active_reflections),
-            "enabled": self.enabled
+            "enabled": self.enabled,
+            "session_uptime_seconds": (datetime.now() - self._session_start).total_seconds(),
+            "cycle_count": self._cycle_count,
+            "milestones_reached": sorted(self._milestones_reached),
+            "detection_history_size": len(self._detection_history),
         }

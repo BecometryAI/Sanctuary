@@ -202,25 +202,14 @@ class ContinuousConsciousnessController:
         # INTROSPECTIVE LOOP: Run reflection cycle (Phase 4.2)
         try:
             introspective_percepts = await self.core.introspective_loop.run_reflection_cycle()
-            
+
             # Add introspective percepts to workspace
             for percept in introspective_percepts:
                 self.core.workspace.add_percept(percept)
-            
+
             if introspective_percepts:
-                logger.debug(f"🔍 Generated {len(introspective_percepts)} introspective percepts")
-            
-            # Generate meta-cognitive goals
-            snapshot = self.core.workspace.broadcast()
-            meta_goals = self.core.introspective_loop.generate_meta_cognitive_goals(snapshot)
-            
-            # Add meta-cognitive goals to workspace
-            for goal in meta_goals:
-                self.core.workspace.add_goal(goal)
-            
-            if meta_goals:
-                logger.debug(f"🎯 Created {len(meta_goals)} meta-cognitive goals")
-                
+                logger.debug(f"Generated {len(introspective_percepts)} introspective percepts")
+
         except Exception as e:
             logger.error(f"Error in introspective loop: {e}")
         

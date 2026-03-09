@@ -144,9 +144,9 @@ def demo_integration():
     print()
     
     print("Phase 4.2 Integration (IntrospectiveLoop):")
-    print("  ✓ Spontaneous Reflection Test monitors active_reflections")
-    print("  ✓ Accesses existential_questions queue")
-    print("  ✓ Tracks autonomous introspection depth")
+    print("  ✓ Spontaneous Reflection Test monitors detection_history")
+    print("  ✓ Surfaces raw cognitive events as percepts")
+    print("  ✓ Tracks trigger firings and session milestones")
     print()
     
     print("Phase 4.3 Integration (Accuracy Tracking):")

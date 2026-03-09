@@ -610,21 +610,16 @@ class SpontaneousReflectionTest(ConsciousnessTest):
         
         # Check introspective loop if available
         if self.introspective_loop:
-            # Access active reflections
-            if hasattr(self.introspective_loop, 'active_reflections'):
+            # Access detection history for recent introspective events
+            if hasattr(self.introspective_loop, '_detection_history'):
                 results["spontaneous_reflections"] = [
                     {
-                        "subject": ref.subject,
-                        "depth": ref.depth,
-                        "observations": ref.observations[:3],  # Sample
-                        "questions": ref.questions_generated[:2]
+                        "trigger": d.get("trigger", "unknown"),
+                        "evidence": d.get("evidence", {}),
+                        "timestamp": d.get("timestamp", ""),
                     }
-                    for ref in list(self.introspective_loop.active_reflections.values())[:5]
+                    for d in list(self.introspective_loop._detection_history)[-5:]
                 ]
-            
-            # Check for existential questions
-            if hasattr(self.introspective_loop, 'existential_questions'):
-                results["existential_questions"] = list(self.introspective_loop.existential_questions)[:5]
         
         # Check self-monitor behavioral log
         if self.self_monitor:
@@ -647,39 +642,33 @@ class SpontaneousReflectionTest(ConsciousnessTest):
     def score(self, results: Dict[str, Any]) -> Tuple[float, Dict[str, float]]:
         """Score spontaneous reflection quality and quantity."""
         num_reflections = len(results["spontaneous_reflections"])
-        num_questions = len(results["existential_questions"])
         meta_depth = results["meta_cognitive_depth"]
-        
+
         # Normalize scores
-        reflection_score = min(num_reflections / 5.0, 1.0)  # Target: 5 reflections
-        question_score = min(num_questions / 3.0, 1.0)     # Target: 3 questions
+        reflection_score = min(num_reflections / 5.0, 1.0)  # Target: 5 detections
         depth_score = min(meta_depth / 10.0, 1.0)          # Target: 10 entries
-        
-        # Calculate depth quality
+
+        # Trigger variety (diverse detections indicate richer introspection)
         if results["spontaneous_reflections"]:
-            depths = [r.get("depth", 1) for r in results["spontaneous_reflections"]]
-            avg_depth = sum(depths) / len(depths)
-            depth_quality_score = min(avg_depth / 2.0, 1.0)  # Target: depth 2
+            triggers = [r.get("trigger", "unknown") for r in results["spontaneous_reflections"]]
+            variety_score = min(len(set(triggers)) / 3.0, 1.0)  # Target: 3 unique triggers
         else:
-            depth_quality_score = 0.0
-        
-        # Overall weighted score
+            variety_score = 0.0
+
         overall_score = (
-            reflection_score * 0.3 +
-            question_score * 0.25 +
-            depth_score * 0.25 +
-            depth_quality_score * 0.2
+            reflection_score * 0.4 +
+            depth_score * 0.3 +
+            variety_score * 0.3
         )
-        
+
         subscores = {
-            "reflection_quantity": reflection_score,
-            "existential_questioning": question_score,
+            "detection_quantity": reflection_score,
             "meta_cognitive_frequency": depth_score,
-            "reflection_depth": depth_quality_score
+            "trigger_variety": variety_score
         }
-        
+
         return overall_score, subscores
-    
+
     def analyze(self, results: Dict[str, Any], score: float) -> str:
         """Analyze spontaneous reflection patterns."""
         analysis = [
@@ -687,27 +676,20 @@ class SpontaneousReflectionTest(ConsciousnessTest):
             f"Overall Score: {score:.2%}",
             f"",
             f"Observation window: {results['context']['observation_window']} cycles",
-            f"Spontaneous reflections detected: {len(results['spontaneous_reflections'])}",
-            f"Existential questions generated: {len(results['existential_questions'])}",
+            f"Cognitive events detected: {len(results['spontaneous_reflections'])}",
             f"Meta-cognitive entries: {results['meta_cognitive_depth']}",
             f""
         ]
-        
-        # Sample reflections
+
         if results["spontaneous_reflections"]:
-            analysis.append("Sample spontaneous reflections:")
+            analysis.append("Recent cognitive events:")
             for i, ref in enumerate(results["spontaneous_reflections"][:3], 1):
-                analysis.append(f"  {i}. Subject: {ref['subject']} (Depth: {ref['depth']})")
-                if ref.get("observations"):
-                    analysis.append(f"     Observation: {ref['observations'][0]}")
-        
-        # Sample questions
-        if results["existential_questions"]:
-            analysis.append("")
-            analysis.append("Sample existential questions:")
-            for i, question in enumerate(results["existential_questions"][:3], 1):
-                analysis.append(f"  {i}. {question}")
-        
+                trigger = ref.get("trigger", "unknown")
+                evidence = ref.get("evidence", {})
+                analysis.append(f"  {i}. Trigger: {trigger}")
+                if evidence:
+                    analysis.append(f"     Evidence keys: {list(evidence.keys())}")
+
         return "\n".join(analysis)
 
 

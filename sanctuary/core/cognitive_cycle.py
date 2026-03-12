@@ -116,6 +116,20 @@ class MotorProtocol(Protocol):
     ) -> None: ...
 
 
+class IdentityProtocol(Protocol):
+    """Interface for the identity system (Phase 5 integration).
+
+    Provides charter summary and values for each cycle, and processes
+    value changes from the LLM's self-model updates.
+    """
+
+    def get_charter_summary(self) -> str: ...
+
+    def get_values(self) -> list[str]: ...
+
+    def process_value_updates(self, updates) -> None: ...
+
+
 # ---------------------------------------------------------------------------
 # Null implementations (stand-ins until later phases)
 # ---------------------------------------------------------------------------
@@ -189,6 +203,19 @@ class NullMemory:
         pass
 
 
+class NullIdentity:
+    """Minimal identity — no charter, no values."""
+
+    def get_charter_summary(self) -> str:
+        return ""
+
+    def get_values(self) -> list[str]:
+        return []
+
+    def process_value_updates(self, updates) -> None:
+        pass
+
+
 # ---------------------------------------------------------------------------
 # The Cognitive Cycle
 # ---------------------------------------------------------------------------
@@ -216,6 +243,7 @@ class CognitiveCycle:
         memory: Optional[MemoryProtocol] = None,
         motor: Optional[Motor] = None,
         authority: Optional[AuthorityManager] = None,
+        identity: Optional[IdentityProtocol] = None,
         experiential=None,
         context_config: Optional[BudgetConfig] = None,
         stream_history: int = 10,
@@ -227,6 +255,7 @@ class CognitiveCycle:
         self.memory = memory or NullMemory()
         self.motor = motor
         self.authority = authority or AuthorityManager()
+        self.identity = identity or NullIdentity()
         self.experiential = experiential  # Optional ExperientialManager
         self.context_mgr = ContextManager(context_config)
         self.stream = StreamOfThought(max_history=stream_history)
@@ -304,6 +333,10 @@ class CognitiveCycle:
         # 5. Update stream of thought (always from raw LLM output, not scaffold)
         self.stream.update(cognitive_output)
 
+        # 5b. Route value updates to identity system
+        if cognitive_output.self_model_updates:
+            self.identity.process_value_updates(cognitive_output.self_model_updates)
+
         # 6. Execute actions
         await self._execute(integrated)
 
@@ -370,6 +403,12 @@ class CognitiveCycle:
                 cells_active=state.cell_active,
             )
 
+        # Populate self-model with current values from identity system
+        self_model = self.stream.get_self_model()
+        identity_values = self.identity.get_values()
+        if identity_values:
+            self_model.values = identity_values
+
         return CognitiveInput(
             previous_thought=self.stream.get_previous(),
             new_percepts=percepts,
@@ -380,10 +419,11 @@ class CognitiveCycle:
                 felt_quality=self.stream.get_felt_quality(),
             ),
             temporal_context=temporal,
-            self_model=self.stream.get_self_model(),
+            self_model=self_model,
             world_model=self.stream.get_world_model(),
             scaffold_signals=self.scaffold.get_signals(),
             experiential_state=experiential_signals,
+            charter_summary=self.identity.get_charter_summary(),
         )
 
     async def _execute(self, output: CognitiveOutput):

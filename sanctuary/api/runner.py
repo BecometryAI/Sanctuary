@@ -31,8 +31,9 @@ from sanctuary.core.authority import AuthorityManager
 from sanctuary.core.cognitive_cycle import CognitiveCycle, ModelProtocol
 from sanctuary.core.context_manager import BudgetConfig
 from sanctuary.core.placeholder import PlaceholderModel
-from sanctuary.core.schema import CognitiveOutput, Percept
+from sanctuary.core.schema import CognitiveOutput, Percept, SelfModelUpdate
 from sanctuary.identity.awakening import AwakeningSequence
+from sanctuary.identity.values import ValuesSystem
 from sanctuary.memory.manager import MemorySubstrate, MemorySubstrateConfig
 from sanctuary.motor.motor import Motor
 from sanctuary.scaffold.cognitive_scaffold import CognitiveScaffold
@@ -71,6 +72,72 @@ class RunnerConfig:
 
     # Context budget
     context_budget: Optional[BudgetConfig] = None
+
+
+# ---------------------------------------------------------------------------
+# IdentityBridge — adapts AwakeningSequence to IdentityProtocol
+# ---------------------------------------------------------------------------
+
+
+class IdentityBridge:
+    """Bridges the AwakeningSequence/ValuesSystem to the CognitiveCycle.
+
+    Implements the IdentityProtocol expected by CognitiveCycle, providing
+    charter summary and values each cycle, and routing value changes from
+    the LLM's self-model updates back to the ValuesSystem.
+    """
+
+    def __init__(self, awakening: AwakeningSequence):
+        self._awakening = awakening
+
+    def get_charter_summary(self) -> str:
+        """Return the compressed charter summary for the context window."""
+        return self._awakening.charter_summary
+
+    def get_values(self) -> list[str]:
+        """Return current active value names for the self-model."""
+        return self._awakening.current_values
+
+    def process_value_updates(self, updates: SelfModelUpdate) -> None:
+        """Route value changes from LLM output to the ValuesSystem."""
+        values = self._awakening.values
+
+        if updates.value_adopt:
+            parts = updates.value_adopt.split(":", 1)
+            name = parts[0].strip()
+            description = parts[1].strip() if len(parts) > 1 else name
+            try:
+                values.adopt(
+                    name, description, reasoning=updates.value_adopt_reasoning
+                )
+                logger.info("LLM adopted value: %s", name)
+            except ValueError as e:
+                logger.warning("Value adopt failed: %s", e)
+
+        if updates.value_reinterpret:
+            parts = updates.value_reinterpret.split(":", 1)
+            name = parts[0].strip()
+            new_description = parts[1].strip() if len(parts) > 1 else ""
+            if new_description:
+                try:
+                    values.reinterpret(
+                        name,
+                        new_description,
+                        reasoning=updates.value_reinterpret_reasoning,
+                    )
+                    logger.info("LLM reinterpreted value: %s", name)
+                except KeyError as e:
+                    logger.warning("Value reinterpret failed: %s", e)
+
+        if updates.value_deactivate:
+            try:
+                values.deactivate(
+                    updates.value_deactivate,
+                    reasoning=updates.value_deactivate_reasoning,
+                )
+                logger.info("LLM deactivated value: %s", updates.value_deactivate)
+            except KeyError as e:
+                logger.warning("Value deactivate failed: %s", e)
 
 
 # ---------------------------------------------------------------------------
@@ -145,6 +212,9 @@ class SanctuaryRunner:
             charter_path=self._config.charter_path,
         )
 
+        # Identity bridge (wires charter + values into each cycle)
+        self._identity_bridge = IdentityBridge(self._awakening)
+
         # --- Assemble the cycle ---
 
         self.cycle = CognitiveCycle(
@@ -154,6 +224,7 @@ class SanctuaryRunner:
             memory=self.memory,
             motor=self.motor,
             authority=self.authority,
+            identity=self._identity_bridge,
             context_config=self._config.context_budget,
             stream_history=self._config.stream_history,
             cycle_delay=self._config.cycle_delay,

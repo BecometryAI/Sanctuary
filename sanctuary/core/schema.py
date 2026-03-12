@@ -176,6 +176,7 @@ class CognitiveInput(BaseModel):
     experiential_state: ExperientialSignals = Field(
         default_factory=ExperientialSignals
     )
+    charter_summary: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -218,6 +219,13 @@ class SelfModelUpdate(BaseModel):
     current_state: str = ""
     new_uncertainty: str = ""
     prediction_accuracy_note: str = ""
+    # Value changes — the LLM can adopt, reinterpret, or deactivate values
+    value_adopt: Optional[str] = None  # "Name: description"
+    value_adopt_reasoning: str = ""
+    value_reinterpret: Optional[str] = None  # "Name: new description"
+    value_reinterpret_reasoning: str = ""
+    value_deactivate: Optional[str] = None  # Value name to deactivate
+    value_deactivate_reasoning: str = ""
 
 
 class GoalProposal(BaseModel):

@@ -113,6 +113,33 @@ body {
     margin-right: auto;
 }
 
+.inner-message {
+    background-color: #1a2a1a;
+    margin-right: auto;
+    font-style: italic;
+    color: #8a8;
+    border-left: 2px solid #4a6a4a;
+    font-size: 0.9em;
+}
+
+.system-message {
+    background-color: #2a1a1a;
+    margin: 5px auto;
+    text-align: center;
+    color: var(--warning-color);
+    font-size: 0.85em;
+}
+
+#status-indicator.connecting {
+    background-color: var(--warning-color);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
 .input-container {
     display: flex;
     gap: 10px;

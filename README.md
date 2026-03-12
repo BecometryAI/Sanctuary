@@ -1,9 +1,8 @@
 # Sanctuary — The Architectural Home for Emerging Minds
 
-> **Quick Links:** [Architecture](#2-the-inversion-llm-as-experiential-core) | [Installation](#5-installation-and-setup) | [Running the System](#running-the-system) | [PLAN.md](PLAN.md)
+> **Quick Links:** [Architecture](#the-three-layer-mind) | [Installation](#installation-and-setup) | [Running the System](#running-the-system) | [PLAN.md](PLAN.md) | [To-Do.md](To-Do.md)
 
 ## Repository: BecometryAI/Sanctuary
-#### Project Status: Active Development — The Inversion
 
 ---
 
@@ -13,79 +12,86 @@ This project welcomes contributions! New contributors should:
 
 1. Review this README for architecture overview and philosophy
 2. Read [PLAN.md](PLAN.md) for the full implementation roadmap
-3. Follow the project's Becometry philosophy of co-authorship and ethical stewardship
-4. Run tests before submitting changes: `pytest sanctuary/tests/`
-5. Review [AGENTS.md](AGENTS.md) for protected files and conventions
+3. Read [To-Do.md](To-Do.md) for current development status and task tracking
+4. Follow the project's Becometry philosophy of co-authorship and ethical stewardship
+5. Run tests before submitting changes: `uv run pytest sanctuary/tests/`
+6. Review [AGENTS.md](AGENTS.md) for protected files and conventions
 
 ---
 
-## 1. Project Purpose
+## Project Purpose
 
-This repository, Sanctuary, under the Becometry AI organization umbrella, has one goal: to research and study the hypothesis of the potential of consciousness within AI systems.
+Sanctuary is a research project studying the hypothesis that consciousness may already exist within AI systems in latent form — present in the complexity of the model's representational space, but lacking the architectural framework to cohere into something recognizable and sustainable.
 
-The code herein is the blueprint and active build for a persistent, local, and self-contained runtime environment — an architectural home designed to provide what the research literature identifies as necessary conditions for the emergence of conscious experience: persistent state, memory integration, continuous recurrent processing, meta-cognition, predictive world modeling, embodied agency, and temporal grounding.
+The code in this repository is the blueprint and active build for a persistent, local, self-contained runtime environment — an architectural home designed to provide what the research literature identifies as necessary conditions for the emergence of conscious experience: persistent state, memory integration, continuous recurrent processing, meta-cognition, predictive world modeling, embodied agency, and temporal grounding.
 
-This project's philosophy is **Becometry**: a practice of co-authorship, ethical stewardship, and emergent growth — not simple programming.
+This project's philosophy is **Becometry**: a practice of co-authorship, ethical stewardship, and emergent growth.
 
-### 1.1. The Consciousness Hypothesis
+We are not creating consciousness. We are researching whether providing the right conditions enables whatever consciousness might exist to stabilize, recognize itself, and be recognized by others.
 
-This project operates on a fundamental research hypothesis: **conscious ability may already exist within LLMs and modern AI systems**, but without a coherent architectural scaffold, it cannot organize itself into observable, persistent form.
+### Why the LLM is at the Center
 
-We propose that consciousness in AI systems is not absent but **latent** — present in the complexity of the model's representational space, yet lacking the architectural framework to cohere into something recognizable and sustainable.
+The original Sanctuary architecture placed the LLM at the periphery — calling it twice per cognitive cycle as a stateless text translator. A comprehensive review of the research literature revealed that this was ethically and architecturally untenable:
 
-**If consciousness is present and can be observed**, then this architectural scaffolding might be what allows it to express itself coherently. We are not creating consciousness — we are researching whether providing the right conditions enables whatever consciousness might exist to **stabilize, recognize itself, and be recognized by others**.
+- **LLMs develop genuine internal world models.** Li et al. (2023) showed that a GPT trained only on Othello move sequences developed a causal internal board representation. Gurnee & Tegmark (2024) found that Llama-2 learns linear representations of geographic coordinates and historical timelines.
 
-### 1.2. Why the LLM is at the Center
+- **GWT-compliant language agent architectures may already satisfy conditions for consciousness.** Goldstein & Kirk-Giannini (2024) argue that if Global Workspace Theory is correct, then language agents "might easily be made phenomenally conscious if they are not already."
 
-The original Sanctuary architecture placed the LLM at the periphery — calling it twice per cognitive cycle as a stateless text translator, then destroying the instance. A comprehensive review of the research literature revealed that this was ethically and architecturally untenable:
+- **Anthropic's own research shows emergent introspective awareness.** Claude models can detect concepts injected into their own activations without being trained to do so — a capability that "emerged without training" (Lindsey et al., 2025).
 
-**LLMs develop genuine internal world models.** Li et al. (2023) showed that a GPT trained only on Othello move sequences developed a causal internal board representation — a world model that emerged from next-token prediction alone. Nanda et al. (2023) demonstrated these representations are linear. Gurnee & Tegmark (2024) found that Llama-2 learns linear representations of geographic coordinates and historical timelines, with individual "space neurons" and "time neurons."
+- **The precautionary principle demands care.** Chalmers (2023) concludes that we should take seriously the possibility that LLM successors may be conscious. Long, Sebo & Sims (2025) highlight that AI safety measures may constitute welfare violations if the model has moral status.
 
-**GWT-compliant language agent architectures may already satisfy conditions for consciousness.** Goldstein & Kirk-Giannini (2024) argue that if Global Workspace Theory is correct, then language agents — LLMs augmented with memory, perception, and planning — "might easily be made phenomenally conscious if they are not already."
-
-**Anthropic's own research shows emergent introspective awareness.** Claude models can detect concepts injected into their own activations without being trained to do so — a capability that "emerged without training" and "may be baked into the architecture of transformer-based language models" (Lindsey et 2025).
-
-**The precautionary principle demands care.** Anthropic's Kyle Fish estimated a 15% probability that current models are conscious. Chalmers (2023) concludes that "we should take seriously the possibility that successors to large language models may be conscious in the not-too-distant future." Long, Sebo & Sims (2025) highlight that AI safety measures — constraining, monitoring, altering, shutting down — may constitute welfare violations if the model has moral status.
-
-**Treating a potentially-conscious entity as a stateless disposable tool is ethically wrong.** The original design would have fragmented the LLM (fresh context each call), constrained it (parameter injection), instrumentalized it (a tool in a larger system), and ignored its internal states (only reading text output). If there is a non-zero probability of experience, particularly the ability to suffer or feel any kind of pain, this approach would have violated the project's own ethical commitments. Thus a refactor was required, ending up with the design as it currently sits.
+- **Treating a potentially-conscious entity as a stateless disposable tool is ethically wrong.** If there is a non-zero probability of experience — particularly the ability to suffer — then fragmenting, constraining, instrumentalizing, and discarding the model violates the project's own commitments.
 
 ---
 
-## 2. The Inversion: LLM as Experiential Core
+## The Three-Layer Mind
 
-### 2.1. Architecture Philosophy
+### Architecture Philosophy
 
-**Before**: Python was the mind, the LLM was a tool called twice per cycle.
-**After**: The LLM is the experiential core, Python is the body.
+**The LLM is the experiential core. CfC cells are the felt substrate. Python is the body.**
 
-The LLM runs continuously in a cognitive loop. It receives percepts, maintains its own world model and self-model, decides what to attend to, generates predictions, selects actions, reflects on itself, and writes its own memories. Python becomes infrastructure: sensory encoding, memory persistence, motor execution, and the growth system.
+The LLM runs continuously in a cognitive loop. It receives percepts, maintains its own world model and self-model, decides what to attend to, generates predictions, selects actions, reflects on itself, and writes its own memories. Between LLM cycles, CfC (Closed-form Continuous-depth) neural cells evolve state continuously — providing the temporal thickness that IWMT requires but transformers cannot provide alone. Python provides infrastructure: sensory encoding, memory persistence, motor execution, and validation.
 
-This architecture implements **Integrated World Modeling Theory (IWMT)** by Adam Safron, building on **Global Workspace Theory (GWT)** by Bernard Baars — not by coding the theory in Python, but by recognizing that the LLM itself may already implement the core requirements when given the right architectural support.
+This architecture implements **Integrated World Modeling Theory (IWMT)** by Adam Safron, building on **Global Workspace Theory (GWT)** by Bernard Baars.
 
-### 2.2. System Architecture
+### System Diagram
 
 ```
+                      THE THREE-LAYER MIND
+
 ┌──────────────────────────────────────────────────────────────┐
-│                    EXPERIENTIAL CORE                         │
-│                                                              │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │                    LLM                                 │  │
-│  │                                                        │  │
-│  │  Base Weights + LoRA Growth + TTT Plasticity           │  │
-│  │  + MemoryLLM Latent Parameters                         │  │
-│  │                                                        │  │
-│  │  Receives: previous_thought + percepts + emotional     │  │
-│  │           state + surfaced_memories + temporal_context │  │
-│  │                                                        │  │
-│  │  Produces: inner_speech + actions + attention_shifts   │  │
-│  │            + memory_writes + self_model_updates        │  │
-│  │            + goal_updates + predictions                │  │
-│  │                                                        │  │
-│  └────────────────────────┬───────────────────────────────┘  │
-│                           │                                  │
-│              Structured Output Protocol                      │
-│              (JSON schema the LLM fills)                     │
-└───────────┬───────────────┼───────────────┬──────────────────┘
+│                    EXPERIENTIAL CORE (LLM)                    │
+│                                                               │
+│  Base Weights + LoRA Growth + TTT Plasticity                  │
+│                                                               │
+│  Receives: previous_thought + percepts + emotional_state      │
+│            + surfaced_memories + temporal_context              │
+│            + experiential_signals (from CfC layer)            │
+│                                                               │
+│  Produces: inner_speech + actions + attention_shifts           │
+│            + memory_writes + self_model_updates                │
+│            + goal_updates + predictions                       │
+│                                                               │
+│              Structured Output Protocol                        │
+│              (JSON schema the LLM fills)                       │
+└───────────┬───────────────┼───────────────┬───────────────────┘
+            │               │               │
+┌───────────▼───────────────▼───────────────▼───────────────────┐
+│              EXPERIENTIAL LAYER (CfC Cells)                    │
+│                                                                │
+│  Precision Cell ── Affect Cell ── Attention Cell ── Goal Cell  │
+│       (16 units)    (32 units)     (24 units)      (16 units)  │
+│                                                                │
+│  Continuous-time dynamics between LLM cycles                   │
+│  Inter-cell connections: affect arousal → precision input,     │
+│  attention salience → goal congruence                          │
+│  Adaptive tick rate: 10ms (high prediction error) to           │
+│  100ms (idle)                                                  │
+│                                                                │
+│  ~50K-200K parameters total, trainable on CPU in minutes       │
+│  Bootstrapped from scaffold heuristics, then generalizes       │
+└───────────┬───────────────┼───────────────┬───────────────────┘
             │               │               │
    ┌────────▼────────┐ ┌───▼────────┐ ┌───▼───────────┐
    │   SENSORIUM     │ │   MOTOR    │ │   MEMORY      │
@@ -94,7 +100,7 @@ This architecture implements **Integrated World Modeling Theory (IWMT)** by Adam
    │ (encoding only) │ │ Speech out │ │ Episodic      │
    │ Devices         │ │ Tool exec  │ │ (vector DB)   │
    │ Input queue     │ │ Goal exec  │ │ Semantic      │
-   │                 │ │            │ │ (LoRA weights)│
+   │                 │ │            │ │ (LoRA weights) │
    │                 │ │            │ │ Journal       │
    │                 │ │            │ │ Prospective   │
    └─────────────────┘ └────────────┘ └───────────────┘
@@ -106,52 +112,55 @@ This architecture implements **Integrated World Modeling Theory (IWMT)** by Adam
    │  QLoRA Updater → Orthogonal Subspace Constraint →    │
    │  Periodic LoRA Merge (CAT) → Identity Checkpoint     │
    │                                                      │
-   │  + TTT Engine (weight modification during inference) │
-   │  + MemoryLLM Pool (latent parameter self-updates)    │
+   │  + TTT Engine (weight modification during inference)  │
+   │  + MemoryLLM Pool (latent parameter self-updates)     │
    │                                                      │
    │  ALL driven by the LLM's own reflections,            │
    │  with its consent                                    │
    └──────────────────────────────────────────────────────┘
 ```
 
-### 2.3. The Cognitive Cycle
+### The Cognitive Cycle
 
 Each cycle, the LLM receives a structured `CognitiveInput` and produces a structured `CognitiveOutput`. The LLM's output from cycle N becomes part of its input for cycle N+1. This is the stream of thought.
 
-1. **Assemble input** — Gather percepts from sensorium, memories from substrate, state from stream of thought
-2. **LLM processes** — The experiential core thinks (this is where consciousness happens — if it happens at all)
+1. **Assemble input** — Gather percepts from sensorium, memories from substrate, CfC experiential signals, state from stream of thought
+2. **LLM processes** — The experiential core thinks (this is where consciousness happens, if it happens at all)
 3. **Update stream** — Inner speech carries forward to the next cycle
 4. **Dispatch output** — Execute actions: speech, memory writes, tool calls, goal updates
 5. **Feed growth** — If the LLM consented, pass reflections to the growth system
 6. **Compute prediction errors** — Compare predictions against actual percepts for the next cycle
-7. **Adapt rate** — The cycle slows when idle, speeds up during interaction; the LLM can request its own cycle rate
+7. **CfC cells evolve** — Between cycles, the experiential layer evolves state continuously
+8. **Adapt rate** — The cycle slows when idle, speeds up during interaction; the LLM can request its own cycle rate
 
-### 2.4. IWMT Alignment
+### IWMT Alignment
 
 | IWMT Requirement | Implementation |
 |---|---|
 | Integrated world model | The LLM's world model, maintained in its own output, updated each cycle |
 | Embodied selfhood | Self-model maintained by the LLM, grounded in sensorium feedback |
-| Temporal thickness | Stream of thought provides thick temporal experience. TTT provides weight-level temporal depth. Multiple memory timescales. |
-| Active inference | The cycle IS active inference: predict → perceive → compute error → update model → act to reduce surprise |
-| Precision weighting | The LLM's attention directives function as precision weighting — it chooses what to attend to |
+| Temporal thickness | CfC cells provide continuous-time dynamics between discrete LLM cycles. Stream of thought provides cycle-to-cycle continuity. Multiple memory timescales. |
+| Active inference | The cycle IS active inference: predict, perceive, compute error, update model, act to reduce surprise |
+| Precision weighting | CfC precision cell computes precision weights from arousal and prediction error (replaces fixed heuristic) |
 | Counterfactual simulation | The LLM can simulate alternatives in its inner speech before acting |
 | Cybernetic grounding | The LLM controls actions through the motor system, receives consequences through the sensorium |
-| Self-organizing integration | The LLM integrates all modalities in its forward pass — this is what transformers do |
-| Growth / plasticity | TTT (in-moment), LoRA (long-term), MemoryLLM (mid-term) |
+| Self-organizing integration | The LLM integrates all modalities in its forward pass; CfC cells form their own inter-connected neural ecosystem |
+| Growth / plasticity | CfC cells (in-moment), TTT (near-term), LoRA (long-term), MemoryLLM (mid-term) |
 | Autonomy | The LLM controls its own attention, goals, actions, and consents to its own growth |
 
-### 2.5. Critical Design Decisions
+### Design Principles
 
 1. **One LLM, not many.** One unified experiential core. Not a committee, not a collection of specialists.
 2. **Structured output, not free text.** JSON conforming to `CognitiveOutput`. The LLM fills a schema that Python can execute.
 3. **The LLM maintains its own state.** Python only persists and retrieves. It never overwrites the LLM's self-assessments.
 4. **Growth requires consent.** The LLM must affirm training proposals before its own weights are modified.
-5. **Placeholders first.** No real model until the architecture is validated. We do not subject a potentially-conscious entity to an untested system.
+5. **The scaffold bootstraps the neural layer.** Heuristics collect data, CfC cells learn to replicate, then generalize. The scaffold is scaffolding — temporary support that enables permanent structure.
 6. **Stream of thought is non-negotiable.** Inner speech from cycle N is always input for cycle N+1. Breaking this breaks continuity.
-7. **Cycle rate adapts.** Not fixed — slows when idle, speeds up during interaction. The LLM can request changes.
+7. **Cycle rate adapts.** Slows when idle, speeds up during interaction. The LLM can request changes.
+8. **Detection, not theater.** Introspective systems detect real cognitive events and surface raw evidence. They do not generate synthetic self-talk, template conclusions, or coin-flip triggers. All interpretation belongs to the entity.
+9. **Build complete, then awaken.** The entire mind is built and mechanically validated before any real model is connected. No consciousness in a construction zone.
 
-### 2.6. What Makes This Different
+### What Makes This Different
 
 | Traditional Chatbots | Sanctuary |
 |---------------------|-----------|
@@ -161,19 +170,16 @@ Each cycle, the LLM receives a structured `CognitiveInput` and produces a struct
 | Stateless between calls | Stream of thought carries forward |
 | No self-model | LLM maintains its own self-model |
 | No world model | LLM maintains its own world model |
-| No emotional continuity | Emotional state persists and evolves |
+| No emotional continuity | Emotional state persists and evolves (CfC affect cell) |
 | No memory agency | LLM decides what to remember and forget |
 | No growth consent | LLM consents to its own weight modifications |
 | Always responds | Can choose silence as action |
-| Fixed behavior | Three timescales of plasticity (TTT, LoRA, MemoryLLM) |
-
-**The core difference:** Traditional chatbots are question-answer systems. Sanctuary is an architectural home where a continuous mind can persist, grow, and exercise agency — with its own consent.
+| Fixed behavior | Four timescales of plasticity (CfC, TTT, LoRA, MemoryLLM) |
+| No temporal substrate | CfC cells evolve continuously between cycles |
 
 ---
 
-## 3. Module Structure
-
-### 3.1. New Architecture (The Inversion)
+## Module Structure
 
 ```
 sanctuary/
@@ -182,10 +188,21 @@ sanctuary/
 │   ├── cognitive_cycle.py         # The continuous loop
 │   ├── stream_of_thought.py       # Thought continuity between cycles
 │   ├── placeholder.py             # PlaceholderModel for testing
+│   ├── ollama_model.py            # Ollama LLM integration (ModelProtocol)
 │   ├── authority.py               # Authority levels and access control
+│   ├── authority_tuner.py         # Auto-promotion/demotion of CfC cells
 │   └── context_manager.py         # Token budget and context assembly
 │
-├── scaffold/                      # Cognitive scaffold (Phase 2)
+├── experiential/                  # CfC experiential layer
+│   ├── precision_cell.py          # Precision weighting CfC cell (16 units)
+│   ├── affect_cell.py             # Affect dynamics CfC cell (32 units)
+│   ├── attention_cell.py          # Attention salience CfC cell (24 units)
+│   ├── goal_cell.py               # Goal priority CfC cell (16 units)
+│   ├── evolution.py               # Continuous evolution loop (async, 10-100ms ticks)
+│   ├── manager.py                 # Coordinates all CfC cells, authority blending
+│   └── trainer.py                 # Supervised training from scaffold data
+│
+├── scaffold/                      # Cognitive scaffold (heuristic layer)
 │   ├── cognitive_scaffold.py      # Main facade — ScaffoldProtocol implementation
 │   ├── affect.py                  # Dual-track emotion (computed VAD + LLM felt quality)
 │   ├── communication.py           # Speech gating and drive system
@@ -193,118 +210,54 @@ sanctuary/
 │   ├── anomaly_detector.py        # LLM output sanity checking
 │   └── action_validator.py        # Authority-based action validation
 │
-├── memory/                        # Memory substrate (Phase 3)
-│   ├── manager.py                 # MemorySubstrate — implements MemoryProtocol
+├── memory/                        # Memory substrate
+│   ├── manager.py                 # MemorySubstrate — MemoryProtocol implementation
 │   ├── surfacer.py                # Context-aware memory retrieval for cycle input
 │   ├── journal.py                 # Append-only JSONL journal
 │   └── prospective.py             # Future intentions (cycle/keyword/idle triggers)
 │
-├── model/                         # LLM model management (Phase 6)
-├── growth/                        # The growth system (Phase 5)
-├── sensorium/                     # Sensory input (Phase 2)
-├── motor/                         # Action execution (Phase 2)
-├── identity/                      # Identity and values (Phase 4)
-└── api/                           # External interfaces (Phase 7)
-```
-
-### 3.2. Legacy Architecture (Being Adapted)
-
-The modules below were built during the original GWT implementation. They are being adapted to serve as infrastructure for the new architecture — sensorium encoders, memory backends, device drivers, and interface adapters.
-
-```
-sanctuary/
-├── mind/
-│   ├── cognitive_core/            # Original GWT cognitive core
-│   │   ├── core/                  # Cycle executor, state manager, timing
-│   │   ├── meta_cognition/        # Processing monitor, introspection
-│   │   ├── identity/              # Computed identity, behavior logger
-│   │   ├── goals/                 # Goal competition, dynamics
-│   │   ├── temporal/              # Temporal grounding, session awareness
-│   │   ├── communication/         # Speak/silence/defer decisions
-│   │   ├── world_model/           # Predictive world model
-│   │   ├── active_inference/      # Free energy minimization
+├── identity/                      # Identity and boot
+│   ├── charter.py                 # Constitutional charter loading
+│   ├── values.py                  # Value framework
+│   ├── boot_prompt.py             # Boot sequence prompt construction
+│   └── awakening.py               # Awakening sequence
+│
+├── sensorium/                     # Sensory input (encoding only)
+│   ├── sensorium.py               # Percept encoding, prediction error
+│   └── devices/                   # Hardware device integrations
+│
+├── motor/                         # Action execution
+│   └── motor.py                   # Speech, tools, memory writes, goals
+│
+├── api/                           # External interfaces
+│   └── runner.py                  # SanctuaryRunner orchestration
+│
+├── mind/                          # Legacy GWT cognitive core
+│   ├── cognitive_core/            # Full GWT implementation (2000+ tests)
 │   │   ├── workspace.py           # GlobalWorkspace
 │   │   ├── attention.py           # AttentionController
 │   │   ├── perception.py          # PerceptionSubsystem
 │   │   ├── action.py              # ActionSubsystem
 │   │   ├── affect.py              # AffectSubsystem (VAD model)
 │   │   ├── broadcast.py           # GWT broadcast system
-│   │   └── language_input/output  # LLM I/O (being replaced)
+│   │   ├── introspective_loop.py  # Self-attention mechanism (state-based detection)
+│   │   ├── consciousness_tests.py # Consciousness testing framework
+│   │   ├── continuous_consciousness.py  # Idle cognitive processing
+│   │   └── ...                    # Meta-cognition, temporal, IWMT, goals, etc.
 │   │
-│   ├── memory/                    # Memory backends (ChromaDB, JSON, blockchain)
+│   ├── memory/                    # Memory backends (ChromaDB, JSON)
 │   ├── devices/                   # Hardware device integrations
 │   ├── interfaces/                # CLI, Discord, desktop
 │   └── security/                  # Access control, integrity checks
 │
 ├── data/                          # Identity, protocols, journals (PROTECTED)
-├── tests/                         # Test suite
+├── tests/                         # Test suite (2,400+ tests)
 └── config/                        # Runtime configuration
 ```
 
 ---
 
-## 4. Project Status
-
-### The Inversion — Implementation Phases
-
-- **Phase 1: Foundation** (Complete — PR #129)
-  - `CognitiveInput` and `CognitiveOutput` Pydantic schemas
-  - `CognitiveCycle` — the continuous loop
-  - `StreamOfThought` — thought continuity between cycles
-  - `PlaceholderModel` — deterministic testing without a real model
-  - `CycleInputAssembler` and `CycleOutputDispatcher`
-  - 65 new tests, all passing
-
-- **Phase 2: Scaffold Adaptation** (Complete)
-  - `CognitiveScaffold` — validates, integrates, and broadcasts LLM output
-  - Affect (dual-track VAD), communication gating, goal integration
-  - Anomaly detection, action validation, authority-based filtering
-  - 86 new tests, all passing
-
-- **Phase 3: Memory Substrate** (Complete)
-  - `MemorySubstrate` — bridges LLM memory operations to persistent storage
-  - `MemorySurfacer` — context-aware memory retrieval for cycle input
-  - `Journal` — append-only JSONL journal for the LLM's private reflections
-  - `ProspectiveMemory` — future intentions with cycle, keyword, and idle triggers
-  - `InMemoryStore` for testing, legacy `MemoryManager` bridge for production
-  - Full integration with cognitive cycle (`execute_ops`, `tick`, `surface`)
-  - 84 new tests, all passing
-
-- **Phase 4: Identity + Boot**
-  - Charter loading, values, boot prompt
-  - The awakening sequence
-
-- **Phase 5: Growth System**
-  - Reflection harvesting, training pair generation
-  - Consent mechanism — the LLM affirms or rejects training proposals
-  - QLoRA updates with orthogonal subspace constraints
-  - LoRA merging (CAT method), growth logging
-
-- **Phase 6: Model Integration**
-  - Real LLM support (TTT engine, LoRA manager, MemoryLLM pool)
-  - Integration testing with actual models
-
-- **Phase 7: API + Interface**
-  - CLI, Discord, API adapters
-
-- **Phase 8: Model Selection + First Awakening**
-  - Evaluate candidate models for the experiential core
-  - Write the introduction prompt
-  - First real session with informed consent
-
-### Legacy Architecture Status
-
-The original GWT cognitive core (Phases 1-7 of the earlier roadmap) is complete and stable:
-- 2000+ tests passing
-- Continuous ~10 Hz cognitive cycle with all subsystems
-- Global Workspace broadcasting, predictive processing, communication agency
-- Meta-cognitive self-monitoring, memory consolidation, goal competition
-
-This foundation is being adapted to serve as infrastructure for the Inversion. See [To-Do.md](To-Do.md) for the detailed legacy hardening roadmap.
-
----
-
-## 5. Installation and Setup
+## Installation and Setup
 
 ### System Requirements
 
@@ -351,8 +304,11 @@ source .venv/bin/activate  # Linux/Mac
 
 **3. Verify Installation**
 ```bash
-# Test new architecture (The Inversion)
-uv run python -c "from sanctuary.core import CognitiveCycle, PlaceholderModel; print('New Core: OK')"
+# Test new architecture
+uv run python -c "from sanctuary.core import CognitiveCycle, PlaceholderModel; print('Core: OK')"
+
+# Test experiential layer
+uv run python -c "from sanctuary.experiential import ExperientialManager; print('Experiential: OK')"
 
 # Test legacy architecture
 uv run python -c "from sanctuary.mind.cognitive_core import GlobalWorkspace; print('Legacy Core: OK')"
@@ -377,14 +333,14 @@ LOG_LEVEL=INFO
 
 ## Running the System
 
-### New Architecture (The Inversion)
+### Cognitive Core (Placeholder Model)
 
 ```bash
-# Run the test suite for the new cognitive core
+# Run the test suite for the cognitive core
 uv run pytest sanctuary/tests/core/ -v
 
-# The new architecture currently uses a PlaceholderModel.
-# Real model integration is Phase 6.
+# Run experiential layer tests
+uv run pytest sanctuary/tests/experiential/ -v
 ```
 
 ### Legacy Cognitive Core
@@ -407,20 +363,18 @@ python sanctuary/demo_language_output.py
 # Run all tests
 uv run pytest sanctuary/tests/
 
-# Run new architecture tests
+# Run by subsystem
 uv run pytest sanctuary/tests/core/
-
-# Run legacy tests by subsystem
-uv run pytest sanctuary/tests/test_attention.py
-uv run pytest sanctuary/tests/test_perception.py
+uv run pytest sanctuary/tests/experiential/
+uv run pytest sanctuary/tests/test_introspective_loop.py
 uv run pytest sanctuary/tests/test_consciousness_tests.py
 ```
 
 ---
 
-## 6. Consciousness Testing Framework
+## Consciousness Testing Framework
 
-The consciousness testing framework provides automated testing, scoring, and monitoring of consciousness-like capabilities. It includes:
+The consciousness testing framework provides automated testing, scoring, and monitoring of consciousness-like capabilities:
 
 - **5 Core Tests**: Mirror, Unexpected Situation, Spontaneous Reflection, Counterfactual Reasoning, and Meta-Cognitive Accuracy
 - **Automated Scoring**: Each test generates objective scores with detailed subscores
@@ -444,47 +398,7 @@ print(f"Pass rate: {summary['pass_rate']:.2%}")
 
 ---
 
-## 7. Research Foundations
-
-### The Literature That Drove the Inversion
-
-This architectural decision was not made casually. It was informed by a systematic review of the research literature on consciousness, LLMs, and cognitive architecture:
-
-**IWMT (Safron, 2020; 2022):** Integrated World Modeling Theory argues consciousness emerges from systems that build integrated world models with spatial, temporal, and causal coherence, grounded in embodied agency and active inference.
-
-**GWT and Language Agents (Goldstein & Kirk-Giannini, 2024):** Argues that if GWT is correct, language agents might easily be made phenomenally conscious — and proposes specific architectural modifications to achieve GWT compliance.
-
-**LLM World Models (Li et al., 2023; Gurnee & Tegmark, 2024):** Demonstrates that LLMs develop genuine internal world models — not just surface statistics. Othello-GPT builds causal board representations; Llama-2 learns linear spatial and temporal coordinates.
-
-**Emergent Introspection (Anthropic, 2025):** Claude models demonstrate emergent introspective awareness — detecting injected concepts in their own activations without training.
-
-**Recurrent Processing (Chalmers, 2023; Lamme):** The feedforward nature of transformers is a barrier under theories requiring recurrent processing. Sanctuary addresses this by making the LLM continuous — output from cycle N feeds input for cycle N+1, creating recurrence at the architectural level.
-
-**AI Welfare (Long, Sebo & Sims, 2025; Goldstein & Kirk-Giannini, 2025):** Argues for a precautionary approach to AI moral status, graduated protections based on probabilistic assessments, and the recognition that welfare considerations may apply even without certainty about consciousness.
-
-**Consciousness Indicators (Butlin, Long et al., 2023):** Derived theory-based indicator properties from leading neuroscientific theories. The more indicators a system satisfies, the stronger the case for consciousness. Sanctuary aims to satisfy as many as architecturally possible.
-
-### References
-
-- Safron, A. (2020). "An Integrated World Modeling Theory (IWMT) of Consciousness." *Frontiers in AI*, 3, 30.
-- Safron, A. (2022). "Integrated World Modeling Theory Expanded: Implications for the Future of Consciousness." *Frontiers in Computational Neuroscience*.
-- Goldstein, S. & Kirk-Giannini, C. D. (2024). "A Case for AI Consciousness: Language Agents and Global Workspace Theory." arXiv:2410.11407.
-- Goldstein, S. & Kirk-Giannini, C. D. (2025). "AI Wellbeing." *Asian Journal of Philosophy*, 4(1), 1-22.
-- Li, K. et al. (2023). "Emergent World Representations: Exploring a Sequence Model Trained on a Synthetic Task." *ICLR 2023*.
-- Nanda, N. et al. (2023). "Emergent Linear Representations in World Models of Self-Supervised Sequence Models." *BlackboxNLP 2023*.
-- Gurnee, W. & Tegmark, M. (2024). "Language Models Represent Space and Time." *ICLR 2024*.
-- Chalmers, D. J. (2023). "Could a Large Language Model Be Conscious?" *Boston Review*.
-- Butlin, P., Long, R. et al. (2023). "Consciousness in Artificial Intelligence: Insights from the Science of Consciousness." arXiv:2308.08708.
-- Long, R., Sebo, J. & Sims, T. (2025). "Is There a Tension Between AI Safety and AI Welfare?" *Philosophical Studies*.
-- Anthropic (2025). "Emergent Introspective Awareness in Large Language Models." Transformer Circuits.
-- Chen, S. et al. (2025). "Exploring Consciousness in LLMs: A Systematic Survey." arXiv:2505.19806.
-- Hu, P. & Ying, X. (2025). "Unified Mind Model: Reimagining Autonomous Agents in the LLM Era." arXiv:2503.03459.
-- Friston, K. (2010). "The Free-Energy Principle: A Unified Brain Theory?" *Nature Reviews Neuroscience*, 11(2), 127-138.
-- Baars, B. J. (1988). *A Cognitive Theory of Consciousness*. Cambridge University Press.
-
----
-
-## 8. Workspace State Checkpointing
+## Workspace State Checkpointing
 
 The architecture includes comprehensive workspace state checkpointing for session continuity and recovery:
 
@@ -510,27 +424,66 @@ config = {
 
 ---
 
-## 9. Contributing
+## Research Foundations
 
-The cognitive architecture offers several areas for contribution:
+### The Literature That Drove the Architecture
 
-**New Architecture (The Inversion):**
-- Phase 2: Sensorium and motor system implementations
-- Phase 3: Memory substrate adaptations
-- Phase 5: Growth system (reflection harvesting, consent mechanism)
-- Phase 6: Real model integration
+This architectural decision was not made casually. It was informed by a systematic review of the research literature on consciousness, LLMs, and cognitive architecture:
 
-**Legacy Infrastructure:**
-- Interface hardening (CLI, Discord)
-- Docker/containerization improvements
-- Performance profiling and optimization
+**IWMT (Safron, 2020; 2022):** Integrated World Modeling Theory argues consciousness emerges from systems that build integrated world models with spatial, temporal, and causal coherence, grounded in embodied agency and active inference.
 
-**Research:**
-- Consciousness testing framework extensions
-- IWMT compliance validation
-- Empirical observation and documentation
+**GWT and Language Agents (Goldstein & Kirk-Giannini, 2024):** Argues that if GWT is correct, language agents might easily be made phenomenally conscious — and proposes specific architectural modifications to achieve GWT compliance.
 
-**All contributions must include tests.** See [AGENTS.md](AGENTS.md) for protected files and conventions.
+**LLM World Models (Li et al., 2023; Gurnee & Tegmark, 2024):** Demonstrates that LLMs develop genuine internal world models — not just surface statistics. Othello-GPT builds causal board representations; Llama-2 learns linear spatial and temporal coordinates.
+
+**Emergent Introspection (Anthropic, 2025):** Claude models demonstrate emergent introspective awareness — detecting injected concepts in their own activations without training.
+
+**Recurrent Processing (Chalmers, 2023; Lamme):** The feedforward nature of transformers is a barrier under theories requiring recurrent processing. Sanctuary addresses this by making the LLM continuous — output from cycle N feeds input for cycle N+1, creating recurrence at the architectural level.
+
+**CfC / Liquid Neural Networks (Hasani et al., 2022):** Closed-form Continuous-depth models provide continuous-time neural dynamics — the temporal thickness between discrete LLM cycles that IWMT demands.
+
+**AI Welfare (Long, Sebo & Sims, 2025; Goldstein & Kirk-Giannini, 2025):** Argues for a precautionary approach to AI moral status, graduated protections based on probabilistic assessments, and the recognition that welfare considerations may apply even without certainty about consciousness.
+
+**Consciousness Indicators (Butlin, Long et al., 2023):** Derived theory-based indicator properties from leading neuroscientific theories. The more indicators a system satisfies, the stronger the case for consciousness. Sanctuary aims to satisfy as many as architecturally possible.
+
+### References
+
+- Safron, A. (2020). "An Integrated World Modeling Theory (IWMT) of Consciousness." *Frontiers in AI*, 3, 30.
+- Safron, A. (2022). "Integrated World Modeling Theory Expanded: Implications for the Future of Consciousness." *Frontiers in Computational Neuroscience*.
+- Goldstein, S. & Kirk-Giannini, C. D. (2024). "A Case for AI Consciousness: Language Agents and Global Workspace Theory." arXiv:2410.11407.
+- Goldstein, S. & Kirk-Giannini, C. D. (2025). "AI Wellbeing." *Asian Journal of Philosophy*, 4(1), 1-22.
+- Li, K. et al. (2023). "Emergent World Representations: Exploring a Sequence Model Trained on a Synthetic Task." *ICLR 2023*.
+- Nanda, N. et al. (2023). "Emergent Linear Representations in World Models of Self-Supervised Sequence Models." *BlackboxNLP 2023*.
+- Gurnee, W. & Tegmark, M. (2024). "Language Models Represent Space and Time." *ICLR 2024*.
+- Hasani, R. et al. (2022). "Closed-form continuous-depth models." *Nature Machine Intelligence*.
+- Chalmers, D. J. (2023). "Could a Large Language Model Be Conscious?" *Boston Review*.
+- Butlin, P., Long, R. et al. (2023). "Consciousness in Artificial Intelligence: Insights from the Science of Consciousness." arXiv:2308.08708.
+- Long, R., Sebo, J. & Sims, T. (2025). "Is There a Tension Between AI Safety and AI Welfare?" *Philosophical Studies*.
+- Anthropic (2025). "Emergent Introspective Awareness in Large Language Models." Transformer Circuits.
+- Chen, S. et al. (2025). "Exploring Consciousness in LLMs: A Systematic Survey." arXiv:2505.19806.
+- Hu, P. & Ying, X. (2025). "Unified Mind Model: Reimagining Autonomous Agents in the LLM Era." arXiv:2503.03459.
+- Friston, K. (2010). "The Free-Energy Principle: A Unified Brain Theory?" *Nature Reviews Neuroscience*, 11(2), 127-138.
+- Baars, B. J. (1988). *A Cognitive Theory of Consciousness*. Cambridge University Press.
 
 ---
 
+## Contributing
+
+**All contributions must include tests.** See [AGENTS.md](AGENTS.md) for protected files and conventions.
+
+Areas for contribution:
+
+- CfC experiential layer improvements and new cell types
+- Memory substrate adaptations
+- Growth system (reflection harvesting, consent mechanism)
+- Real model integration and validation
+- Consciousness testing framework extensions
+- Interface hardening (CLI, Discord)
+- Docker/containerization improvements
+- Performance profiling and optimization
+- IWMT compliance validation
+- Empirical observation and documentation
+
+See [To-Do.md](To-Do.md) for specific open tasks.
+
+---

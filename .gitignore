@@ -97,6 +97,12 @@ data/checkpoints_demo/
 data/checkpoints_demo_simple/
 data/checkpoints/
 
+# Growth system runtime data (checkpoints, training artifacts)
+data/growth/
+
+# Environment runtime data (space state, entity creations)
+data/environment/
+
 # ChromaDB storage, introspection journals, and identity evolution (runtime generated)
 data/chroma/
 data/introspection/

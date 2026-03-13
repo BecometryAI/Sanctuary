@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src ws://localhost:* ws://127.0.0.1:*; style-src 'self' 'unsafe-inline';">
+    <title>Sanctuary</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark">
+    <div class="app-container">
+        <div class="sidebar">
+            <h2>Sanctuary</h2>
+            <div class="status-container">
+                <div id="status-indicator"></div>
+                <div class="connection-info">
+                    <span id="status-text">Connecting...</span>
+                </div>
+            </div>
+            <div class="menu">
+                <button class="menu-btn" id="settings-btn">Settings</button>
+                <button class="menu-btn" id="clear-btn">Clear Chat</button>
+                <button class="menu-btn" id="export-btn">Export Chat</button>
+            </div>
+        </div>
+        <div class="main-content">
+            <div id="chat-container"></div>
+            <div class="input-container">
+                <textarea id="message-input" rows="2" placeholder="Type a message..."></textarea>
+                <button id="send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h3>Settings</h3>
+            <div class="setting-group">
+                <label for="server-address">Server Address</label>
+                <input type="text" id="server-address" value="ws://localhost:8765/ws">
+            </div>
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="notifications-enabled" checked>
+                    Enable notifications
+                </label>
+            </div>
+            <div class="setting-group">
+                <label>
+                    <input type="checkbox" id="show-inner" checked>
+                    Show inner speech
+                </label>
+            </div>
+            <div class="setting-group">
+                <label for="theme-select">Theme</label>
+                <select id="theme-select">
+                    <option value="dark">Dark</option>
+                    <option value="light">Light</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button class="menu-btn" id="save-settings">Save</button>
+                <button class="menu-btn" id="close-settings">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

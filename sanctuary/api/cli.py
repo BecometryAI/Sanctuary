@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Optional
 
 from sanctuary.api.runner import RunnerConfig, SanctuaryRunner
+from sanctuary.api.ws_server import SanctuaryWebServer
 from sanctuary.core.schema import CognitiveOutput
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,12 @@ def parse_args(argv=None) -> argparse.Namespace:
         default=None,
         help="Path to charter file (default: data/identity/charter.md)",
     )
+    parser.add_argument(
+        "--ws-port",
+        type=int,
+        default=8765,
+        help="WebSocket server port for desktop GUI (default: 8765, 0 to disable)",
+    )
     return parser.parse_args(argv)
 
 
@@ -89,6 +96,7 @@ class SanctuaryCLI:
     def __init__(self, args: argparse.Namespace):
         self._args = args
         self._runner: Optional[SanctuaryRunner] = None
+        self._ws_server: Optional[SanctuaryWebServer] = None
         self._cycle_task: Optional[asyncio.Task] = None
         self._shutting_down = False
 
@@ -108,6 +116,15 @@ class SanctuaryCLI:
         # Optionally show inner state
         if self._args.show_inner:
             self._runner.on_output(self._handle_output)
+
+        # Start WebSocket server for desktop GUI
+        ws_port = getattr(self._args, "ws_port", 8765)
+        if ws_port:
+            self._ws_server = SanctuaryWebServer(
+                runner=self._runner, port=ws_port
+            )
+            await self._ws_server.start()
+            print(f"[sanctuary] WebSocket server on ws://localhost:{ws_port}/ws")
 
         # Boot (awakening sequence)
         print("[sanctuary] Booting...")
@@ -161,6 +178,9 @@ class SanctuaryCLI:
         self._shutting_down = True
 
         print("\n[sanctuary] Shutting down...")
+
+        if self._ws_server:
+            await self._ws_server.stop()
 
         if self._runner:
             self._runner.stop()

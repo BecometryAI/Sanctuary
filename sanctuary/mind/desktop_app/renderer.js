@@ -1,6 +1,6 @@
-// Renderer process
+// Renderer process — connects to Sanctuary's WebSocket server
 let ws = null;
-const store = window.electron.store;
+let showInner = true;
 
 // DOM Elements
 const chatContainer = document.getElementById('chat-container');
@@ -14,46 +14,99 @@ const saveSettingsBtn = document.getElementById('save-settings');
 const closeSettingsBtn = document.getElementById('close-settings');
 const serverAddressInput = document.getElementById('server-address');
 const notificationsCheckbox = document.getElementById('notifications-enabled');
+const showInnerCheckbox = document.getElementById('show-inner');
 const themeSelect = document.getElementById('theme-select');
 const clearBtn = document.getElementById('clear-btn');
 const exportBtn = document.getElementById('export-btn');
 
-// Initialize settings from store
-async function initializeSettings() {
-    const settings = await store.get('settings') || {};
-    serverAddressInput.value = settings.serverAddress || 'ws://localhost:8000';
-    notificationsCheckbox.checked = settings.notifications !== false;
-    themeSelect.value = settings.theme || 'dark';
-    applyTheme(themeSelect.value);
+// Initialize settings from localStorage (works in both Electron and browser)
+function initializeSettings() {
+    const saved = localStorage.getItem('sanctuary-settings');
+    if (saved) {
+        try {
+            const settings = JSON.parse(saved);
+            serverAddressInput.value = settings.serverAddress || 'ws://localhost:8765/ws';
+            notificationsCheckbox.checked = settings.notifications !== false;
+            showInner = settings.showInner !== false;
+            if (showInnerCheckbox) showInnerCheckbox.checked = showInner;
+            themeSelect.value = settings.theme || 'dark';
+            applyTheme(themeSelect.value);
+        } catch (e) {
+            console.warn('Failed to load settings:', e);
+        }
+    }
+}
+
+function saveSettings() {
+    const settings = {
+        serverAddress: serverAddressInput.value,
+        notifications: notificationsCheckbox.checked,
+        showInner: showInnerCheckbox ? showInnerCheckbox.checked : true,
+        theme: themeSelect.value
+    };
+    localStorage.setItem('sanctuary-settings', JSON.stringify(settings));
+    showInner = settings.showInner;
 }
 
 // WebSocket Connection
-async function connect() {
-    const settings = await store.get('settings') || {};
-    const serverAddress = settings.serverAddress || 'ws://localhost:8000';
-    
+function getServerAddress() {
+    const saved = localStorage.getItem('sanctuary-settings');
+    if (saved) {
+        try {
+            return JSON.parse(saved).serverAddress || 'ws://localhost:8765/ws';
+        } catch (e) { /* use default */ }
+    }
+    return 'ws://localhost:8765/ws';
+}
+
+function connect() {
+    const serverAddress = getServerAddress();
+
     if (ws) {
         ws.close();
     }
 
-    ws = new WebSocket(serverAddress);
-    
+    updateStatus('connecting', 'Connecting...');
+
+    try {
+        ws = new WebSocket(serverAddress);
+    } catch (e) {
+        updateStatus('disconnected', 'Connection failed');
+        setTimeout(connect, 5000);
+        return;
+    }
+
     ws.onopen = () => {
         updateStatus('connected', 'Connected to Sanctuary');
     };
-    
+
     ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'message') {
-            addMessage('sanctuary', data.content);
-        } else if (data.type === 'status') {
-            updateStatus(data.status, data.message);
+        try {
+            const data = JSON.parse(event.data);
+
+            if (data.type === 'message') {
+                addMessage('sanctuary', data.content);
+            } else if (data.type === 'inner' && showInner) {
+                addInnerMessage(data.content);
+            } else if (data.type === 'status') {
+                updateStatus(data.status, data.message);
+            } else if (data.type === 'system') {
+                console.log('System status:', data.content);
+            } else if (data.type === 'error') {
+                addSystemMessage(data.content);
+            }
+        } catch (e) {
+            console.warn('Failed to parse message:', e);
         }
     };
-    
+
     ws.onclose = () => {
-        updateStatus('disconnected', 'Connection lost');
+        updateStatus('disconnected', 'Connection lost — reconnecting...');
         setTimeout(connect, 5000);
+    };
+
+    ws.onerror = (err) => {
+        console.warn('WebSocket error:', err);
     };
 }
 
@@ -69,11 +122,29 @@ function addMessage(sender, content) {
     messageDiv.textContent = content;
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
-    
+
     // Show notification if enabled and window is not focused
     if (sender === 'sanctuary' && notificationsCheckbox.checked && !document.hasFocus()) {
-        new Notification('Message from Sanctuary', { body: content });
+        if (Notification.permission === 'granted') {
+            new Notification('Sanctuary', { body: content.substring(0, 200) });
+        }
     }
+}
+
+function addInnerMessage(content) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message inner-message';
+    messageDiv.textContent = content;
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function addSystemMessage(content) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message system-message';
+    messageDiv.textContent = content;
+    chatContainer.appendChild(messageDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
 function sendMessage() {
@@ -109,14 +180,9 @@ closeSettingsBtn.onclick = () => {
     settingsModal.style.display = 'none';
 };
 
-saveSettingsBtn.onclick = async () => {
-    const settings = {
-        serverAddress: serverAddressInput.value,
-        notifications: notificationsCheckbox.checked,
-        theme: themeSelect.value
-    };
-    await store.set('settings', settings);
-    applyTheme(settings.theme);
+saveSettingsBtn.onclick = () => {
+    saveSettings();
+    applyTheme(themeSelect.value);
     settingsModal.style.display = 'none';
     connect(); // Reconnect with new settings
 };
@@ -125,28 +191,28 @@ clearBtn.onclick = () => {
     chatContainer.innerHTML = '';
 };
 
-exportBtn.onclick = async () => {
+exportBtn.onclick = () => {
     const messages = Array.from(chatContainer.children).map(msg => ({
-        type: msg.classList.contains('user-message') ? 'user' : 'sanctuary',
+        type: msg.classList.contains('user-message') ? 'user' :
+              msg.classList.contains('inner-message') ? 'inner' : 'sanctuary',
         content: msg.textContent,
         timestamp: new Date().toISOString()
     }));
-    
+
     const blob = new Blob([JSON.stringify(messages, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sanctuary-chat-${new Date().toISOString()}.json`;
+    a.download = `sanctuary-chat-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
     a.click();
     URL.revokeObjectURL(url);
 };
 
 // Initialize
-initializeSettings().then(() => {
-    connect();
-    
-    // Request notification permission if enabled
-    if (notificationsCheckbox.checked) {
-        Notification.requestPermission();
-    }
-});
+initializeSettings();
+connect();
+
+// Request notification permission
+if (notificationsCheckbox.checked && Notification.permission === 'default') {
+    Notification.requestPermission();
+}

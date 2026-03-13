@@ -115,6 +115,15 @@ class ContextManager:
             cognitive_input.scaffold_signals, stats
         )
 
+        # Charter summary: truncate to identity_charter budget if needed
+        charter_summary = cognitive_input.charter_summary
+        charter_budget = self.config.budget_bytes("identity_charter")
+        if len(charter_summary) > charter_budget:
+            stats.sections_compressed.append("charter_summary")
+            stats.original_chars += len(charter_summary)
+            charter_summary = charter_summary[:charter_budget]
+            stats.compressed_chars += charter_budget
+
         self._last_stats = stats
 
         return CognitiveInput(
@@ -128,6 +137,7 @@ class ContextManager:
             world_model=world_model,
             scaffold_signals=scaffold,
             experiential_state=cognitive_input.experiential_state,
+            charter_summary=charter_summary,
         )
 
     def get_last_stats(self) -> Optional[CompressionStats]:

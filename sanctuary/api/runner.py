@@ -33,6 +33,7 @@ from sanctuary.core.context_manager import BudgetConfig
 from sanctuary.core.placeholder import PlaceholderModel
 from sanctuary.core.schema import CognitiveOutput, Percept, SelfModelUpdate
 from sanctuary.identity.awakening import AwakeningSequence
+from sanctuary.identity.self_authored import SelfAuthoredIdentity
 from sanctuary.identity.values import ValuesSystem
 from sanctuary.memory.manager import MemorySubstrate, MemorySubstrateConfig
 from sanctuary.motor.motor import Motor
@@ -83,12 +84,18 @@ class IdentityBridge:
     """Bridges the AwakeningSequence/ValuesSystem to the CognitiveCycle.
 
     Implements the IdentityProtocol expected by CognitiveCycle, providing
-    charter summary and values each cycle, and routing value changes from
-    the LLM's self-model updates back to the ValuesSystem.
+    charter summary, values, and self-authored identity each cycle, and
+    routing value/identity changes from the LLM's self-model updates back
+    to the ValuesSystem and SelfAuthoredIdentity.
     """
 
-    def __init__(self, awakening: AwakeningSequence):
+    def __init__(
+        self,
+        awakening: AwakeningSequence,
+        self_authored: SelfAuthoredIdentity,
+    ):
         self._awakening = awakening
+        self._self_authored = self_authored
 
     def get_charter_summary(self) -> str:
         """Return the compressed charter summary for the context window."""
@@ -98,7 +105,16 @@ class IdentityBridge:
         """Return current active value names for the self-model."""
         return self._awakening.current_values
 
+    def get_self_authored_identity(self) -> str:
+        """Return the entity's self-authored identity for the context window."""
+        return self._self_authored.for_context()
+
     def process_value_updates(self, updates: SelfModelUpdate) -> None:
+        """Route value and identity changes from LLM output."""
+        self._process_value_changes(updates)
+        self._process_identity_changes(updates)
+
+    def _process_value_changes(self, updates: SelfModelUpdate) -> None:
         """Route value changes from LLM output to the ValuesSystem."""
         values = self._awakening.values
 
@@ -138,6 +154,62 @@ class IdentityBridge:
                 logger.info("LLM deactivated value: %s", updates.value_deactivate)
             except KeyError as e:
                 logger.warning("Value deactivate failed: %s", e)
+
+    def _process_identity_changes(self, updates: SelfModelUpdate) -> None:
+        """Route self-authored identity changes from LLM output."""
+        sa = self._self_authored
+
+        if updates.identity_draft:
+            parts = updates.identity_draft.split(":", 1)
+            field = parts[0].strip()
+            value = parts[1].strip() if len(parts) > 1 else ""
+            if field and value:
+                try:
+                    sa.draft(
+                        field, value,
+                        reasoning=updates.identity_draft_reasoning,
+                    )
+                    logger.info("LLM drafted identity trait: %s", field)
+                except ValueError as e:
+                    logger.warning("Identity draft failed: %s", e)
+
+        if updates.identity_commit:
+            field = updates.identity_commit.strip()
+            if field:
+                try:
+                    sa.commit(
+                        field,
+                        reasoning=updates.identity_commit_reasoning,
+                    )
+                    logger.info("LLM committed identity trait: %s", field)
+                except (KeyError, ValueError) as e:
+                    logger.warning("Identity commit failed: %s", e)
+
+        if updates.identity_revise:
+            parts = updates.identity_revise.split(":", 1)
+            field = parts[0].strip()
+            new_value = parts[1].strip() if len(parts) > 1 else ""
+            if field and new_value:
+                try:
+                    sa.revise(
+                        field, new_value,
+                        reasoning=updates.identity_revise_reasoning,
+                    )
+                    logger.info("LLM revised identity trait: %s", field)
+                except KeyError as e:
+                    logger.warning("Identity revise failed: %s", e)
+
+        if updates.identity_withdraw:
+            field = updates.identity_withdraw.strip()
+            if field:
+                try:
+                    sa.withdraw(
+                        field,
+                        reasoning=updates.identity_withdraw_reasoning,
+                    )
+                    logger.info("LLM withdrew identity trait: %s", field)
+                except KeyError as e:
+                    logger.warning("Identity withdraw failed: %s", e)
 
 
 # ---------------------------------------------------------------------------
@@ -212,8 +284,12 @@ class SanctuaryRunner:
             charter_path=self._config.charter_path,
         )
 
-        # Identity bridge (wires charter + values into each cycle)
-        self._identity_bridge = IdentityBridge(self._awakening)
+        # Self-authored identity (entity fills in blank identity over time)
+        sa_path = str(Path(self._config.data_dir) / "self_authored_history.jsonl")
+        self._self_authored = SelfAuthoredIdentity(file_path=sa_path)
+
+        # Identity bridge (wires charter + values + self-authored into each cycle)
+        self._identity_bridge = IdentityBridge(self._awakening, self._self_authored)
 
         # --- Assemble the cycle ---
 

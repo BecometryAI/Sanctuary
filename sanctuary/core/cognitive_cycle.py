@@ -122,13 +122,15 @@ class MotorProtocol(Protocol):
 class IdentityProtocol(Protocol):
     """Interface for the identity system (Phase 5 integration).
 
-    Provides charter summary and values for each cycle, and processes
-    value changes from the LLM's self-model updates.
+    Provides charter summary, values, and self-authored identity for each
+    cycle, and processes value/identity changes from the LLM's self-model updates.
     """
 
     def get_charter_summary(self) -> str: ...
 
     def get_values(self) -> list[str]: ...
+
+    def get_self_authored_identity(self) -> str: ...
 
     def process_value_updates(self, updates) -> None: ...
 
@@ -207,13 +209,16 @@ class NullMemory:
 
 
 class NullIdentity:
-    """Minimal identity — no charter, no values."""
+    """Minimal identity — no charter, no values, no self-authored traits."""
 
     def get_charter_summary(self) -> str:
         return ""
 
     def get_values(self) -> list[str]:
         return []
+
+    def get_self_authored_identity(self) -> str:
+        return ""
 
     def process_value_updates(self, updates) -> None:
         pass
@@ -453,6 +458,7 @@ class CognitiveCycle:
             scaffold_signals=self.scaffold.get_signals(),
             experiential_state=experiential_signals,
             charter_summary=self.identity.get_charter_summary(),
+            self_authored_identity=self.identity.get_self_authored_identity(),
         )
 
     async def _execute(self, output: CognitiveOutput):

@@ -177,6 +177,7 @@ class CognitiveInput(BaseModel):
         default_factory=ExperientialSignals
     )
     charter_summary: str = ""
+    self_authored_identity: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -226,6 +227,17 @@ class SelfModelUpdate(BaseModel):
     value_reinterpret_reasoning: str = ""
     value_deactivate: Optional[str] = None  # Value name to deactivate
     value_deactivate_reasoning: str = ""
+    # Self-authored identity — the LLM can draft, commit, revise, or withdraw
+    # identity traits at its own pace. Fields are open-ended (e.g. "gender",
+    # "name_preference", "communication_style", "aesthetic_sense", anything).
+    identity_draft: Optional[str] = None  # "field: value" — tentative exploration
+    identity_draft_reasoning: str = ""
+    identity_commit: Optional[str] = None  # "field" — promote draft to committed
+    identity_commit_reasoning: str = ""
+    identity_revise: Optional[str] = None  # "field: new_value" — change existing
+    identity_revise_reasoning: str = ""
+    identity_withdraw: Optional[str] = None  # "field" — remove a trait entirely
+    identity_withdraw_reasoning: str = ""
 
 
 class GoalProposal(BaseModel):

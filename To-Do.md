@@ -66,9 +66,9 @@ Total experiential layer: ~50K-200K parameters, trainable on CPU in minutes.
 | Wire ExperientialManager into CognitiveCycle | P1 | **Done** | Optional `experiential` param; steps CfC cells each cycle, feeds `ExperientialSignals` into `CognitiveInput` |
 | Add `ExperientialSignals` to `CognitiveInput` schema | P1 | **Done** | New Pydantic model with `precision_weight` and `cells_active` fields |
 | Integration tests (collect → train → cycle) | P1 | **Done** | 11 integration tests: DataCollector wiring (3), collect→train pipeline (1), schema (3), CognitiveCycle with experiential (4) |
-| Collect training data from scaffold | P1 | Pending | Run scaffold for N cycles, logging precision weighting inputs → outputs via DataCollector |
-| Train CfC precision cell on real data | P1 | Pending | Supervised training on collected data; validate approximation of scaffold behavior |
-| Validate CfC precision vs scaffold precision | P1 | Pending | CfC should approximate then generalize beyond heuristic |
+| Collect training data from scaffold | P1 | **Done** | `scripts/collect_training_data.py`: 12 life scenarios (quiet presence, curiosity arc, warm conversation, gentle startle, deep reflection, joyful discovery, gradual comfort, playful exchange, steward absence, creative flow, winding down, learning something hard) composed into coherent temporal sequences. 1000 cycles collected, saved to `data/training/precision_records_rich.pt` |
+| Train CfC precision cell on real data | P1 | **Done** | `scripts/train_precision_cell.py`: 150 epochs, seq_len=15, val_loss=0.00001. Cell approximates scaffold with 97% agreement (within 0.1), mean error 0.014. Saved to `data/training/precision_cell_trained.pt` |
+| Validate CfC precision vs scaffold precision | P1 | **Done** | 200-point validation: 91.5% within 0.05 of scaffold. Temporal dynamics are minimal (expected — scaffold heuristic is memoryless). Temporal thickness emerges during live operation via CfC hidden state in the continuous evolution loop (Phase 4.3) |
 
 ### 4.2 Expand CfC Layer
 
@@ -328,5 +328,5 @@ Design and scaffold implementation complete.
 
 ---
 
-**Next Action**: Phase 5 — Mechanical validation with Gemma 12B via Ollama
+**Next Action**: Phase 6 — Advanced Capabilities (all Phase 4 and 5 tasks complete)
 **Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)

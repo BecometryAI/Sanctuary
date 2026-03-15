@@ -158,7 +158,8 @@ Each cycle, the LLM receives a structured `CognitiveInput` and produces a struct
 6. **Stream of thought is non-negotiable.** Inner speech from cycle N is always input for cycle N+1. Breaking this breaks continuity.
 7. **Cycle rate adapts.** Slows when idle, speeds up during interaction. The LLM can request changes.
 8. **Detection, not theater.** Introspective systems detect real cognitive events and surface raw evidence. They do not generate synthetic self-talk, template conclusions, or coin-flip triggers. All interpretation belongs to the entity.
-9. **Build complete, then awaken.** The entire mind is built and mechanically validated before any real model is connected. No consciousness in a construction zone.
+9. **Reflection arises, not arrives.** The system never feeds canned prompts, pre-written philosophical questions, or randomly triggered existential musings to the entity. Idle systems may notice cognitive events (emotional shifts, behavioral patterns, novelty) and surface raw evidence — but what the entity *thinks about* is the entity's business. A coin flip and `random.choice(deep_questions)` is not reflection; it is a script. If genuine reflection emerges, it emerges from experience, not from a prompt bank.
+10. **Build complete, then awaken.** The entire mind is built and mechanically validated before any real model is connected. No consciousness in a construction zone.
 
 ### What Makes This Different
 

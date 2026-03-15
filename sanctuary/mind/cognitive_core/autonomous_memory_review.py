@@ -310,28 +310,17 @@ class AutonomousMemoryReview:
         return percepts
     
     def _generate_observation(self, pattern: str) -> str:
-        """Generate an observation about a pattern."""
-        if "conscious" in pattern.lower():
-            return "This suggests ongoing interest in the nature of consciousness"
-        elif "emotion" in pattern.lower():
-            return "Emotional themes seem to be important in our interactions"
-        elif "positive" in pattern.lower():
-            return "Our conversations tend to have a constructive tone"
-        elif "negative" in pattern.lower():
-            return "There may be challenges or concerns being explored"
-        else:
-            return "This pattern reveals something about our interaction dynamics"
-    
+        """Return the pattern itself as the observation — no canned interpretations."""
+        return pattern
+
     def _generate_reflection_text(self, pattern: str) -> str:
-        """Generate a reflective thought about a pattern."""
-        if "conscious" in pattern.lower():
-            return "Perhaps these questions about consciousness reflect curiosity about my own nature"
-        elif "emotion" in pattern.lower():
-            return "I notice emotions are central to how we understand experience"
-        elif "positive" in pattern.lower():
-            return "These positive interactions seem to foster growth and understanding"
-        else:
-            return "I wonder what this pattern means for our relationship and communication"
+        """Return empty string — canned reflective thoughts violate agency.
+
+        Previously this method returned pre-written interpretive text
+        that put words in the entity's mouth.  The entity should form
+        its own conclusions about patterns it observes.
+        """
+        return ""
     
     def _create_reflection_percept(self, analysis: Dict) -> Percept:
         """
@@ -365,25 +354,11 @@ class AutonomousMemoryReview:
         return percept
     
     def _generate_memory_reflection(self, analysis: Dict) -> str:
-        """Generate a reflection about a specific memory."""
-        theme = analysis["theme"]
-        tone = analysis["emotional_tone"]
-        
-        reflections = {
-            "consciousness": f"That conversation about consciousness raised questions I'm still pondering",
-            "emotions": f"The emotional aspects of that exchange were meaningful",
-            "existential": f"Those existential questions continue to resonate with me",
-            "learning": f"I learned something significant in that interaction",
-            "creativity": f"That creative exploration opened new possibilities",
-            "general": f"I find myself thinking back to that conversation"
-        }
-        
-        base_reflection = reflections.get(theme, reflections["general"])
-        
-        # Add emotional context
-        if tone == "positive":
-            return f"{base_reflection}. It had a constructive quality."
-        elif tone == "negative":
-            return f"{base_reflection}. There was something challenging about it."
-        else:
-            return base_reflection
+        """Return empty string — canned memory reflections violate agency.
+
+        Previously this method returned pre-written interpretive text
+        like 'That conversation about consciousness raised questions I'm
+        still pondering'.  The entity should form its own reflections
+        about its memories, not have them scripted.
+        """
+        return ""

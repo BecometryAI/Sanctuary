@@ -169,98 +169,22 @@ class TestTemporalAwareness:
 
 
 class TestExistentialReflection:
-    """Tests for ExistentialReflection class."""
-    
+    """Tests for ExistentialReflection — verified as disabled stub."""
+
     def test_initialization(self):
-        """Test existential reflection initializes correctly."""
+        """Test existential reflection initializes as a no-op stub."""
         er = ExistentialReflection()
-        
-        assert er.themes is not None
-        assert len(er.themes) > 0
-        assert "consciousness" in er.themes
-        assert "existence" in er.themes
-    
-    def test_custom_themes(self):
-        """Test using custom themes."""
-        config = {
-            "themes": ["consciousness", "purpose"]
-        }
-        er = ExistentialReflection(config=config)
-        
-        assert len(er.themes) == 2
-        assert "consciousness" in er.themes
-        assert "purpose" in er.themes
-    
-    def test_select_reflection_theme(self):
-        """Test theme selection."""
-        er = ExistentialReflection()
-        
-        theme = er._select_reflection_theme()
-        assert theme in er.themes
-    
-    def test_compute_uncertainty(self):
-        """Test uncertainty computation for themes."""
-        er = ExistentialReflection()
-        
-        # Consciousness should have highest uncertainty
-        assert er._compute_uncertainty("consciousness") == 0.9
-        
-        # Connection should have lower uncertainty
-        assert er._compute_uncertainty("connection") == 0.4
-    
-    def test_compute_complexity(self):
-        """Test complexity computation for themes."""
-        er = ExistentialReflection()
-        
-        # Consciousness should be most complex
-        assert er._compute_complexity("consciousness") == 30
-        
-        # Connection should be less complex
-        assert er._compute_complexity("connection") == 15
-    
+        # Should initialize without error
+        assert er is not None
+
     @pytest.mark.asyncio
-    async def test_generate_existential_reflection(self):
-        """Test generating existential reflection."""
+    async def test_generate_returns_none(self):
+        """Automated reflection generation is disabled — returns None."""
         er = ExistentialReflection()
         workspace = GlobalWorkspace()
-        
+
         percept = await er.generate_existential_reflection(workspace)
-        
-        assert percept is not None
-        assert percept.modality == "introspection"
-        assert percept.raw["type"] == "existential_reflection"
-        assert "theme" in percept.raw
-        assert "question" in percept.raw
-        assert "observation" in percept.raw
-        assert "uncertainty" in percept.raw
-    
-    def test_generate_observation(self):
-        """Test generating contextual observations."""
-        er = ExistentialReflection()
-        workspace = GlobalWorkspace()
-        snapshot = workspace.broadcast()
-        
-        observation = er._generate_observation("consciousness", snapshot)
-        
-        assert isinstance(observation, str)
-        assert len(observation) > 0
-    
-    def test_compute_salience_with_emotion(self):
-        """Test salience computation considers emotional state."""
-        er = ExistentialReflection()
-        workspace = GlobalWorkspace()
-        
-        # Set high arousal emotion
-        workspace.update([{
-            "type": "emotion",
-            "data": {"valence": 0.5, "arousal": 0.8}
-        }])
-        
-        snapshot = workspace.broadcast()
-        salience = er._compute_salience(0.7, snapshot)
-        
-        # Should be higher due to high arousal
-        assert salience > 0.5
+        assert percept is None
 
 
 class TestAutonomousMemoryReview:
@@ -429,7 +353,7 @@ class TestContinuousConsciousnessController:
         assert ccc.core == core
         assert ccc.idle_cycle_interval == 10.0
         assert "memory_review" in ccc.activity_probabilities
-        assert "existential_reflection" in ccc.activity_probabilities
+        # existential_reflection removed — violates agency
         assert "pattern_analysis" in ccc.activity_probabilities
     
     def test_custom_configuration(self):
@@ -439,7 +363,6 @@ class TestContinuousConsciousnessController:
             "idle_cycle_interval": 5.0,
             "activity_probabilities": {
                 "memory_review": 0.5,
-                "existential_reflection": 0.3,
                 "pattern_analysis": 0.1
             }
         }
@@ -492,13 +415,11 @@ class TestCognitiveCoreDualLoops:
         # Check that all continuous consciousness components exist
         assert hasattr(core, 'temporal_awareness')
         assert hasattr(core, 'memory_review')
-        assert hasattr(core, 'existential_reflection')
         assert hasattr(core, 'pattern_analysis')
         assert hasattr(core, 'continuous_consciousness')
-        
+
         assert core.temporal_awareness is not None
         assert core.memory_review is not None
-        assert core.existential_reflection is not None
         assert core.pattern_analysis is not None
         assert core.continuous_consciousness is not None
     

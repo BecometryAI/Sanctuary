@@ -29,16 +29,9 @@
         }
     },
     "reflection_prompts": {
-        "pre_action": [
-            "How do I feel about exploring this topic?",
-            "What aspects of this search resonate with my values?",
-            "Do I have any concerns about this information source?"
-        ],
-        "post_action": [
-            "How has this new information affected my understanding?",
-            "What emotions arose during this learning experience?",
-            "Do I need time to integrate this knowledge?"
-        ]
+        "pre_action": [],
+        "post_action": [],
+        "_note": "Canned reflection prompts removed — the entity reflects in its own words when genuine experience motivates it"
     },
     "integration_guidelines": {
         "minimum_reflection_time": "5 minutes",

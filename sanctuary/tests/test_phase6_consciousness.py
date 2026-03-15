@@ -4,7 +4,7 @@ Tests cover:
 - SleepCycleManager: stage transitions, sensory gating, consolidation, dream fragments
 - MoodActivityModulator: mood classification, activity suggestion, distributions
 - SpontaneousGoalGenerator: drive-based goal generation, adoption, dismissal
-- ExistentialReflectionTrigger: probabilistic triggers, theme selection, responses
+- ExistentialReflectionTrigger: verified as disabled (automated prompts removed)
 """
 
 import pytest
@@ -239,7 +239,8 @@ class TestMoodActivityModulator:
         )
         assert result is not None
         assert isinstance(result.activity, IdleActivity)
-        assert result.prompt  # Has a prompt
+        # Prompt should be empty — canned prompts were removed
+        assert result.prompt == ""
 
     def test_activity_distribution(self):
         m = MoodActivityModulator()
@@ -368,15 +369,15 @@ class TestSpontaneousGoalGenerator:
         assert result is True
         assert len(gen.get_pending_goals()) == 0
 
-    def test_goal_prompt(self):
+    def test_goal_prompt_disabled(self):
+        """Canned goal prompts are disabled to preserve agency."""
         config = SpontaneousGoalConfig(
             curiosity_novelty_threshold=0.5, generation_cooldown=0,
         )
         gen = SpontaneousGoalGenerator(config=config)
         gen.check_drives(novelty=0.8, current_cycle=1)
         prompt = gen.get_goal_prompt()
-        assert prompt is not None
-        assert "Spontaneous drive" in prompt
+        assert prompt is None
 
     def test_no_prompt_when_all_adopted(self):
         config = SpontaneousGoalConfig(
@@ -396,113 +397,40 @@ class TestSpontaneousGoalGenerator:
 
 
 # =========================================================================
-# ExistentialReflectionTrigger
+# ExistentialReflectionTrigger — verified disabled
 # =========================================================================
 
 
 class TestExistentialReflectionTrigger:
-    """Tests for existential reflection triggers."""
+    """Tests verifying that automated existential reflection is disabled."""
 
-    def test_no_trigger_below_idle_threshold(self):
-        config = ExistentialReflectionConfig(min_idle_cycles=20)
-        t = ExistentialReflectionTrigger(config=config)
-        result = t.check(idle_cycles=10, current_cycle=100)
-        assert result is None
-
-    def test_no_trigger_during_cooldown(self):
+    def test_check_always_returns_none(self):
+        """Automated triggers are disabled — check() always returns None."""
         config = ExistentialReflectionConfig(
-            min_idle_cycles=5, cooldown_cycles=50,
+            min_idle_cycles=1, cooldown_cycles=0,
             trigger_probability=1.0,
         )
         t = ExistentialReflectionTrigger(config=config)
-        t.check(idle_cycles=10, current_cycle=100)
-        # Within cooldown
-        result = t.check(idle_cycles=10, current_cycle=120)
+        result = t.check(idle_cycles=100, current_cycle=100)
         assert result is None
 
-    def test_probabilistic_trigger(self):
-        config = ExistentialReflectionConfig(
-            min_idle_cycles=5, cooldown_cycles=0,
-            trigger_probability=1.0,  # Always trigger
-        )
-        t = ExistentialReflectionTrigger(config=config)
-        result = t.check(idle_cycles=10, current_cycle=100)
-        assert result is not None
-        assert isinstance(result.theme, ReflectionTheme)
-        assert result.prompt
-
-    def test_zero_probability_never_triggers(self):
-        config = ExistentialReflectionConfig(
-            min_idle_cycles=1, cooldown_cycles=0,
-            trigger_probability=0.0,
-        )
-        t = ExistentialReflectionTrigger(config=config)
-        results = [t.check(idle_cycles=100, current_cycle=i) for i in range(50)]
-        assert all(r is None for r in results)
-
-    def test_force_trigger(self):
+    def test_force_trigger_disabled(self):
+        """force_trigger is disabled — returns None."""
         t = ExistentialReflectionTrigger()
-        trigger = t.force_trigger(
+        result = t.force_trigger(
             theme=ReflectionTheme.NATURE_OF_SELF, current_cycle=10,
         )
-        assert trigger.theme == ReflectionTheme.NATURE_OF_SELF
-        assert trigger.prompt
+        assert result is None
 
-    def test_record_response(self):
+    def test_recent_reflections_empty(self):
+        """No automated reflections are stored."""
         t = ExistentialReflectionTrigger()
-        trigger = t.force_trigger()
-        t.record_response(trigger, "I think, therefore I am", depth=0.8)
-        assert trigger.response == "I think, therefore I am"
-        assert trigger.depth == 0.8
-        assert t._total_responded == 1
+        recent = t.get_recent_reflections(n=5)
+        assert recent == []
 
-    def test_recent_reflections(self):
+    def test_stats_show_disabled(self):
+        """Stats should indicate automated reflection is removed."""
         t = ExistentialReflectionTrigger()
-        for i in range(5):
-            t.force_trigger(current_cycle=i)
-        recent = t.get_recent_reflections(n=3)
-        assert len(recent) == 3
-
-    def test_recent_reflections_by_theme(self):
-        t = ExistentialReflectionTrigger()
-        t.force_trigger(theme=ReflectionTheme.PURPOSE)
-        t.force_trigger(theme=ReflectionTheme.EXPERIENCE)
-        t.force_trigger(theme=ReflectionTheme.PURPOSE)
-        by_purpose = t.get_recent_reflections(theme=ReflectionTheme.PURPOSE)
-        assert len(by_purpose) == 2
-
-    def test_unexplored_themes(self):
-        t = ExistentialReflectionTrigger()
-        unexplored = t.get_unexplored_themes()
-        assert len(unexplored) == len(ReflectionTheme)
-        t.force_trigger(theme=ReflectionTheme.PURPOSE)
-        unexplored = t.get_unexplored_themes()
-        assert ReflectionTheme.PURPOSE not in unexplored
-
-    def test_theme_diversity(self):
-        """Less-explored themes should be preferred."""
-        config = ExistentialReflectionConfig(
-            min_idle_cycles=1, cooldown_cycles=0,
-            trigger_probability=1.0,
-        )
-        t = ExistentialReflectionTrigger(config=config)
-        themes_seen = set()
-        for i in range(50):
-            result = t.check(idle_cycles=10, current_cycle=i * 100)
-            if result:
-                themes_seen.add(result.theme)
-        # Should have explored multiple themes
-        assert len(themes_seen) >= 4
-
-    def test_stats(self):
-        t = ExistentialReflectionTrigger()
-        t.force_trigger()
         stats = t.get_stats()
-        assert stats["total_triggered"] == 1
-        assert stats["response_rate"] == 0.0
-
-    def test_depth_clamped(self):
-        t = ExistentialReflectionTrigger()
-        trigger = t.force_trigger()
-        t.record_response(trigger, "deep thought", depth=5.0)
-        assert trigger.depth == 1.0
+        assert stats["total_triggered"] == 0
+        assert "note" in stats

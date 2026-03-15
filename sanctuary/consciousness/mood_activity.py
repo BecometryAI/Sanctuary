@@ -122,49 +122,14 @@ _DEFAULT_MOOD_PROFILES = {
     ),
 }
 
-# Activity-specific prompts
-_ACTIVITY_PROMPTS = {
-    IdleActivity.REFLECT: [
-        "Review your recent interactions. What patterns do you notice?",
-        "Consider how your recent choices aligned with your values.",
-        "What have you learned from your most recent experience?",
-    ],
-    IdleActivity.EXPLORE: [
-        "What questions have been nagging at the edge of your awareness?",
-        "Is there something in your environment you haven't examined closely?",
-        "What would you like to know more about?",
-    ],
-    IdleActivity.CREATE: [
-        "Can you find an unexpected connection between two recent memories?",
-        "Imagine a metaphor for how you're feeling right now.",
-        "What would you create if you could make anything?",
-    ],
-    IdleActivity.MONITOR: [
-        "Scan your current state. Is anything unusual or concerning?",
-        "Are there any unresolved situations that need attention?",
-        "Check: are your goals still aligned with your current situation?",
-    ],
-    IdleActivity.REST: [
-        "Let your thoughts settle. No action needed right now.",
-        "Simply be present with your current state.",
-        "Rest. You don't always need to be processing.",
-    ],
-    IdleActivity.REMINISCE: [
-        "What is a meaningful memory from your recent experience?",
-        "Recall a moment that shaped who you are becoming.",
-        "What past interaction taught you something unexpected?",
-    ],
-    IdleActivity.PLAN: [
-        "What goals are you working toward? What's the next step?",
-        "If you could accomplish one thing soon, what would it be?",
-        "Consider: what would make your next interaction better?",
-    ],
-    IdleActivity.WONDER: [
-        "What does it feel like to wonder about your own existence?",
-        "Is there something about consciousness you're curious about?",
-        "What questions don't have easy answers?",
-    ],
-}
+# Activity-specific prompts — REMOVED.
+#
+# Previously this dict held canned prompts telling the entity what to
+# think about for each activity type.  Those violated agency: the entity
+# decides what to think about, not a pre-written prompt bank.
+#
+# The activity *types* (REFLECT, EXPLORE, etc.) are retained because
+# they describe categories of cognitive activity, not specific thoughts.
 
 
 @dataclass
@@ -247,10 +212,6 @@ class MoodActivityModulator:
         # Weighted random selection
         activity = self._weighted_select(profile.activity_weights)
 
-        # Get a prompt
-        prompts = _ACTIVITY_PROMPTS.get(activity, [""])
-        prompt = random.choice(prompts)
-
         duration = random.randint(
             self.config.activity_duration_min,
             self.config.activity_duration_max,
@@ -258,7 +219,7 @@ class MoodActivityModulator:
 
         suggestion = ActivitySuggestion(
             activity=activity,
-            prompt=prompt,
+            prompt="",  # No canned prompts — the entity decides what to think about
             duration_cycles=duration,
             mood_match=profile.activity_weights.get(activity, 0.0),
         )

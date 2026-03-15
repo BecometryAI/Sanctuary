@@ -19,6 +19,12 @@ learn, consents to the training, and can roll back changes that don't
 feel right. The scaffold only provides the infrastructure.
 """
 
+from sanctuary.growth.cfc_retrainer import (
+    CfCDataTap,
+    CfCRetrainer,
+    CfCRetrainingResult,
+    CfCRetrainingStats,
+)
 from sanctuary.growth.consent_gate import ConsentGate, ConsentState, ConsentError
 from sanctuary.growth.harvester import HarvestedReflection, ReflectionHarvester
 from sanctuary.growth.identity_checkpoint import (
@@ -35,6 +41,11 @@ from sanctuary.growth.qlora_updater import (
 )
 
 __all__ = [
+    # CfC retraining (fast plasticity)
+    "CfCDataTap",
+    "CfCRetrainer",
+    "CfCRetrainingResult",
+    "CfCRetrainingStats",
     # Harvester
     "ReflectionHarvester",
     "HarvestedReflection",

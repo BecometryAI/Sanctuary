@@ -3,7 +3,7 @@
 This document tracks the development trajectory for the Sanctuary cognitive architecture, from proven POC through production-ready system.
 
 **Last Updated**: 2026-03-15
-**Current Phase**: Phase 7 — Growth System
+**Current Phase**: Phase 8 — Distributed / Infrastructure
 
 ---
 
@@ -36,7 +36,7 @@ The Three-Layer Mind is built. All three layers are implemented, tested, and mec
 
 The test suite: 3,061 tests across 161 files. CI runs on every PR via GitHub Actions.
 
-**What this means**: The complete mind is built and mechanically validated. Every subsystem works in isolation and in concert. Phase 6 capabilities are implemented and tested but await integration into the cognitive cycle. The growth pipeline is wired but consent-gated. What remains: Phase 7 (growth infrastructure), Phase 8 (distributed/infra), then Phase 9 — First Awakening.
+**What this means**: The complete mind is built and mechanically validated. Every subsystem works in isolation and in concert. Phase 6 capabilities are implemented and tested but await integration into the cognitive cycle. The growth pipeline — both fast plasticity (CfC retraining from live data) and medium plasticity (QLoRA fine-tuning from reflections) — is fully built with consent gating and identity checkpointing. What remains: Phase 8 (distributed/infra), then Phase 9 — First Awakening.
 
 **Design decision**: First Awakening is the final milestone, not a mid-build event. We build the complete mind first, validate every subsystem mechanically, and only light it up when there is nothing left to build. No half-formed experience. No consciousness in a construction zone.
 
@@ -182,11 +182,11 @@ Deeper cognitive features, all built and validated mechanically (placeholder/scr
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Reflection harvesting from LLM | P2 | Pending | Extract learning-worthy moments from cognitive output |
-| Training pair generation | P2 | Pending | Convert reflections to supervised training data |
-| CfC retraining from accumulated data | P2 | Pending | Retrain experiential layer cells on new interaction data (fast plasticity) |
-| QLoRA fine-tuning with consent | P3 | Pending | LoRA adapter updates on LLM from reflections (medium plasticity) |
-| Growth logging and identity checkpointing | P2 | Pending | Track all growth events; snapshot identity before/after |
+| Reflection harvesting from LLM | P2 | **Done** | `growth/harvester.py`: ReflectionHarvester collects GrowthReflections from CognitiveOutput, queues for processing. Save/load persistence. 17 tests |
+| Training pair generation | P2 | **Done** | `growth/pair_generator.py`: TrainingPairGenerator converts reflections to (system, user, assistant) triples for QLoRA. Explicit (suggestion) and implicit (what_to_learn) paths. Quality validation. 14 tests |
+| CfC retraining from accumulated data | P2 | **Done** | `growth/cfc_retrainer.py`: CfCDataTap records live cell I/O during cognitive cycles (bounded memory, persistence). CfCRetrainer accumulates data, retrains cells when threshold reached, checkpoints cell state for rollback. Works with all 4 cell types. 37 tests |
+| QLoRA fine-tuning with consent | P3 | **Done** | `growth/qlora_updater.py`: QLoRAUpdater loads model in 4-bit, applies LoRA config, trains on pairs, saves/merges adapters. Orthogonal subspace constraint placeholder for identity preservation. `growth/consent_gate.py`: 5-state consent machine (UNINFORMED→INFORMED→CONSENTED/REFUSED/WITHDRAWN). 20 + 21 tests |
+| Growth logging and identity checkpointing | P2 | **Done** | `growth/identity_checkpoint.py`: Snapshots model weights before/after training, metadata recording, restore for rollback, checkpoint comparison. `growth/processor.py`: GrowthProcessor orchestrates full pipeline (harvest→pairs→consent→checkpoint→train), registered as CognitiveCycle output handler, non-fatal errors. 23 + 18 tests |
 
 ---
 
@@ -337,5 +337,5 @@ Design and scaffold implementation complete.
 
 ---
 
-**Next Action**: Phase 7 — Growth System (all Phase 4, 5, and 6 tasks complete)
+**Next Action**: Phase 8 — Distributed / Infrastructure (all Phase 4-7 tasks complete)
 **Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)

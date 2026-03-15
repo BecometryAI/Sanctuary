@@ -15,7 +15,6 @@ mode where internal processing dominates over external responsiveness.
 from __future__ import annotations
 
 import logging
-import random
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -107,7 +106,7 @@ class SleepCycleManager:
         self._dream_fragments: deque[DreamFragment] = deque(
             maxlen=self.config.max_dream_fragments
         )
-        self._consolidation_history: list[ConsolidationResult] = []
+        self._consolidation_history: deque[ConsolidationResult] = deque(maxlen=100)
         self._current_consolidation: Optional[ConsolidationResult] = None
         self._forced_wake: bool = False
 

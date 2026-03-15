@@ -11,7 +11,6 @@ system (uncertain topics get salience boosts).
 from __future__ import annotations
 
 import logging
-import math
 from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -26,6 +25,7 @@ class TrackedPrediction:
 
     what: str
     confidence: float  # 0 to 1: how confident was the prediction?
+    domain: str = "general"
     timeframe: str = ""
     cycle_made: int = 0
     cycle_resolved: Optional[int] = None
@@ -101,6 +101,7 @@ class UncertaintyQuantifier:
         pred = TrackedPrediction(
             what=what,
             confidence=confidence,
+            domain=domain,
             timeframe=timeframe,
             cycle_made=cycle,
         )
@@ -243,7 +244,7 @@ class UncertaintyQuantifier:
         for domain, stats in self._domains.items():
             domain_preds = [
                 p for p in self._predictions
-                if p.outcome is not None
+                if p.outcome is not None and p.domain == domain
             ]
             if domain_preds:
                 stats.predictions_correct = sum(

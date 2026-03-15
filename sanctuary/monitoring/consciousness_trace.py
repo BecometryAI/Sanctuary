@@ -11,12 +11,10 @@ for consciousness.
 
 from __future__ import annotations
 
-import json
 import logging
 from collections import deque
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -92,7 +90,6 @@ class ConsciousnessTraceRecorder:
         self._traces: deque[CycleTrace] = deque(
             maxlen=self.config.max_traces
         )
-        self._cycle_index: dict[int, int] = {}  # cycle → deque index
 
     def record(
         self,
@@ -139,8 +136,6 @@ class ConsciousnessTraceRecorder:
             latency_ms=latency_ms,
         )
         self._traces.append(trace)
-        self._cycle_index[cycle] = len(self._traces) - 1
-
         return trace
 
     def get_trace(self, cycle: int) -> Optional[CycleTrace]:

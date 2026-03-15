@@ -77,7 +77,7 @@ class CognitiveProfiler:
         self._profiles: deque[CycleProfile] = deque(
             maxlen=self.config.max_profiles
         )
-        self._slow_cycles: list[CycleProfile] = []
+        self._slow_cycles: deque[CycleProfile] = deque(maxlen=200)
 
     def cycle(self, cycle_num: int = 0) -> _CycleContext:
         """Start profiling a cycle. Use as context manager."""

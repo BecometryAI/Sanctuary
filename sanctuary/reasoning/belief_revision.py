@@ -20,6 +20,12 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+# Common stop words excluded from keyword overlap checks
+_STOP_WORDS = frozenset({
+    "the", "a", "an", "is", "are", "was", "were", "be",
+    "to", "of", "in", "for", "on", "with", "that", "this",
+})
+
 
 @dataclass
 class Belief:
@@ -102,7 +108,7 @@ class BeliefRevisionTracker:
         self._contradictions: deque[Contradiction] = deque(
             maxlen=self.config.max_contradictions
         )
-        self._revision_history: list[dict] = []
+        self._revision_history: deque[dict] = deque(maxlen=500)
         self._belief_counter: int = 0
 
     def add_belief(
@@ -169,14 +175,8 @@ class BeliefRevisionTracker:
 
             prop_lower = belief.proposition.lower()
             # Simple overlap check: do they share significant words?
-            prop_words = set(prop_lower.split()) - {
-                "the", "a", "an", "is", "are", "was", "were", "be",
-                "to", "of", "in", "for", "on", "with", "that", "this",
-            }
-            evidence_words = set(evidence_lower.split()) - {
-                "the", "a", "an", "is", "are", "was", "were", "be",
-                "to", "of", "in", "for", "on", "with", "that", "this",
-            }
+            prop_words = set(prop_lower.split()) - _STOP_WORDS
+            evidence_words = set(evidence_lower.split()) - _STOP_WORDS
 
             overlap = prop_words & evidence_words
             if len(overlap) < 2:

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import random
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
@@ -197,7 +198,7 @@ class MoodActivityModulator:
     def __init__(self, config: Optional[MoodActivityConfig] = None):
         self.config = config or MoodActivityConfig()
         self._mood_profiles = dict(_DEFAULT_MOOD_PROFILES)
-        self._activity_history: list[ActivitySuggestion] = []
+        self._activity_history: deque[ActivitySuggestion] = deque(maxlen=500)
         self._current_activity: Optional[ActivitySuggestion] = None
         self._activity_cycles_remaining: int = 0
 

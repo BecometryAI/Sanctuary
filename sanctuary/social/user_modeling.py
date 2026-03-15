@@ -61,7 +61,7 @@ class UserProfile:
     trust_level: float = 0.3  # 0 to 1, starts low
     rapport: float = 0.0  # 0 to 1
     familiarity: float = 0.0  # 0 to 1
-    notes: list[str] = field(default_factory=list)
+    notes: list[str] = field(default_factory=list)  # Capped in add_note()
 
 
 @dataclass
@@ -195,9 +195,12 @@ class UserModeler:
         return list(self._profiles.keys())
 
     def add_note(self, user_id: str, note: str) -> bool:
-        """Add a free-text note about a user."""
+        """Add a free-text note about a user (max 50 notes per user)."""
         if user_id in self._profiles:
-            self._profiles[user_id].notes.append(note)
+            notes = self._profiles[user_id].notes
+            notes.append(note)
+            if len(notes) > 50:
+                del notes[:len(notes) - 50]
             return True
         return False
 
@@ -233,11 +236,15 @@ class UserModeler:
         questions = sum(1 for r in history if r.was_question)
         prefs.question_frequency = questions / len(history)
 
-        # Topic interests
+        # Topic interests (cap at 50 topics, evict lowest-scored)
         for record in history[-20:]:  # Recent topics
             for topic in record.topics:
                 current = prefs.topic_interests.get(topic, 0.0)
                 prefs.topic_interests[topic] = min(1.0, current + 0.1)
+        if len(prefs.topic_interests) > 50:
+            sorted_topics = sorted(prefs.topic_interests.items(), key=lambda x: x[1])
+            for t, _ in sorted_topics[:len(prefs.topic_interests) - 50]:
+                del prefs.topic_interests[t]
 
     def _update_relationship(self, user_id: str, sentiment: float) -> None:
         """Update relationship metrics based on interaction sentiment."""

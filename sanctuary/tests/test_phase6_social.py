@@ -258,6 +258,19 @@ class TestProsodyAnalyzer:
         stats = analyzer.get_stats()
         assert stats["total_analyses"] == 1
 
+    def test_calibration_preserves_weights(self):
+        """Verify analyze_for_user doesn't lose custom config weights."""
+        config = ProsodyConfig(
+            pitch_weight=0.5, energy_weight=0.5, rate_weight=0.0, pause_weight=0.0
+        )
+        analyzer = ProsodyAnalyzer(config=config)
+        baseline = AudioFeatures(pitch_mean=0.3, energy_mean=0.4, speaking_rate=0.3)
+        analyzer.calibrate_for_user("u1", baseline)
+        analyzer.analyze_for_user("u1", AudioFeatures(pitch_mean=0.8, energy_mean=0.8))
+        # Config should still have custom weights after analyze_for_user
+        assert analyzer.config.pitch_weight == 0.5
+        assert analyzer.config.rate_weight == 0.0
+
 
 # =========================================================================
 # UserModeler
@@ -399,3 +412,19 @@ class TestUserModeler:
         stats = m.get_stats()
         assert stats["total_users"] == 1
         assert stats["total_interactions"] == 1
+
+    def test_notes_bounded(self):
+        m = UserModeler()
+        m.record_interaction(user_id="u1", cycle=1)
+        for i in range(60):
+            m.add_note("u1", f"Note {i}")
+        assert len(m.get_profile("u1").notes) == 50
+
+    def test_topic_interests_bounded(self):
+        m = UserModeler()
+        for i in range(60):
+            m.record_interaction(
+                user_id="u1", topics=[f"topic_{i}"], cycle=i,
+            )
+        profile = m.get_profile("u1")
+        assert len(profile.communication_prefs.topic_interests) <= 50

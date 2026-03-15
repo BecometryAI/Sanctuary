@@ -387,6 +387,36 @@ class TestUncertaintyQuantifier:
         assert stats["total_predictions"] == 1
         assert stats["pending"] == 1
 
+    def test_per_domain_calibration(self):
+        """Verify calibration is computed per-domain, not globally."""
+        uq = UncertaintyQuantifier()
+        # Weather domain: 100% correct
+        uq.record_prediction(what="w1", confidence=0.9, domain="weather")
+        uq.resolve_prediction("w1", correct=True)
+        # Math domain: 0% correct
+        uq.record_prediction(what="m1", confidence=0.9, domain="math")
+        uq.resolve_prediction("m1", correct=False)
+        # Weather should have 1 correct, 0 wrong
+        assert uq._domains["weather"].predictions_correct == 1
+        assert uq._domains["weather"].predictions_wrong == 0
+        # Math should have 0 correct, 1 wrong
+        assert uq._domains["math"].predictions_correct == 0
+        assert uq._domains["math"].predictions_wrong == 1
+
+    def test_prediction_stores_domain(self):
+        uq = UncertaintyQuantifier()
+        uq.record_prediction(what="p1", confidence=0.5, domain="sports")
+        assert uq._predictions[0].domain == "sports"
+
+    def test_revision_history_bounded(self):
+        """Verify revision history doesn't grow unbounded."""
+        from sanctuary.reasoning.belief_revision import BeliefRevisionTracker
+        t = BeliefRevisionTracker()
+        t.add_belief(proposition="Test belief with content", confidence=0.5)
+        for i in range(600):
+            t.revise_belief("Test belief with content", new_confidence=0.5 + (i % 5) * 0.1, cycle=i)
+        assert len(t._revision_history) <= 500
+
 
 # =========================================================================
 # MentalSimulator

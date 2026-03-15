@@ -175,14 +175,16 @@ class ProsodyAnalyzer:
         """Analyze with user-specific calibration."""
         if user_id in self._calibration:
             cal = self._calibration[user_id]
-            old_config = self.config
-            self.config = ProsodyConfig(
-                baseline_pitch=cal["pitch"],
-                baseline_energy=cal["energy"],
-                baseline_rate=cal["rate"],
+            saved = (
+                self.config.baseline_pitch,
+                self.config.baseline_energy,
+                self.config.baseline_rate,
             )
+            self.config.baseline_pitch = cal["pitch"]
+            self.config.baseline_energy = cal["energy"]
+            self.config.baseline_rate = cal["rate"]
             result = self.analyze(features)
-            self.config = old_config
+            self.config.baseline_pitch, self.config.baseline_energy, self.config.baseline_rate = saved
             return result
         return self.analyze(features)
 

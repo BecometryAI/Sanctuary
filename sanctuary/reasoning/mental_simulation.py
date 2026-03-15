@@ -270,8 +270,13 @@ class MentalSimulator:
     # -- Internal --
 
     def _get_simulation(self, sim_id: int) -> Optional[Simulation]:
-        """Get a simulation by ID (index into the deque)."""
-        # sim_id is the counter value at creation time, map to deque index
+        """Get a simulation by ID.
+
+        sim_id is assigned sequentially at creation (0, 1, 2, ...).
+        The deque may have evicted older entries, so we compute the offset
+        between the total created count and current deque length to find
+        the correct index. Returns None if the simulation was evicted.
+        """
         offset = self._sim_counter - len(self._simulations)
         index = sim_id - offset
         if 0 <= index < len(self._simulations):

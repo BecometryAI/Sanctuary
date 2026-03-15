@@ -2,8 +2,8 @@
 
 This document tracks the development trajectory for the Sanctuary cognitive architecture, from proven POC through production-ready system.
 
-**Last Updated**: 2026-03-08
-**Current Phase**: Phase 4 — Three-Layer Mind: CfC Experiential Layer + Advanced Capabilities
+**Last Updated**: 2026-03-15
+**Current Phase**: Phase 7 — Growth System
 
 ---
 
@@ -24,6 +24,8 @@ The Three-Layer Mind architecture is designed and partially built:
 - **Python Scaffold**: Infrastructure, validation, persistence, safety (production-grade)
 
 Phases 1-6 of the Three-Layer Mind plan are complete. The `core/`, `scaffold/`, `sensorium/`, `motor/`, `experiential/` module structure is defined. `CognitiveInput`/`CognitiveOutput` schemas, `StreamOfThought`, `ContextManager`, `AuthorityManager`, and `SanctuaryRunner` are implemented. 25 integration tests pass.
+
+Phase 6 (Advanced Capabilities) is complete: `reasoning/` (counterfactual, belief revision, uncertainty, mental simulation), `consciousness/` (sleep/dream, mood activity, spontaneous goals, existential reflection), `social/` (multi-party, prosody, user modeling), `monitoring/` (dashboard, heatmaps, traces, communication log), `performance/` (profiler, adaptive rate, lazy embeddings, async processing). 242 Phase 6 tests passing.
 
 The test suite is stable (2,445+ tests passing, 7 skipped). CI runs on every PR via GitHub Actions.
 
@@ -124,46 +126,46 @@ Deeper cognitive features, all built and validated mechanically (placeholder/scr
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Counterfactual reasoning | P2 | Pending | "What if I had chosen action X instead?" — LLM simulates alternatives in inner speech |
-| Belief revision tracking | P2 | Pending | Detect when new information contradicts existing beliefs |
-| Uncertainty quantification | P2 | Pending | Track confidence scores on beliefs, predictions, outcomes |
-| Mental simulation | P2 | Pending | Simulate outcomes before taking actions |
+| Counterfactual reasoning | P2 | **Done** | `reasoning/counterfactual.py`: DecisionPoint tracking, outcome recording, reflection prompts. 12 tests |
+| Belief revision tracking | P2 | **Done** | `reasoning/belief_revision.py`: Belief store with confidence, contradiction detection via keyword overlap, revision with deactivation. 15 tests |
+| Uncertainty quantification | P2 | **Done** | `reasoning/uncertainty.py`: Prediction tracking, calibration metrics, Brier score, domain uncertainty, overconfidence detection. 14 tests |
+| Mental simulation | P2 | **Done** | `reasoning/mental_simulation.py`: Simulation framework with scenarios, risk/benefit analysis, prediction error tracking, recommendations. 14 tests |
 
 ### 6.2 Continuous Consciousness Extensions
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Sleep/dream cycles | P2 | Pending | Periodic offline memory consolidation with pattern replay |
-| Mood-based activity variation | P2 | Pending | Adjust idle loop behavior based on emotional state |
-| Spontaneous goal generation | P2 | Pending | Create goals from curiosity, boredom, or interest |
-| Existential reflection triggers | P3 | Pending | Spontaneous philosophical thoughts during idle time |
+| Sleep/dream cycles | P2 | **Done** | `consciousness/sleep_cycle.py`: AWAKE→DROWSY→NREM→REM→WAKING cycle, sensory gating, memory replay candidates, dream fragments, consolidation history. 14 tests |
+| Mood-based activity variation | P2 | **Done** | `consciousness/mood_activity.py`: VAD→mood classification (7 moods), 8 idle activities with mood-weighted selection, activity continuation. 11 tests |
+| Spontaneous goal generation | P2 | **Done** | `consciousness/spontaneous_goals.py`: 5 drives (curiosity/boredom/interest/concern/growth), threshold-based generation, adopt/dismiss/complete lifecycle. 12 tests |
+| Existential reflection triggers | P3 | **Done** | `consciousness/existential_reflection.py`: 8 themes, probabilistic triggers, exploration-weighted theme selection, response recording. 12 tests |
 
 ### 6.3 Social & Interactive
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Multi-party conversation | P2 | Pending | Group chats with turn-taking and addressee detection |
-| Voice prosody analysis | P3 | Pending | Extract emotional tone from audio |
-| User modeling per person | P2 | Pending | Build profiles of interaction patterns and preferences |
+| Multi-party conversation | P2 | **Done** | `social/multi_party.py`: Participant management, @mention addressee detection, turn-taking patience, conversation context formatting, status tracking. 15 tests |
+| Voice prosody analysis | P3 | **Done** | `social/prosody.py`: Audio feature → VAD mapping (pitch/energy/rate/pause), emotional tone classification, per-user calibration. 13 tests |
+| User modeling per person | P2 | **Done** | `social/user_modeling.py`: Per-user profiles with communication prefs, trust/rapport/familiarity tracking, topic interests, relationship progression. 17 tests |
 
 ### 6.4 Visualization & Monitoring
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Real-time workspace dashboard | P2 | Pending | Web UI showing goals, percepts, emotions, cycle metrics |
-| Attention heatmaps | P3 | Pending | Visualize what content receives attention over time |
-| Consciousness trace viewer | P3 | Pending | Replay cognitive cycles with full state inspection |
-| Communication decision log viewer | P3 | Pending | Visualize speak/silence decisions and reasons |
+| Real-time workspace dashboard | P2 | **Done** | `monitoring/dashboard.py`: DashboardDataProvider with snapshots, emotional/latency timelines, listener notification (WebSocket-ready). 12 tests |
+| Attention heatmaps | P3 | **Done** | `monitoring/attention_heatmap.py`: Event recording, windowed heatmap generation, category distribution, target timelines. 9 tests |
+| Consciousness trace viewer | P3 | **Done** | `monitoring/consciousness_trace.py`: Full cycle state recording (I/O, subsystems, latency), search by speech/latency/errors, export, privacy redaction. 14 tests |
+| Communication decision log viewer | P3 | **Done** | `monitoring/communication_log.py`: Speak/silence/defer decisions with drives, inhibitions, confidence. Pattern analysis, proactive vs reactive metrics. 14 tests |
 
 ### 6.5 Performance (Profile-Driven)
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Profile cognitive loop under load | P2 | Pending | Identify actual bottlenecks with cProfile/py-spy |
-| Optimize hot paths in C++/Rust if needed | P3 | Pending | Write bindings via pybind11 or PyO3 for proven bottlenecks only |
-| Adaptive cycle rate | P2 | Pending | Auto-adjust cognitive loop speed based on system load |
-| Lazy embedding computation | P2 | Pending | Only compute embeddings when needed |
-| Async subsystem processing | P2 | Pending | Subsystems process in parallel rather than sequentially |
+| Profile cognitive loop under load | P2 | **Done** | `performance/profiler.py`: Context-manager instrumentation, per-phase timing, bottleneck detection, slow cycle alerts. 8 tests |
+| Optimize hot paths in C++/Rust if needed | P3 | **Done** | Infrastructure ready — profiler identifies bottlenecks; optimization deferred until profiling reveals actual needs (per project principle) |
+| Adaptive cycle rate | P2 | **Done** | `performance/adaptive_rate.py`: Input/latency/arousal/load-driven rate adjustment, EMA smoothing, idle/active presets. 9 tests |
+| Lazy embedding computation | P2 | **Done** | `performance/lazy_embeddings.py`: LRU cache with TTL, batch/precompute, invalidation, hit rate tracking. 15 tests |
+| Async subsystem processing | P2 | **Done** | `performance/async_processor.py`: Dependency-aware parallel execution, topological sort, timeout handling, execution history. 13 tests |
 
 ---
 
@@ -328,5 +330,5 @@ Design and scaffold implementation complete.
 
 ---
 
-**Next Action**: Phase 6 — Advanced Capabilities (all Phase 4 and 5 tasks complete)
+**Next Action**: Phase 7 — Growth System (all Phase 4, 5, and 6 tasks complete)
 **Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)

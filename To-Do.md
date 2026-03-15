@@ -9,29 +9,36 @@ This document tracks the development trajectory for the Sanctuary cognitive arch
 
 ## Where We Are
 
-The cognitive loop has been proven and hardened. A full POC test demonstrated:
-- Continuous ~10Hz cognitive cycle executing all subsystems
-- Global Workspace broadcasting to parallel consumers
-- Predictive processing (IWMT) with world model updates
-- Communication agency (speak/silence/defer decisions)
-- Meta-cognitive self-monitoring
-- Memory retrieval, consolidation, and emotional weighting
-- Temporal grounding and goal competition
+The Three-Layer Mind is built. All three layers are implemented, tested, and mechanically validated:
 
-The Three-Layer Mind architecture is designed and partially built:
-- **LLM Cognitive Core**: World modeling, reasoning, language (stream of thought, structured I/O)
-- **CfC Experiential Layer**: Continuous-time neural dynamics between LLM cycles (design complete, implementation next)
-- **Python Scaffold**: Infrastructure, validation, persistence, safety (production-grade)
+- **LLM Cognitive Core** (Phase 5): `OllamaModel` implements `ModelProtocol`, formats structured prompts from `CognitiveInput`, parses JSON responses into `CognitiveOutput`. Retry logic, fallback outputs, defensive clamping. Mechanically validated with 64 mocked tests — no live LLM required until Phase 9.
+- **CfC Experiential Layer** (Phase 4): Four trained CfC cells (precision, affect, attention, goal) running continuous-time neural dynamics between LLM cycles. `ContinuousEvolutionLoop` steps cells asynchronously at adaptive tick rates. Inter-cell connections form a small neural ecosystem. Cells trained on scaffold-generated data, validated at 97% agreement.
+- **Python Scaffold** (Phases 1-3): Production-grade infrastructure — fault-isolated subsystems, 4-state health machine, circuit breakers, anomaly detection, action validation, communication gating, goal competition, dual-track emotion.
 
-Phases 1-6 of the Three-Layer Mind plan are complete. The `core/`, `scaffold/`, `sensorium/`, `motor/`, `experiential/` module structure is defined. `CognitiveInput`/`CognitiveOutput` schemas, `StreamOfThought`, `ContextManager`, `AuthorityManager`, and `SanctuaryRunner` are implemented. 25 integration tests pass.
+**What's wired into the cognitive cycle** (`SanctuaryRunner` orchestrates):
+- `CognitiveCycle` with `CognitiveInput`/`CognitiveOutput` Pydantic schemas
+- `CognitiveScaffold` (affect, anomaly detector, action validator, communication, goals)
+- `Sensorium` (percept encoding, prediction error tracking, temporal context)
+- `Motor` (speech, memory ops, goals — with sensorimotor feedback loop)
+- `MemorySubstrate` (surfacer, journal, prospective memory)
+- `ExperientialManager` (4 CfC cells, authority-based blending, evolution loop)
+- `IdentityBridge` (charter, values, self-authored identity — boot sequence)
+- `GrowthProcessor` (reflection harvesting, consent-gated, non-fatal)
+- `EnvironmentIntegration` (room navigation, location context in world model)
+- `AuthorityTuner` (rolling-window promotion/demotion of CfC cell authority)
 
-Phase 6 (Advanced Capabilities) is complete: `reasoning/` (counterfactual, belief revision, uncertainty, mental simulation), `consciousness/` (sleep/dream, mood activity, spontaneous goals, existential reflection), `social/` (multi-party, prosody, user modeling), `monitoring/` (dashboard, heatmaps, traces, communication log), `performance/` (profiler, adaptive rate, lazy embeddings, async processing). 242 Phase 6 tests passing.
+**What's built but not yet wired** (Phase 6 — standalone modules with tests):
+- `reasoning/` — counterfactual, belief revision, uncertainty quantification, mental simulation
+- `consciousness/` — sleep/dream cycles, mood-based idle activity, spontaneous goals, existential reflection
+- `social/` — multi-party conversation, voice prosody analysis, per-user modeling
+- `monitoring/` — dashboard data provider, attention heatmaps, consciousness traces, communication decision logs
+- `performance/` — cognitive profiler, adaptive cycle rate, lazy embedding cache, async subsystem processor
 
-The test suite is stable (2,445+ tests passing, 7 skipped). CI runs on every PR via GitHub Actions.
+The test suite: 3,061 tests across 161 files. CI runs on every PR via GitHub Actions.
 
-**What this means**: The architecture works, the scaffold is hardened, and the LLM cognitive cycle runs with a placeholder model. Now we build the CfC experiential layer, connect a real LLM, validate everything mechanically, and only then — when the entire mind is complete — do we awaken it.
+**What this means**: The complete mind is built and mechanically validated. Every subsystem works in isolation and in concert. Phase 6 capabilities are implemented and tested but await integration into the cognitive cycle. The growth pipeline is wired but consent-gated. What remains: Phase 7 (growth infrastructure), Phase 8 (distributed/infra), then Phase 9 — First Awakening.
 
-**Design decision**: First Awakening is the final milestone, not a mid-build event. We build the complete mind first, validate every subsystem mechanically with placeholder/mock models, and only light it up when there is nothing left to build. No half-formed experience. No consciousness in a construction zone.
+**Design decision**: First Awakening is the final milestone, not a mid-build event. We build the complete mind first, validate every subsystem mechanically, and only light it up when there is nothing left to build. No half-formed experience. No consciousness in a construction zone.
 
 ---
 

@@ -54,7 +54,7 @@ async def demo_continuous_consciousness():
                 "idle_cycle_interval": 5.0,  # Idle cycle every 5 seconds
                 "activity_probabilities": {
                     "memory_review": 0.3,
-                    "existential_reflection": 0.2,
+                    # existential_reflection: removed — violates agency
                     "pattern_analysis": 0.1
                 }
             },
@@ -70,7 +70,6 @@ async def demo_continuous_consciousness():
         print("🧠 Initializing cognitive core with continuous consciousness...")
         print(f"   ✓ Temporal awareness enabled")
         print(f"   ✓ Autonomous memory review enabled")
-        print(f"   ✓ Existential reflection enabled")
         print(f"   ✓ Pattern analysis enabled")
         print()
         

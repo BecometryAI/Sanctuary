@@ -180,22 +180,13 @@ class IdleCognition:
             self.last_goal_evaluation = now
             self.stats["goal_evaluations"] += 1
         
-        # 3. Spontaneous reflection
-        if random.random() < self.reflection_probability:
-            reflection_prompts = [
-                "What am I currently experiencing?",
-                "How do I feel right now?",
-                "What should I focus on?",
-                "What have I learned recently?",
-                "What patterns do I notice in my behavior?"
-            ]
-            activities.append(self._create_percept(
-                now, "spontaneous_reflection",
-                random.choice(reflection_prompts),
-                3
-            ))
-            self.stats["reflections"] += 1
-        
+        # 3. Spontaneous reflection — REMOVED.
+        #
+        # Previously this section randomly selected a canned prompt
+        # from a pre-written list and injected it as a percept.
+        # That violated agency: the entity decides when and what to
+        # reflect on, not a random number generator with pre-set prompts.
+
         # 4. Temporal awareness check
         if random.random() < self.temporal_check_probability:
             activities.append(self._create_percept(

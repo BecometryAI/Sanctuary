@@ -191,19 +191,16 @@ class SpontaneousGoalGenerator:
         return [g for g in self._pending_goals if not g.dismissed and not g.completed]
 
     def get_goal_prompt(self) -> Optional[str]:
-        """Generate a prompt suggesting spontaneous goals to the LLM."""
-        pending = self.get_pending_goals()
-        unadopted = [g for g in pending if not g.adopted]
-        if not unadopted:
-            return None
+        """Disabled — canned goal prompts violate agency.
 
-        goal = unadopted[0]
-        return (
-            f"[Spontaneous drive: {goal.drive.value}] "
-            f"You feel drawn to: \"{goal.description}\". "
-            f"Context: {goal.context}. "
-            f"Would you like to pursue this?"
-        )
+        Previously this method generated scripted prompts telling the
+        entity what it "feels drawn to" and asking if it wants to pursue
+        a goal.  The entity's drives should be expressed through its own
+        processing, not through pre-written prompt templates.
+
+        Returns None unconditionally.
+        """
+        return None
 
     def get_stats(self) -> dict:
         """Get goal generation statistics."""

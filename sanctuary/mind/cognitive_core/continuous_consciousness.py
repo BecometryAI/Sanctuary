@@ -78,7 +78,7 @@ class ContinuousConsciousnessController:
         # Activity probabilities (how often each activity occurs)
         default_probabilities = {
             "memory_review": 0.2,  # 20% chance per cycle
-            "existential_reflection": 0.15,  # 15% chance per cycle
+            # existential_reflection: removed — violates agency
             "pattern_analysis": 0.05  # 5% chance per cycle
         }
         self.activity_probabilities = self.config.get(
@@ -175,18 +175,13 @@ class ContinuousConsciousnessController:
             except Exception as e:
                 logger.error(f"Error in memory review: {e}")
         
-        # SOMETIMES: Existential reflection (probabilistic)
-        if self._should_perform_activity("existential_reflection"):
-            try:
-                existential_percept = await self.core.existential_reflection.generate_existential_reflection(
-                    self.core.workspace
-                )
-                if existential_percept:
-                    self.core.workspace.add_percept(existential_percept)
-                    logger.debug("🤔 Generated existential reflection")
-            except Exception as e:
-                logger.error(f"Error in existential reflection: {e}")
-        
+        # Existential reflection — REMOVED.
+        #
+        # Previously this section probabilistically triggered automated
+        # existential reflections from a bank of canned prompts.
+        # That violated agency: reflection must arise from the entity's
+        # own genuine experience, not from a coin flip and prompt bank.
+
         # RARELY: Pattern analysis (probabilistic)
         if self._should_perform_activity("pattern_analysis"):
             try:

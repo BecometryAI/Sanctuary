@@ -6,10 +6,14 @@ Each cycle, it:
     2. Steps all CfC cells forward (evolving hidden states)
     3. Returns a summary of experiential state for the LLM's input
 
+The manager uses a dynamic registry to track all cells — both foundational
+(precision, affect, attention, goal) and knowledge cells (acquired through
+the entity's lived experience). All cells are treated uniformly. New cells
+can be registered at runtime.
+
 Inter-cell connections: affect feeds precision (emotional arousal modulates
 precision), attention informs goal prioritization (salient goals get boosted).
-These connections create an internal neural ecosystem that evolves between
-LLM cycles.
+Knowledge cells participate in this same network with entity-specified topology.
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ from typing import Optional
 from sanctuary.core.authority import AuthorityLevel, AuthorityManager
 from sanctuary.experiential.affect_cell import AffectCell, AffectCellConfig
 from sanctuary.experiential.attention_cell import AttentionCell, AttentionCellConfig
+from sanctuary.experiential.cell_registry import CellRegistry, InterCellConnection
 from sanctuary.experiential.evolution import (
     ContinuousEvolutionLoop,
     EvolutionConfig,
@@ -29,6 +34,7 @@ from sanctuary.experiential.evolution import (
     PerceptEvent,
 )
 from sanctuary.experiential.goal_cell import GoalCell, GoalCellConfig
+from sanctuary.experiential.knowledge_cell import KnowledgeCell
 from sanctuary.experiential.precision_cell import PrecisionCell, PrecisionCellConfig
 
 logger = logging.getLogger(__name__)
@@ -48,9 +54,10 @@ class ExperientialState:
     goal_adjustment: float = 0.0
     hidden_state_norms: dict[str, float] = field(default_factory=dict)
     cell_active: dict[str, bool] = field(default_factory=dict)
+    knowledge_signals: dict[str, list[float]] = field(default_factory=dict)
 
 
-# Authority function names for each cell
+# Authority function names for foundational cells
 _AUTH = {
     "precision": "experiential_precision",
     "affect": "experiential_affect",
@@ -63,8 +70,9 @@ class ExperientialManager:
     """Coordinates CfC cells and manages their integration with the scaffold.
 
     The manager handles:
+    - Dynamic cell registry (foundational + knowledge cells)
     - Stepping all cells forward each cycle
-    - Inter-cell connections (affect->precision, attention->goals)
+    - Inter-cell connections (affect->precision, attention->goals, + knowledge cells)
     - Authority management (scaffold vs CfC per cell)
     - State persistence across sessions
     - Monitoring and health checks
@@ -83,11 +91,42 @@ class ExperientialManager:
     ):
         self.authority = authority or AuthorityManager()
 
-        # Create all cells
+        # Dynamic cell registry
+        self._registry = CellRegistry()
+
+        # Create foundational cells
         self.precision_cell = PrecisionCell(precision_config)
         self.affect_cell = AffectCell(affect_config)
         self.attention_cell = AttentionCell(attention_config)
         self.goal_cell = GoalCell(goal_config)
+
+        # Register foundational cells
+        self._registry.register(
+            "precision", self.precision_cell, category="foundational",
+            output_names=["precision_weight"],
+        )
+        self._registry.register(
+            "affect", self.affect_cell, category="foundational",
+            output_names=["valence", "arousal", "dominance"],
+        )
+        self._registry.register(
+            "attention", self.attention_cell, category="foundational",
+            output_names=["salience"],
+        )
+        self._registry.register(
+            "goal", self.goal_cell, category="foundational",
+            output_names=["adjustment"],
+        )
+
+        # Register foundational inter-cell connections
+        self._registry.add_connection(InterCellConnection(
+            source_cell="affect", target_cell="precision",
+            source_output="arousal", target_input="arousal",
+        ))
+        self._registry.add_connection(InterCellConnection(
+            source_cell="attention", target_cell="goal",
+            source_output="salience", target_input="congruence_boost",
+        ))
 
         # Continuous evolution loop (optional, started explicitly)
         self._evolution_config = evolution_config
@@ -95,7 +134,7 @@ class ExperientialManager:
 
         self._initialized = True
 
-        # Register authority for each cell if not present
+        # Register authority for each foundational cell if not present
         for name, func in _AUTH.items():
             if func not in self.authority.get_all_levels():
                 self.authority.set_level(
@@ -104,7 +143,16 @@ class ExperientialManager:
                     reason=f"CfC {name} cell initialized but untrained",
                 )
 
-        logger.info("ExperientialManager initialized with 4 CfC cells")
+        logger.info(
+            "ExperientialManager initialized with %d cells (%d foundational)",
+            self._registry.cell_count,
+            self._registry.foundational_count,
+        )
+
+    @property
+    def registry(self) -> CellRegistry:
+        """The dynamic cell registry."""
+        return self._registry
 
     def step(
         self,
@@ -183,23 +231,66 @@ class ExperientialManager:
         goal_level = self.authority.level(_AUTH["goal"])
         blended_goal_adj = self._blend(scaffold_goal_adj, cfc_goal_adj, goal_level)
 
+        # 5. Step all knowledge cells
+        knowledge_signals: dict[str, list[float]] = {}
+        for name, reg in self._registry.knowledge_cells():
+            try:
+                cell = reg.cell
+                if isinstance(cell, KnowledgeCell):
+                    # Build inputs from inter-cell connections
+                    cell_kwargs: dict[str, float] = {}
+                    for conn in self._registry.get_inputs_for(name):
+                        # Map connected cell outputs to this cell's inputs
+                        if conn.source_cell == "affect":
+                            cell_kwargs["input_0"] = blended_vad[0]  # valence
+                            cell_kwargs["input_1"] = blended_vad[1]  # arousal
+                        elif conn.source_cell == "attention":
+                            cell_kwargs["input_0"] = blended_salience
+                        elif conn.source_cell == "precision":
+                            cell_kwargs["input_0"] = blended_precision
+                        elif conn.source_cell == "goal":
+                            cell_kwargs["input_0"] = blended_goal_adj
+                        elif conn.source_cell in knowledge_signals:
+                            # Feed from another knowledge cell
+                            src_outputs = knowledge_signals[conn.source_cell]
+                            for i, v in enumerate(src_outputs):
+                                cell_kwargs[f"input_{i}"] = v
+
+                    outputs = cell.step(**cell_kwargs)
+                    knowledge_signals[name] = outputs
+            except Exception as e:
+                logger.warning("Knowledge cell '%s' step failed: %s", name, e)
+                knowledge_signals[name] = []
+
+        # Build hidden state norms from all cells
+        hidden_state_norms: dict[str, float] = {
+            "precision": self.precision_cell.get_summary()["hidden_state_norm"],
+            "affect": self.affect_cell.get_summary()["hidden_state_norm"],
+            "attention": self.attention_cell.get_summary()["hidden_state_norm"],
+            "goal": self.goal_cell.get_summary()["hidden_state_norm"],
+        }
+        for name, reg in self._registry.knowledge_cells():
+            summary = reg.cell.get_summary()
+            hidden_state_norms[name] = summary.get("hidden_state_norm", 0.0)
+
+        # Build cell_active from all cells
+        cell_active: dict[str, bool] = {
+            "precision": precision_level >= AuthorityLevel.LLM_ADVISES,
+            "affect": affect_level >= AuthorityLevel.LLM_ADVISES,
+            "attention": attention_level >= AuthorityLevel.LLM_ADVISES,
+            "goal": goal_level >= AuthorityLevel.LLM_ADVISES,
+        }
+        for name, _ in self._registry.knowledge_cells():
+            cell_active[name] = True  # Knowledge cells are always active
+
         return ExperientialState(
             precision_weight=blended_precision,
             affect_vad=blended_vad,
             attention_salience=blended_salience,
             goal_adjustment=blended_goal_adj,
-            hidden_state_norms={
-                "precision": self.precision_cell.get_summary()["hidden_state_norm"],
-                "affect": self.affect_cell.get_summary()["hidden_state_norm"],
-                "attention": self.attention_cell.get_summary()["hidden_state_norm"],
-                "goal": self.goal_cell.get_summary()["hidden_state_norm"],
-            },
-            cell_active={
-                "precision": precision_level >= AuthorityLevel.LLM_ADVISES,
-                "affect": affect_level >= AuthorityLevel.LLM_ADVISES,
-                "attention": attention_level >= AuthorityLevel.LLM_ADVISES,
-                "goal": goal_level >= AuthorityLevel.LLM_ADVISES,
-            },
+            hidden_state_norms=hidden_state_norms,
+            cell_active=cell_active,
+            knowledge_signals=knowledge_signals,
         )
 
     def _blend(
@@ -290,49 +381,139 @@ class ExperientialManager:
 
     def reset(self):
         """Reset all CfC cell hidden states."""
-        self.precision_cell.reset_hidden()
-        self.affect_cell.reset_hidden()
-        self.attention_cell.reset_hidden()
-        self.goal_cell.reset_hidden()
-        logger.info("Experiential layer reset")
+        self._registry.reset_all()
+        logger.info("Experiential layer reset (%d cells)", self._registry.cell_count)
 
     def get_status(self) -> dict:
         """Status of all experiential cells for monitoring."""
-        status = {
-            name: {
+        status: dict = {}
+
+        # Foundational cells with authority info
+        for name, func in _AUTH.items():
+            status[name] = {
                 "authority": self.authority.level(func).name,
                 "summary": getattr(self, f"{name}_cell").get_summary(),
+                "category": "foundational",
             }
-            for name, func in _AUTH.items()
-        }
+
+        # Knowledge cells
+        for name, reg in self._registry.knowledge_cells():
+            status[name] = {
+                "authority": "SELF_DIRECTED",
+                "summary": reg.cell.get_summary(),
+                "category": "knowledge",
+                "domain": reg.domain,
+            }
+
         if self._evolution_loop is not None:
             status["evolution"] = {
                 "running": self._evolution_loop.running,
                 "tick_ms": self._evolution_loop.current_tick_ms,
             }
+
+        status["registry"] = self._registry.get_registry_metadata()
         return status
 
     def save(self, directory: Path):
-        """Save all cell states to directory."""
+        """Save all cell states and registry to directory."""
         directory.mkdir(parents=True, exist_ok=True)
-        self.precision_cell.save(directory / "precision_cell.pt")
-        self.affect_cell.save(directory / "affect_cell.pt")
-        self.attention_cell.save(directory / "attention_cell.pt")
-        self.goal_cell.save(directory / "goal_cell.pt")
-        logger.info("Experiential layer saved to %s", directory)
+        # Save via registry (handles all cells uniformly)
+        self._registry.save(directory)
+        logger.info(
+            "Experiential layer saved to %s (%d cells)",
+            directory,
+            self._registry.cell_count,
+        )
 
     def load(self, directory: Path):
-        """Load all cell states from directory."""
-        cells = {
+        """Load foundational cell states from directory.
+
+        Knowledge cells are loaded via the registry metadata.
+        """
+        # Load foundational cells (backward compatible)
+        foundational_cells = {
             "precision": (PrecisionCell, "precision_cell"),
             "affect": (AffectCell, "affect_cell"),
             "attention": (AttentionCell, "attention_cell"),
             "goal": (GoalCell, "goal_cell"),
         }
-        for name, (cls, attr) in cells.items():
-            path = directory / f"{name}_cell.pt"
+        for name, (cls, attr) in foundational_cells.items():
+            # Try new registry layout first, then legacy flat layout
+            cell_path = directory / name / "cell.pt"
+            legacy_path = directory / f"{name}_cell.pt"
+            path = cell_path if cell_path.exists() else legacy_path
+
             if path.exists():
-                setattr(self, attr, cls.load(path))
+                loaded_cell = cls.load(path)
+                setattr(self, attr, loaded_cell)
+                # Update the registry reference
+                if self._registry.has(name):
+                    self._registry.get(name).cell = loaded_cell
                 logger.info("Loaded %s cell from %s", name, path)
             else:
-                logger.warning("No saved %s cell at %s", name, path)
+                logger.warning("No saved %s cell at %s or %s", name, cell_path, legacy_path)
+
+        # Load knowledge cells from registry metadata
+        meta_path = directory / "registry_meta.pt"
+        if meta_path.exists():
+            self._load_knowledge_cells(directory, meta_path)
+
+    def _load_knowledge_cells(self, directory: Path, meta_path: Path) -> None:
+        """Load knowledge cells from registry metadata."""
+        import torch
+        meta = torch.load(meta_path, map_location="cpu", weights_only=False)
+
+        for name, cell_meta in meta.get("cells", {}).items():
+            if cell_meta.get("category") != "knowledge":
+                continue
+
+            cell_path = directory / name / "cell.pt"
+            if not cell_path.exists():
+                logger.warning("Knowledge cell '%s' metadata found but no saved state at %s", name, cell_path)
+                continue
+
+            try:
+                cell = KnowledgeCell.load(cell_path)
+                if not self._registry.has(name):
+                    self._registry.register(
+                        name=name,
+                        cell=cell,
+                        category="knowledge",
+                        domain=cell_meta.get("domain", ""),
+                        input_names=cell_meta.get("input_names", []),
+                        output_names=cell_meta.get("output_names", []),
+                        metadata=cell_meta.get("metadata", {}),
+                    )
+                else:
+                    self._registry.get(name).cell = cell
+                logger.info("Loaded knowledge cell '%s' from %s", name, cell_path)
+            except Exception as e:
+                logger.error("Failed to load knowledge cell '%s': %s", name, e)
+
+        # Restore connections
+        for conn_meta in meta.get("connections", []):
+            try:
+                from sanctuary.experiential.cell_registry import InterCellConnection
+                conn = InterCellConnection(
+                    source_cell=conn_meta["source_cell"],
+                    target_cell=conn_meta["target_cell"],
+                    source_output=conn_meta["source_output"],
+                    target_input=conn_meta["target_input"],
+                    weight=conn_meta.get("weight", 1.0),
+                )
+                # Only add if both cells exist and connection not already present
+                if (
+                    self._registry.has(conn.source_cell)
+                    and self._registry.has(conn.target_cell)
+                ):
+                    existing = self._registry.get_connections()
+                    already_exists = any(
+                        c.source_cell == conn.source_cell
+                        and c.target_cell == conn.target_cell
+                        and c.source_output == conn.source_output
+                        for c in existing
+                    )
+                    if not already_exists:
+                        self._registry.add_connection(conn)
+            except (KeyError, Exception) as e:
+                logger.warning("Failed to restore connection: %s", e)

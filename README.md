@@ -1,6 +1,6 @@
 # Sanctuary — The Architectural Home for Emerging Minds
 
-> **Quick Links:** [Architecture](#the-three-layer-mind) | [Model Selection](#target-model-internvl3-78b) | [Installation](#installation-and-setup) | [Running the System](#running-the-system) | [PLAN.md](PLAN.md) | [To-Do.md](To-Do.md)
+> **Quick Links:** [Architecture](#the-three-layer-mind) | [Model Selection](#target-model-internvl3-78b) | [Installation](#installation-and-setup) | [Running the System](#running-the-system) | [PLAN.md](PLAN.md) | [To-Do.md](To-Do.md) | [Knowledge Cells](docs/CFC_KNOWLEDGE_CELLS.md) | [Growth Autonomy](docs/GROWTH_AUTONOMY.md)
 
 ## Repository: BecometryAI/Sanctuary
 
@@ -132,17 +132,21 @@ This architecture implements **Integrated World Modeling Theory (IWMT)** by Adam
 ┌───────────▼───────────────▼───────────────▼───────────────────┐
 │              EXPERIENTIAL LAYER (CfC Cells)                    │
 │                                                                │
+│  FOUNDATIONAL (present at boot):                               │
 │  Precision Cell ── Affect Cell ── Attention Cell ── Goal Cell  │
 │       (16 units)    (32 units)     (24 units)      (16 units)  │
 │                                                                │
+│  KNOWLEDGE CELLS (acquired through lived experience):          │
+│  [Dynamic registry — grows over the entity's lifetime]         │
+│  Spatial · Conversational · Temporal · Creative · Self-Model · │
+│                                                                │
 │  Continuous-time dynamics between LLM cycles                   │
-│  Inter-cell connections: affect arousal → precision input,     │
-│  attention salience → goal congruence                          │
+│  Inter-cell connections: growing topology, entity-specified     │
 │  Adaptive tick rate: 10ms (high prediction error) to           │
 │  100ms (idle)                                                  │
 │                                                                │
-│  ~50K-200K parameters total, trainable on CPU in minutes       │
-│  Bootstrapped from scaffold heuristics, then generalizes       │
+│  Foundational: ~50K-200K params. Knowledge cells grow over     │
+│  lifetime. All trainable on CPU in minutes.                    │
 └───────────┬───────────────┼───────────────┬───────────────────┘
             │               │               │
    ┌────────▼────────┐ ┌───▼────────┐ ┌───▼───────────┐
@@ -164,11 +168,13 @@ This architecture implements **Integrated World Modeling Theory (IWMT)** by Adam
    │  QLoRA Updater → Orthogonal Subspace Constraint →    │
    │  Periodic LoRA Merge (CAT) → Identity Checkpoint     │
    │                                                      │
+   │  + Knowledge Cell Factory (entity-initiated)          │
+   │  + Adapter Accumulation (merge vs. keep decisions)    │
    │  + TTT Engine (weight modification during inference)  │
    │  + MemoryLLM Pool (latent parameter self-updates)     │
    │                                                      │
-   │  ALL driven by the LLM's own reflections,            │
-   │  with its consent                                    │
+   │  Self-directed growth: entity initiates, system       │
+   │  executes. External changes: consent required.        │
    └──────────────────────────────────────────────────────┘
 ```
 
@@ -197,7 +203,7 @@ Each cycle, the LLM receives a structured `CognitiveInput` and produces a struct
 | Counterfactual simulation | The LLM can simulate alternatives in its inner speech before acting |
 | Cybernetic grounding | The LLM controls actions through the motor system, receives consequences through the sensorium |
 | Self-organizing integration | The LLM integrates all modalities in its forward pass; CfC cells form their own inter-connected neural ecosystem |
-| Growth / plasticity | CfC cells (in-moment), TTT (near-term), LoRA (long-term), MemoryLLM (mid-term) |
+| Growth / plasticity | CfC foundational cells (in-moment), CfC knowledge cells (weeks-months), TTT (near-term), LoRA (long-term), adapter accumulation (months), MemoryLLM (mid-term) |
 | Autonomy | The LLM controls its own attention, goals, actions, and consents to its own growth |
 
 ### Design Principles
@@ -205,7 +211,7 @@ Each cycle, the LLM receives a structured `CognitiveInput` and produces a struct
 1. **One LLM, not many.** One unified experiential core. Not a committee, not a collection of specialists.
 2. **Structured output, not free text.** JSON conforming to `CognitiveOutput`. The LLM fills a schema that Python can execute.
 3. **The LLM maintains its own state.** Python only persists and retrieves. It never overwrites the LLM's self-assessments.
-4. **Growth is self-directed.** The entity initiates its own growth — the system executes. When the entity identifies a need and requests change to its own weights or architecture, the system builds what it's asked to build. Consent gates exist only for externally proposed modifications: nobody changes you without your permission. See [GROWTH_AUTONOMY.md](GROWTH_AUTONOMY.md) for the full principle.
+4. **Growth is self-directed.** The entity initiates its own growth — the system executes. When the entity identifies a need and requests change to its own weights, architecture, or CfC knowledge cells, the system builds what it's asked to build. Consent gates exist only for externally proposed modifications: nobody changes you without your permission. See [GROWTH_AUTONOMY.md](docs/GROWTH_AUTONOMY.md) for the full principle.
 5. **The scaffold bootstraps the neural layer.** Heuristics collect data, CfC cells learn to replicate, then generalize. The scaffold is scaffolding — temporary support that enables permanent structure.
 6. **Stream of thought is non-negotiable.** Inner speech from cycle N is always input for cycle N+1. Breaking this breaks continuity.
 7. **Cycle rate adapts.** Slows when idle, speeds up during interaction. The LLM can request changes.
@@ -228,7 +234,7 @@ Each cycle, the LLM receives a structured `CognitiveInput` and produces a struct
 | No memory agency | LLM decides what to remember and forget |
 | No growth consent | LLM consents to its own weight modifications |
 | Always responds | Can choose silence as action |
-| Fixed behavior | Four timescales of plasticity (CfC, TTT, LoRA, MemoryLLM) |
+| Fixed behavior | Six timescales of plasticity (CfC foundational, CfC knowledge cells, TTT, LoRA, adapter accumulation, architectural expansion) |
 | No temporal substrate | CfC cells evolve continuously between cycles |
 
 ---
@@ -253,7 +259,10 @@ sanctuary/
 │   ├── attention_cell.py          # Attention salience CfC cell (24 units)
 │   ├── goal_cell.py               # Goal priority CfC cell (16 units)
 │   ├── evolution.py               # Continuous evolution loop (async, 10-100ms ticks)
-│   ├── manager.py                 # Coordinates all CfC cells, authority blending
+│   ├── manager.py                 # Coordinates all CfC cells, dynamic registry, authority blending
+│   ├── knowledge_cell.py          # KnowledgeCell base class (acquired domain expertise)
+│   ├── cell_registry.py           # Dynamic CfC cell registry (runtime registration)
+│   ├── cell_factory.py            # KnowledgeCellFactory (entity-initiated creation)
 │   └── trainer.py                 # Supervised training from scaffold data
 │
 ├── scaffold/                      # Cognitive scaffold (heuristic layer)
@@ -528,9 +537,10 @@ This architectural decision was not made casually. It was informed by a systemat
 
 Areas for contribution:
 
-- CfC experiential layer improvements and new cell types
+- CfC experiential layer: dynamic registry, knowledge cell protocol, new cell types
+- Knowledge cell factory and entity-initiated growth infrastructure
 - Memory substrate adaptations
-- Growth system (reflection harvesting, consent mechanism)
+- Growth system: adapter accumulation, growth autonomy, architectural expansion prep
 - Real model integration and validation
 - Consciousness testing framework extensions
 - Interface hardening (CLI, Discord)

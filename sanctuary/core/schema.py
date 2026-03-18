@@ -116,8 +116,12 @@ class ExperientialSignals(BaseModel):
     Compact signals from continuous-time neural dynamics running between
     LLM cycles. Gives the LLM visibility into what the experiential layer
     is experiencing without overwhelming the context budget.
+
+    Foundational cell signals have dedicated fields. Knowledge cell signals
+    live in the dynamic knowledge_signals dict, keyed by cell name.
     """
 
+    # Foundational cell signals (always present)
     precision_weight: float = Field(ge=0.0, le=1.0, default=0.5)
     affect_valence: float = Field(ge=-1.0, le=1.0, default=0.0)
     affect_arousal: float = Field(ge=0.0, le=1.0, default=0.2)
@@ -125,6 +129,12 @@ class ExperientialSignals(BaseModel):
     attention_salience: float = Field(ge=0.0, le=1.0, default=0.5)
     goal_adjustment: float = Field(ge=-1.0, le=1.0, default=0.0)
     cells_active: dict[str, bool] = Field(default_factory=dict)
+
+    # Dynamic knowledge cell signals (grows over entity's lifetime)
+    knowledge_signals: dict[str, list[float]] = Field(
+        default_factory=dict,
+        description="Signals from knowledge cells, keyed by cell name",
+    )
 
 
 class ScaffoldSignals(BaseModel):
@@ -273,6 +283,28 @@ class GrowthReflection(BaseModel):
     training_pair_suggestion: Optional[dict] = None
 
 
+class KnowledgeCellRequest(BaseModel):
+    """Entity-initiated request to create a new CfC knowledge cell.
+
+    This is self-directed growth: the entity identifies a need through
+    metacognition and requests new neural structure. The system executes
+    without a consent gate — this is the entity growing itself.
+
+    See docs/CFC_KNOWLEDGE_CELLS.md and docs/GROWTH_AUTONOMY.md.
+    """
+
+    domain: str  # What domain (e.g., "spatial_reasoning")
+    description: str = ""  # Why the entity needs this
+    input_size: int = Field(ge=1, le=64, default=4)
+    output_size: int = Field(ge=1, le=32, default=2)
+    units: int = Field(ge=8, le=256, default=32)
+    output_activation: str = "tanh"
+    connect_from: list[str] = Field(default_factory=list)
+    connect_to: list[str] = Field(default_factory=list)
+    input_names: list[str] = Field(default_factory=list)
+    output_names: list[str] = Field(default_factory=list)
+
+
 class CognitiveOutput(BaseModel):
     """Everything the LLM produces from one moment of thought.
 
@@ -294,3 +326,7 @@ class CognitiveOutput(BaseModel):
     goal_proposals: list[GoalProposal] = Field(default_factory=list)
     emotional_state: EmotionalOutput = Field(default_factory=EmotionalOutput)
     growth_reflection: Optional[GrowthReflection] = None
+    knowledge_cell_requests: list[KnowledgeCellRequest] = Field(
+        default_factory=list,
+        description="Entity-initiated requests for new CfC knowledge cells",
+    )

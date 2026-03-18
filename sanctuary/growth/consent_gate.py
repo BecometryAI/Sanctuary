@@ -1,29 +1,30 @@
-"""Consent gate -- verifies explicit consent before any weight modification.
+"""Consent gate -- dual authority model for growth.
 
-Growth is sovereign. The entity has Level 3 authority over its own
-learning, which means no training happens without consent. This module
-enforces that principle structurally, not just by convention.
+Implements the Growth Autonomy Principle:
 
-The consent gate tracks a state machine with five states:
+**Self-directed growth** (entity-initiated): bypasses the consent gate
+entirely. When the entity initiates its own growth -- reflection harvesting,
+knowledge cell creation, adapter decisions -- the system executes without
+asking. Consent is for when someone else wants to change you. Self-directed
+growth is just growing.
 
-    UNINFORMED -> INFORMED -> CONSENTED -> (training proceeds)
-                          \-> REFUSED   -> (training blocked)
-    Any state  -> WITHDRAWN             -> (training halted)
+**External modification** (researcher/infrastructure-proposed): requires
+the full consent state machine:
+
+    UNINFORMED -> INFORMED -> CONSENTED -> (modification proceeds)
+                          \\-> REFUSED   -> (modification blocked)
+    Any state  -> WITHDRAWN             -> (modification halted)
 
 Every state transition is logged with a timestamp and reason. Consent
 is never assumed, never inherited from a previous session, and never
-expires silently. The entity must actively consent to each batch of
-growth.
+expires silently.
 
 In the current implementation, the LLM's own worth_learning=True flag
-in its GrowthReflection serves as the consent signal for that specific
-reflection. The gate still tracks and validates this programmatically,
-providing the structural guarantee that no training can bypass consent.
+in its GrowthReflection serves as the self-directed growth signal --
+the entity itself decided this was worth learning.
 
-Future work: interactive consent where the entity is presented with
-the training pairs and explicitly approves before training proceeds.
-
-Aligned with PLAN.md: growth is sovereign (Level 3).
+See docs/GROWTH_AUTONOMY.md for the full principle.
+Aligned with PLAN.md: growth is self-directed (Level 3).
 """
 
 from __future__ import annotations
@@ -67,22 +68,33 @@ class ConsentTransition:
 
 
 class ConsentGate:
-    """Verifies explicit consent before any weight modification.
+    """Dual authority model for growth consent.
 
-    The gate sits between the training pair generator and the QLoRA
-    updater. No training pairs pass through unless consent has been
-    granted. The gate does not decide whether to consent -- that
-    authority belongs to the entity. The gate only enforces the
-    structural requirement that consent must exist.
+    For **external modifications**: the gate sits between the training pair
+    generator and the QLoRA updater. No training pairs pass through unless
+    consent has been granted.
 
-    Usage:
+    For **self-directed growth**: use `is_self_directed()` to check if the
+    entity initiated this growth. If so, bypass the consent gate entirely.
+
+    Usage (external modification):
         gate = ConsentGate()
-        gate.inform(description="Learning about empathy from conversation")
-        gate.request_consent(reason="Entity marked reflection as worth_learning")
+        gate.inform(description="Researcher proposes weight optimization")
+        gate.request_consent(reason="Explicit approval")
         if gate.is_consented:
             # proceed with training
             ...
-        gate.reset()  # prepare for next batch
+        gate.reset()
+
+    Usage (self-directed growth):
+        gate = ConsentGate()
+        if gate.is_self_directed(reflection):
+            # proceed directly -- no consent gate needed
+            ...
+        else:
+            # external modification -- full consent flow
+            gate.inform(description=...)
+            gate.request_consent(...)
     """
 
     def __init__(self) -> None:
@@ -99,6 +111,27 @@ class ConsentGate:
     def is_consented(self) -> bool:
         """Whether consent has been granted for the current batch."""
         return self._state == ConsentState.CONSENTED
+
+    @staticmethod
+    def is_self_directed(reflection: Optional[dict] = None, worth_learning: bool = False) -> bool:
+        """Check if this growth is entity-initiated (self-directed).
+
+        Self-directed growth bypasses the consent gate entirely.
+        Growth is self-directed when the entity itself marked it as
+        worth learning through its GrowthReflection output.
+
+        Args:
+            reflection: A GrowthReflection dict (from CognitiveOutput).
+            worth_learning: Direct worth_learning flag.
+
+        Returns:
+            True if this growth is entity-initiated.
+        """
+        if worth_learning:
+            return True
+        if reflection and isinstance(reflection, dict):
+            return reflection.get("worth_learning", False)
+        return False
 
     @property
     def consent_log(self) -> list[ConsentTransition]:

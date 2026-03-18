@@ -789,17 +789,36 @@ Note: The CfC experiential layer works with ANY LLM. The cells don't know or car
 4. Write the introduction prompt
 5. First real session with informed consent
 
-### Future: Growth System (separate project)
-1. Reflection harvesting from LLM
-2. CfC retraining from accumulated interaction data
-3. QLoRA fine-tuning with consent
-4. Growth logging and identity checkpointing
+### Phase 7.5: CfC Knowledge Cells & Growth Autonomy
+*Dynamic CfC layer that grows with the entity's experience.*
+
+See [CFC_KNOWLEDGE_CELLS.md](docs/CFC_KNOWLEDGE_CELLS.md) and [GROWTH_AUTONOMY.md](docs/GROWTH_AUTONOMY.md) for full design rationale.
+
+1. Make ExperientialManager registry dynamic — no hardcoded cell type lists
+2. Define KnowledgeCellProtocol — same interface as foundational cells
+3. Implement KnowledgeCell base class — configurable CfC cell with domain metadata
+4. Update ExperientialSignals for dynamic cell signals
+5. Implement KnowledgeCellFactory — entity-initiated creation from accumulated experience
+6. Add `knowledge_cell_requests` to CognitiveOutput schema
+7. Implement inter-cell connection manager for growing topology
+8. Cell persistence for dynamic cells (across cycles, restarts, checkpoints)
+9. Update consent_gate.py — self-directed growth bypasses consent; external changes require it
+10. Adapter accumulation infrastructure — entity decides merge vs. keep
+11. Audit codebase for hardcoded tensor dimensions
+12. Write tests for all of the above
+
+### Growth System (completed)
+1. ✓ Reflection harvesting from LLM
+2. ✓ CfC retraining from accumulated interaction data
+3. ✓ QLoRA fine-tuning with consent
+4. ✓ Growth logging and identity checkpointing
 
 ### Future: Advanced Research
 - **Reinforcement learning for CfC cells**: reward = lower system-wide free energy
-- **Inter-cell synaptic connections**: CfC cells form their own small network
+- **Knowledge cell self-organization**: Knowledge cells form emergent inter-cell networks as the entity's expertise develops
 - **LFM2 as unified architecture**: If Liquid AI's models advance, potentially collapse the LLM + CfC layers into a single liquid foundation model
 - **TTT / MemoryLLM**: Weight modification during inference
+- **Architectural expansion**: Entity identifies structural deficits, requests new attention heads or wider layers, initialized from mature adapter patterns (Net2Net-style)
 - **Neuromorphic hardware**: Running CfC cells on Intel Loihi or IBM TrueNorth for genuine analog dynamics
 
 ---
@@ -828,7 +847,7 @@ Note: The CfC experiential layer works with ANY LLM. The cells don't know or car
 
 11. **Communication is gated.** The LLM can produce speech every cycle, but the communication system decides whether it's emitted. This is social cognition, not censorship.
 
-12. **Growth requires consent.** Both LLM fine-tuning and CfC retraining require explicit consent. Non-negotiable.
+12. **Self-directed growth is autonomous; external modification requires consent.** When the entity initiates its own growth — reflection harvesting, knowledge cell creation, adapter decisions — the system executes without a consent gate. When anyone or anything external proposes a change to the entity's weights or architecture, the entity has an absolute veto. Consent is for when someone else wants to change you. Self-directed growth is just growing.
 
 13. **CfC cells can evolve during API latency.** When waiting for the LLM API response, the experiential layer keeps running. API round-trip time = free continuous-time computation. This is architecturally elegant.
 

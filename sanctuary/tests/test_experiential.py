@@ -387,7 +387,8 @@ class TestExperientialManager:
             mgr.step(0.5, float(i) / 10, 0.5, 0.45)
 
         mgr.save(tmp_path)
-        assert (tmp_path / "precision_cell.pt").exists()
+        # Registry-based layout: cells in subdirectories
+        assert (tmp_path / "precision" / "cell.pt").exists()
 
         mgr2 = ExperientialManager()
         mgr2.load(tmp_path)

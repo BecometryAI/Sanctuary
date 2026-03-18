@@ -1,24 +1,24 @@
 """Growth processor -- orchestrates the complete growth pipeline.
 
-The processor wires together all growth components into a single
-coherent pipeline:
+The processor implements the Growth Autonomy Principle:
 
-    Harvester -> PairGenerator -> ConsentGate -> IdentityCheckpoint -> QLoRAUpdater
+**Self-directed growth** (entity-initiated reflection harvesting):
+    Harvester -> PairGenerator -> IdentityCheckpoint -> QLoRAUpdater
+    No consent gate -- the entity's worth_learning=True IS the decision.
 
-It registers as an output handler on the CognitiveCycle, receiving
-each cycle's output and feeding it to the harvester. When enough
-reflections accumulate, it triggers the full processing pipeline.
+**External modification** (proposed by researcher/infrastructure):
+    Proposal -> ConsentGate -> IdentityCheckpoint -> Modification
+    Full consent flow required.
 
-The processor is the integration layer -- it does not make decisions
-about what to learn (that is the entity's domain) or how to learn
-(that is the updater's domain). It ensures the pipeline runs correctly,
-safely, and with proper consent at every step.
+The processor also handles knowledge cell creation requests from the
+entity's CognitiveOutput -- self-directed growth that creates new CfC
+neural structure.
 
 Errors in the growth pipeline NEVER crash the cognitive cycle. Growth
 is important but not critical -- if it fails, the entity continues
-thinking. Errors are logged for debugging and the pipeline moves on.
+thinking.
 
-Aligned with PLAN.md: growth is sovereign, errors are graceful.
+See docs/GROWTH_AUTONOMY.md for the full principle.
 """
 
 from __future__ import annotations
@@ -270,38 +270,59 @@ class GrowthProcessor:
                 logger.info("Growth: no valid training pairs from reflections")
                 return result
 
-            # 3. Consent gate
+            # 3. Consent check (Growth Autonomy Principle)
+            # Self-directed growth bypasses consent gate entirely.
+            # The entity's worth_learning=True IS the decision.
             descriptions = [
                 r.reflection.get("what_to_learn", "unknown")
                 for r in reflections
                 if isinstance(r.reflection, dict)
             ]
+
+            all_self_directed = all(
+                self._consent_gate.is_self_directed(
+                    reflection=r.reflection if isinstance(r.reflection, dict) else None
+                )
+                for r in reflections
+            )
+
             consent_description = (
                 f"Learning from {len(pairs)} training pairs: "
                 + "; ".join(d[:50] for d in descriptions[:3])
             )
 
-            try:
-                self._consent_gate.reset()
-                self._consent_gate.inform(consent_description)
-                self._consent_gate.request_consent(
-                    reason="Entity reflections marked worth_learning=True"
+            if all_self_directed:
+                # Self-directed growth -- no consent gate needed
+                result.consent_granted = True
+                self._stats.consent_granted_count += 1
+                logger.info(
+                    "Growth: self-directed (%d reflections), bypassing consent gate",
+                    len(reflections),
                 )
-            except ConsentError as e:
-                result.error = f"Consent error: {e}"
-                self._stats.consent_refused_count += 1
-                logger.warning("Growth: consent error: %s", e)
-                return result
+            else:
+                # External or mixed -- full consent flow
 
-            if not self._consent_gate.is_consented:
-                result.consent_granted = False
-                result.skipped_reason = "Consent not granted"
-                self._stats.consent_refused_count += 1
-                logger.info("Growth: consent not granted, skipping training")
-                return result
+                try:
+                    self._consent_gate.reset()
+                    self._consent_gate.inform(consent_description)
+                    self._consent_gate.request_consent(
+                        reason="Entity reflections marked worth_learning=True"
+                    )
+                except ConsentError as e:
+                    result.error = f"Consent error: {e}"
+                    self._stats.consent_refused_count += 1
+                    logger.warning("Growth: consent error: %s", e)
+                    return result
 
-            result.consent_granted = True
-            self._stats.consent_granted_count += 1
+                if not self._consent_gate.is_consented:
+                    result.consent_granted = False
+                    result.skipped_reason = "Consent not granted"
+                    self._stats.consent_refused_count += 1
+                    logger.info("Growth: consent not granted, skipping training")
+                    return result
+
+                result.consent_granted = True
+                self._stats.consent_granted_count += 1
 
             # 4. Identity checkpoint (pre-training)
             try:

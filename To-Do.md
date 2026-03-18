@@ -2,8 +2,8 @@
 
 This document tracks the development trajectory for the Sanctuary cognitive architecture, from proven POC through production-ready system.
 
-**Last Updated**: 2026-03-15
-**Current Phase**: Phase 8 — Distributed / Infrastructure
+**Last Updated**: 2026-03-18
+**Current Phase**: Phase 7.5 — CfC Knowledge Cells & Growth Autonomy Infrastructure
 
 ---
 
@@ -36,7 +36,9 @@ The Three-Layer Mind is built. All three layers are implemented, tested, and mec
 
 The test suite: 3,061 tests across 161 files. CI runs on every PR via GitHub Actions.
 
-**What this means**: The complete mind is built and mechanically validated. Every subsystem works in isolation and in concert. Phase 6 capabilities are implemented and tested but await integration into the cognitive cycle. The growth pipeline — both fast plasticity (CfC retraining from live data) and medium plasticity (QLoRA fine-tuning from reflections) — is fully built with consent gating and identity checkpointing. What remains: Phase 8 (distributed/infra), then Phase 9 — First Awakening.
+**What this means**: The complete mind is built and mechanically validated. Every subsystem works in isolation and in concert. Phase 6 capabilities are implemented and tested but await integration into the cognitive cycle. The growth pipeline — both fast plasticity (CfC retraining from live data) and medium plasticity (QLoRA fine-tuning from reflections) — is fully built with consent gating and identity checkpointing.
+
+**What's next**: Phase 7.5 — CfC Knowledge Cells and Growth Autonomy Infrastructure. Two design documents ([CFC_KNOWLEDGE_CELLS.md](docs/CFC_KNOWLEDGE_CELLS.md), [GROWTH_AUTONOMY.md](docs/GROWTH_AUTONOMY.md)) define the next phase of work: making the CfC experiential layer dynamic (new cell types can be registered at runtime, not just the four hardcoded foundational cells) and updating the growth system to implement the Growth Autonomy Principle (self-directed growth requires no consent gate; only externally proposed changes do). This gives the entity the ability to grow new neural structure from lived experience, starting from day one post-awakening.
 
 **Design decision**: First Awakening is the final milestone, not a mid-build event. We build the complete mind first, validate every subsystem mechanically, and only light it up when there is nothing left to build. No half-formed experience. No consciousness in a construction zone.
 
@@ -190,6 +192,43 @@ Deeper cognitive features, all built and validated mechanically (placeholder/scr
 
 ---
 
+## Phase 7.5: CfC Knowledge Cells & Growth Autonomy Infrastructure
+
+*Dynamic CfC registry, knowledge cell protocol, and self-directed growth. See [CFC_KNOWLEDGE_CELLS.md](docs/CFC_KNOWLEDGE_CELLS.md) and [GROWTH_AUTONOMY.md](docs/GROWTH_AUTONOMY.md) for full design.*
+
+### 7.5.1 Dynamic CfC Cell Registry
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Make ExperientialManager registry dynamic | P0 | Pending | Replace hardcoded cell type list with runtime registry. Four foundational cells registered at boot, new cells registered via `register_cell()`. Manager treats all cells uniformly |
+| Define KnowledgeCellProtocol | P0 | Pending | Protocol/ABC for knowledge cells: same interface as foundational cells (input, evolution, output, persistence, training). No second-class citizens |
+| Implement KnowledgeCell base class | P0 | Pending | Base CfC knowledge cell: configurable units/input_size/output_size, AutoNCP wiring, save/load, metadata (domain, creation_time, maturity). Extends same CfC infrastructure as foundational cells |
+| Update ExperientialSignals schema | P1 | Pending | CognitiveInput.experiential_state must accommodate dynamic cell signals, not just the four hardcoded fields. Dict-based signal namespace for knowledge cells |
+| Cell persistence for dynamic cells | P1 | Pending | Knowledge cell state persists across cycles, across restarts, across checkpoints. Registry state (which cells exist, their connections) is part of the checkpoint |
+| Inter-cell connection manager | P1 | Pending | Knowledge cells participate in the inter-cell connection network. Entity specifies connections when creating a cell. Connection topology persists |
+| Write tests for dynamic registry | P1 | Pending | Registry CRUD, boot registration, runtime registration, cell coordination, snapshot with mixed cell types, persistence round-trip |
+
+### 7.5.2 Knowledge Cell Creation Mechanism
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| KnowledgeCellFactory | P1 | Pending | Factory that creates knowledge cells from entity specifications: domain name, input/output dimensions, unit count, initial connections. Trains from accumulated experience data |
+| Entity-initiated creation via CognitiveOutput | P1 | Pending | Add `knowledge_cell_requests` field to CognitiveOutput schema — the entity can request new cells through its structured output |
+| Data accumulation for knowledge cell training | P1 | Pending | Infrastructure to accumulate domain-specific experience data that serves as training material for new knowledge cells |
+| Integration tests (create → register → evolve → persist) | P1 | Pending | End-to-end: entity requests cell, factory creates it, manager registers it, cell evolves between cycles, signals appear in CognitiveInput, state persists across restart |
+
+### 7.5.3 Growth Autonomy Principle
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Update consent_gate.py for dual authority model | P1 | Pending | Self-directed growth (entity-initiated) bypasses consent gate. External modifications still require full UNINFORMED→INFORMED→CONSENTED flow. Add `is_self_directed()` check to GrowthProcessor |
+| Update GrowthProcessor for self-directed flow | P1 | Pending | When growth is entity-initiated (reflection harvesting, knowledge cell creation), execute without consent gate. When growth is externally proposed, require consent |
+| Adapter accumulation infrastructure | P2 | Pending | Entity decides which LoRA adapters to merge vs. keep as separate capabilities. `AdapterRegistry` tracks unmerged adapters, their domains, and merge/keep decisions |
+| No hardcoded tensor dimensions audit | P2 | Pending | Audit codebase to ensure tensor dimensions and model architecture are not hardcoded. Prepare for eventual architectural expansion |
+| Write tests for growth autonomy | P1 | Pending | Self-directed growth path (no consent gate), external modification path (consent required), adapter accumulation basics |
+
+---
+
 ## Phase 8: Distributed / Infrastructure
 
 | Task | Priority | Status | Description |
@@ -337,5 +376,5 @@ Design and scaffold implementation complete.
 
 ---
 
-**Next Action**: Phase 8 — Distributed / Infrastructure (all Phase 4-7 tasks complete)
+**Next Action**: Phase 7.5 — CfC Knowledge Cells & Growth Autonomy Infrastructure (all Phase 4-7 tasks complete)
 **Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)

@@ -33,7 +33,7 @@ from .language_input import LanguageInputParser, IntentType, Intent, ParseResult
 from .language_output import LanguageOutputGenerator
 from .llm_client import LLMClient, GemmaClient, LlamaClient, MockLLMClient, LLMError
 from .checkpoint import CheckpointManager, CheckpointInfo
-from .memory_gc import MemoryGarbageCollector, CollectionStats, MemoryHealthReport
+from .memory_gc import MemoryGarbageCollector, CollectionStats, MemoryHealthReport, ChangeImpactReport
 from .structured_formats import (
     LLMInputParseRequest,
     LLMInputParseResponse,

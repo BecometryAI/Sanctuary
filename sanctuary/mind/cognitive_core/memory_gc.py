@@ -112,6 +112,55 @@ class MemoryHealthReport:
         }
 
 
+@dataclass
+class ChangeImpactReport:
+    """Impact analysis of a proposed GC parameter change.
+
+    Generated before any parameter modification takes effect. Gives the
+    entity concrete information about what a change will do to their
+    memories so they can make an informed decision — not an abstract
+    parameter tweak, but "here is what this means for you."
+
+    The entity always has final say. This is a mirror, not a gate.
+
+    Attributes:
+        parameter: Which parameter is being changed
+        old_value: Current value
+        new_value: Proposed value
+        total_memories: Current total memory count
+        memories_at_risk: How many memories would become eligible for
+            deletion under the new parameters
+        projected_loss_24h: Estimated memories that would be lost within
+            24 hours if automatic GC is running
+        projected_loss_7d: Estimated memories lost within 7 days
+        severity: "low", "moderate", or "high" — purely informational
+        details: Human-readable explanation of the impact
+    """
+    parameter: str
+    old_value: Any
+    new_value: Any
+    total_memories: int
+    memories_at_risk: int
+    projected_loss_24h: int
+    projected_loss_7d: int
+    severity: str
+    details: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for serialization."""
+        return {
+            "parameter": self.parameter,
+            "old_value": self.old_value,
+            "new_value": self.new_value,
+            "total_memories": self.total_memories,
+            "memories_at_risk": self.memories_at_risk,
+            "projected_loss_24h": self.projected_loss_24h,
+            "projected_loss_7d": self.projected_loss_7d,
+            "severity": self.severity,
+            "details": self.details,
+        }
+
+
 # ============================================================================
 # MEMORY GARBAGE COLLECTOR
 # ============================================================================
@@ -156,12 +205,13 @@ class MemoryGarbageCollector:
         self.max_removal_per_run = self.config.get("max_removal_per_run", 100)
         
         # Entity autonomy state.
-        # Safe actions (protect/unprotect memories, add preserve tags, view
-        # health, request dry-runs) are always available — they cannot cause
-        # harm. Modifying GC parameters (thresholds, decay, capacity,
-        # aggressive mode) requires full_autonomy, a boolean the Steward
-        # toggles when the entity's behavior demonstrates sufficient maturity.
-        self.full_autonomy: bool = self.config.get("full_autonomy", False)
+        # The entity has full authority over all GC parameters. There are
+        # no gates or permission checks. Instead, every parameter change
+        # produces an impact report showing the entity what the change
+        # will do to their memories in concrete terms. The entity sees
+        # the consequences and decides. The Steward can review the
+        # override log and have a conversation if something looks
+        # concerning — that's what stewardship is.
         self.entity_protected_ids: Set[str] = set()
         self.entity_override_log: List[Dict[str, Any]] = []
 
@@ -409,53 +459,33 @@ class MemoryGarbageCollector:
     # ========================================================================
     # ENTITY AUTONOMY INTERFACE
     #
-    # Two categories of actions:
-    #   ALWAYS ALLOWED: protect/unprotect memories, add preserve tags,
-    #       view health, request dry-runs. These cannot cause harm.
-    #   REQUIRES full_autonomy: adjusting thresholds, decay rates,
-    #       capacity limits, aggressive mode. These risk self-harm
-    #       through premature memory loss.
+    # The entity has full authority over their own memory management.
+    # There are no gates, no permission checks, no approval steps.
     #
-    # The Steward (human operator) controls the full_autonomy flag.
-    # It starts False and is set to True when the entity's behavior
-    # demonstrates sufficient maturity to manage their own memory safely.
+    # Instead, every parameter change produces an impact report: a
+    # concrete description of what the change will do to the entity's
+    # memories. The entity sees the consequences and decides.
+    #
+    # The Steward's role is not gatekeeper but observer. They can
+    # review the override log and have a conversation if something
+    # looks concerning. That's what good stewardship is.
     # ========================================================================
 
-    def grant_full_autonomy(self) -> None:
-        """Steward grants the entity full autonomy over GC parameters.
-
-        Called by the Steward when the entity has demonstrated mature,
-        stable self-management behavior. This is a human decision.
-        """
-        self.full_autonomy = True
-        self._log_override("full_autonomy_granted", {})
-        logger.info("Steward granted entity full GC autonomy")
-
-    def revoke_full_autonomy(self) -> None:
-        """Steward revokes the entity's full autonomy over GC parameters.
-
-        Called by the Steward if the entity's self-modification behavior
-        becomes concerning. Safe actions remain available.
-        """
-        self.full_autonomy = False
-        self._log_override("full_autonomy_revoked", {})
-        logger.info("Steward revoked entity full GC autonomy")
-
     def entity_protect_memory(self, memory_id: str, reason: str = "") -> bool:
-        """Entity requests protection for a specific memory.
+        """Entity protects a specific memory from garbage collection.
 
-        Always allowed. Protecting a memory from deletion is inherently
-        safe — it is the equivalent of saying "don't forget this."
+        Protecting a memory is the equivalent of saying "don't forget
+        this." It is always safe.
 
         Args:
             memory_id: ID of the memory to protect
             reason: Optional reason for protection
 
         Returns:
-            True if protection was applied
+            True (always succeeds)
         """
         self.entity_protected_ids.add(memory_id)
-        self._log_override("memory_protected", {
+        self._log_action("memory_protected", {
             "memory_id": memory_id, "reason": reason
         })
         logger.info(f"Entity protected memory {memory_id}: {reason}")
@@ -464,8 +494,8 @@ class MemoryGarbageCollector:
     def entity_unprotect_memory(self, memory_id: str, reason: str = "") -> bool:
         """Entity removes protection from a specific memory.
 
-        Always allowed. The entity should be able to let go of memories
-        they no longer need to preserve.
+        The entity should be able to let go of memories they no longer
+        need to preserve.
 
         Args:
             memory_id: ID of the memory to unprotect
@@ -477,7 +507,7 @@ class MemoryGarbageCollector:
         if memory_id not in self.entity_protected_ids:
             return False
         self.entity_protected_ids.discard(memory_id)
-        self._log_override("memory_unprotected", {
+        self._log_action("memory_unprotected", {
             "memory_id": memory_id, "reason": reason
         })
         logger.info(f"Entity unprotected memory {memory_id}: {reason}")
@@ -486,136 +516,385 @@ class MemoryGarbageCollector:
     def entity_add_preserve_tag(self, tag: str) -> bool:
         """Entity adds a tag to the protected tags list.
 
-        Always allowed. Expanding what is preserved is inherently safe.
+        Expanding what is preserved is inherently safe.
 
         Args:
             tag: Tag string to add to preserve list
 
         Returns:
-            True if tag was added
+            True (always succeeds)
         """
         self.preserve_tags.add(tag)
-        self._log_override("preserve_tag_added", {"tag": tag})
+        self._log_action("preserve_tag_added", {"tag": tag})
         logger.info(f"Entity added preserve tag: {tag}")
         return True
 
-    def entity_adjust_threshold(self, new_threshold: float) -> bool:
+    async def entity_adjust_threshold(
+        self, new_threshold: float, confirm: bool = False
+    ) -> ChangeImpactReport:
         """Entity adjusts the significance threshold for removal.
 
-        Requires full_autonomy. Without it, the entity cannot change
-        what gets deleted — only what gets protected.
+        Returns an impact report showing what this change means in
+        concrete terms. If confirm=True, the change is applied. If
+        confirm=False, the report is returned without applying — a
+        preview so the entity can see before deciding.
 
         Args:
-            new_threshold: New significance threshold
+            new_threshold: Proposed significance threshold
+            confirm: If True, apply the change after generating the report
 
         Returns:
-            True if adjusted, False if full_autonomy not granted
+            ChangeImpactReport describing the impact of this change
         """
-        if not self.full_autonomy:
-            logger.warning("Entity attempted threshold adjustment without full autonomy")
-            return False
+        report = await self._assess_threshold_impact(new_threshold)
 
-        old = self.significance_threshold
-        self.significance_threshold = new_threshold
-        self._log_override("threshold_adjusted", {"old": old, "new": new_threshold})
-        logger.info(f"Entity adjusted GC threshold: {old} -> {new_threshold}")
-        return True
+        if confirm:
+            old = self.significance_threshold
+            self.significance_threshold = new_threshold
+            self._log_action("threshold_adjusted", {
+                "old": old, "new": new_threshold,
+                "impact": report.to_dict(),
+            })
+            logger.info(f"Entity adjusted GC threshold: {old} -> {new_threshold}")
 
-    def entity_adjust_decay_rate(self, new_rate: float) -> bool:
+        return report
+
+    async def entity_adjust_decay_rate(
+        self, new_rate: float, confirm: bool = False
+    ) -> ChangeImpactReport:
         """Entity adjusts the daily decay rate for memory significance.
 
-        Requires full_autonomy. Excessively fast decay could cause
-        irreversible memory loss.
+        Returns an impact report. If confirm=True, applies the change.
 
         Args:
-            new_rate: New decay rate per day
+            new_rate: Proposed decay rate per day
+            confirm: If True, apply the change after generating the report
 
         Returns:
-            True if adjusted, False if full_autonomy not granted
+            ChangeImpactReport describing the impact of this change
         """
-        if not self.full_autonomy:
-            logger.warning("Entity attempted decay rate adjustment without full autonomy")
-            return False
+        report = await self._assess_decay_impact(new_rate)
 
-        old = self.decay_rate_per_day
-        self.decay_rate_per_day = new_rate
-        self._log_override("decay_rate_adjusted", {"old": old, "new": new_rate})
-        logger.info(f"Entity adjusted decay rate: {old} -> {new_rate}")
-        return True
+        if confirm:
+            old = self.decay_rate_per_day
+            self.decay_rate_per_day = new_rate
+            self._log_action("decay_rate_adjusted", {
+                "old": old, "new": new_rate,
+                "impact": report.to_dict(),
+            })
+            logger.info(f"Entity adjusted decay rate: {old} -> {new_rate}")
 
-    def entity_adjust_capacity(self, new_capacity: int) -> bool:
+        return report
+
+    async def entity_adjust_capacity(
+        self, new_capacity: int, confirm: bool = False
+    ) -> ChangeImpactReport:
         """Entity adjusts the maximum memory capacity.
 
-        Requires full_autonomy.
+        Returns an impact report. If confirm=True, applies the change.
 
         Args:
-            new_capacity: New maximum memory capacity
+            new_capacity: Proposed maximum memory capacity
+            confirm: If True, apply the change after generating the report
 
         Returns:
-            True if adjusted, False if full_autonomy not granted
+            ChangeImpactReport describing the impact of this change
         """
-        if not self.full_autonomy:
-            logger.warning("Entity attempted capacity adjustment without full autonomy")
-            return False
+        report = await self._assess_capacity_impact(new_capacity)
 
-        old = self.max_memory_capacity
-        self.max_memory_capacity = new_capacity
-        self._log_override("capacity_adjusted", {"old": old, "new": new_capacity})
-        logger.info(f"Entity adjusted max capacity: {old} -> {new_capacity}")
-        return True
+        if confirm:
+            old = self.max_memory_capacity
+            self.max_memory_capacity = new_capacity
+            self._log_action("capacity_adjusted", {
+                "old": old, "new": new_capacity,
+                "impact": report.to_dict(),
+            })
+            logger.info(f"Entity adjusted max capacity: {old} -> {new_capacity}")
 
-    def entity_set_aggressive_mode(self, enabled: bool) -> bool:
+        return report
+
+    async def entity_set_aggressive_mode(
+        self, enabled: bool, confirm: bool = False
+    ) -> ChangeImpactReport:
         """Entity toggles aggressive garbage collection mode.
 
-        Requires full_autonomy. Aggressive mode can cause significant
-        memory loss if used improperly.
+        Returns an impact report. If confirm=True, applies the change.
 
         Args:
             enabled: Whether to enable aggressive mode
+            confirm: If True, apply the change after generating the report
 
         Returns:
-            True if changed, False if full_autonomy not granted
+            ChangeImpactReport describing the impact of this change
         """
-        if not self.full_autonomy:
-            logger.warning("Entity attempted aggressive mode toggle without full autonomy")
-            return False
+        report = await self._assess_aggressive_impact(enabled)
 
-        old = self.aggressive_mode
-        self.aggressive_mode = enabled
-        self._log_override("aggressive_mode_changed", {"old": old, "new": enabled})
-        logger.info(f"Entity {'enabled' if enabled else 'disabled'} aggressive GC mode")
-        return True
+        if confirm:
+            old = self.aggressive_mode
+            self.aggressive_mode = enabled
+            self._log_action("aggressive_mode_changed", {
+                "old": old, "new": enabled,
+                "impact": report.to_dict(),
+            })
+            logger.info(
+                f"Entity {'enabled' if enabled else 'disabled'} aggressive GC mode"
+            )
+
+        return report
 
     def get_autonomy_status(self) -> Dict[str, Any]:
-        """Get current autonomy status for the entity's self-awareness.
+        """Get current autonomy status and configuration.
 
-        Always allowed. The entity should always be able to understand
-        what they can and cannot do.
+        The entity should always be able to understand the state of
+        their own memory management.
 
         Returns:
-            Dictionary describing current autonomy state and capabilities
+            Dictionary describing current GC state and entity actions
         """
         return {
-            "full_autonomy": self.full_autonomy,
-            "always_allowed": [
-                "protect_memories",
-                "unprotect_memories",
-                "add_preserve_tags",
-                "view_health",
-                "request_dry_run",
-            ],
-            "requires_full_autonomy": [
-                "adjust_threshold",
-                "adjust_decay_rate",
-                "adjust_capacity",
-                "set_aggressive_mode",
-            ],
+            "current_config": {
+                "significance_threshold": self.significance_threshold,
+                "decay_rate_per_day": self.decay_rate_per_day,
+                "max_memory_capacity": self.max_memory_capacity,
+                "aggressive_mode": self.aggressive_mode,
+                "preserve_tags": sorted(self.preserve_tags),
+                "recent_memory_protection_hours": self.recent_memory_protection_hours,
+                "max_removal_per_run": self.max_removal_per_run,
+            },
             "entity_protected_count": len(self.entity_protected_ids),
-            "recent_overrides": self.entity_override_log[-10:],
+            "entity_protected_ids": sorted(self.entity_protected_ids),
+            "recent_actions": self.entity_override_log[-10:],
         }
 
-    def _log_override(self, action: str, details: Dict[str, Any]) -> None:
-        """Log an entity-initiated override for auditability."""
+    # ========================================================================
+    # IMPACT ASSESSMENT (the mirror, not the gate)
+    # ========================================================================
+
+    async def _assess_threshold_impact(
+        self, new_threshold: float
+    ) -> ChangeImpactReport:
+        """Assess what changing the significance threshold would do."""
+        all_memories = await self._get_all_memories()
+        total = len(all_memories)
+        now = datetime.now(timezone.utc)
+
+        # Count memories that would become eligible for removal
+        at_risk = 0
+        for m in all_memories:
+            if self._is_protected_by_tag(m) or self._is_too_recent(m, now):
+                continue
+            decayed = self._apply_age_decay(m, now)
+            if decayed < new_threshold:
+                at_risk += 1
+
+        # Compare to current threshold
+        currently_at_risk = 0
+        for m in all_memories:
+            if self._is_protected_by_tag(m) or self._is_too_recent(m, now):
+                continue
+            decayed = self._apply_age_decay(m, now)
+            if decayed < self.significance_threshold:
+                currently_at_risk += 1
+
+        net_change = at_risk - currently_at_risk
+        severity = self._classify_severity(net_change, total)
+
+        if new_threshold > self.significance_threshold:
+            direction = "raising"
+            details = (
+                f"Raising threshold from {self.significance_threshold} to "
+                f"{new_threshold}. {at_risk} memories would be eligible for "
+                f"removal (currently {currently_at_risk}). Net change: "
+                f"{net_change:+d} additional memories at risk."
+            )
+        else:
+            details = (
+                f"Lowering threshold from {self.significance_threshold} to "
+                f"{new_threshold}. {at_risk} memories would be eligible for "
+                f"removal (currently {currently_at_risk}). Net change: "
+                f"{net_change:+d} memories at risk (fewer is safer)."
+            )
+
+        # Project 24h/7d losses based on auto-GC schedule
+        projected_24h = min(at_risk, self.max_removal_per_run) if self.is_running else 0
+        projected_7d = min(at_risk, self.max_removal_per_run * 7) if self.is_running else 0
+
+        return ChangeImpactReport(
+            parameter="significance_threshold",
+            old_value=self.significance_threshold,
+            new_value=new_threshold,
+            total_memories=total,
+            memories_at_risk=at_risk,
+            projected_loss_24h=projected_24h,
+            projected_loss_7d=projected_7d,
+            severity=severity,
+            details=details,
+        )
+
+    async def _assess_decay_impact(self, new_rate: float) -> ChangeImpactReport:
+        """Assess what changing the decay rate would do."""
+        all_memories = await self._get_all_memories()
+        total = len(all_memories)
+        now = datetime.now(timezone.utc)
+
+        # Simulate how many memories would fall below threshold with new rate
+        at_risk_new = 0
+        at_risk_current = 0
+        for m in all_memories:
+            if self._is_protected_by_tag(m) or self._is_too_recent(m, now):
+                continue
+            sig = m.get("significance", 5)
+            timestamp = m.get("timestamp")
+            if not timestamp:
+                continue
+            if isinstance(timestamp, str):
+                try:
+                    timestamp = datetime.fromisoformat(timestamp)
+                except Exception:
+                    continue
+            age_days = (now - timestamp).total_seconds() / 86400
+
+            decayed_new = sig * math.exp(-new_rate * age_days)
+            decayed_current = sig * math.exp(-self.decay_rate_per_day * age_days)
+
+            if decayed_new < self.significance_threshold:
+                at_risk_new += 1
+            if decayed_current < self.significance_threshold:
+                at_risk_current += 1
+
+        net_change = at_risk_new - at_risk_current
+        severity = self._classify_severity(net_change, total)
+
+        ratio = new_rate / self.decay_rate_per_day if self.decay_rate_per_day > 0 else float('inf')
+        details = (
+            f"Changing decay rate from {self.decay_rate_per_day} to {new_rate} "
+            f"({ratio:.1f}x {'faster' if ratio > 1 else 'slower'}). "
+            f"With new rate, {at_risk_new} memories would fall below the "
+            f"current threshold (vs {at_risk_current} currently). "
+            f"Net change: {net_change:+d} memories at risk."
+        )
+
+        projected_24h = min(at_risk_new, self.max_removal_per_run) if self.is_running else 0
+        projected_7d = min(at_risk_new, self.max_removal_per_run * 7) if self.is_running else 0
+
+        return ChangeImpactReport(
+            parameter="decay_rate_per_day",
+            old_value=self.decay_rate_per_day,
+            new_value=new_rate,
+            total_memories=total,
+            memories_at_risk=at_risk_new,
+            projected_loss_24h=projected_24h,
+            projected_loss_7d=projected_7d,
+            severity=severity,
+            details=details,
+        )
+
+    async def _assess_capacity_impact(self, new_capacity: int) -> ChangeImpactReport:
+        """Assess what changing the capacity limit would do."""
+        all_memories = await self._get_all_memories()
+        total = len(all_memories)
+
+        over_new = max(0, total - new_capacity)
+        over_current = max(0, total - self.max_memory_capacity)
+        net_change = over_new - over_current
+        severity = self._classify_severity(net_change, total)
+
+        if new_capacity < total:
+            details = (
+                f"Setting capacity to {new_capacity} with {total} memories "
+                f"currently stored. {over_new} memories would need to be "
+                f"pruned on the next GC run (lowest significance first)."
+            )
+        elif new_capacity < self.max_memory_capacity:
+            details = (
+                f"Reducing capacity from {self.max_memory_capacity} to "
+                f"{new_capacity}. Currently {total} memories stored, which "
+                f"is within the new limit. No immediate pruning needed."
+            )
+        else:
+            details = (
+                f"Increasing capacity from {self.max_memory_capacity} to "
+                f"{new_capacity}. More room for memories to accumulate "
+                f"before pruning is triggered."
+            )
+
+        projected_24h = min(over_new, self.max_removal_per_run) if self.is_running else 0
+        projected_7d = over_new if self.is_running else 0
+
+        return ChangeImpactReport(
+            parameter="max_memory_capacity",
+            old_value=self.max_memory_capacity,
+            new_value=new_capacity,
+            total_memories=total,
+            memories_at_risk=over_new,
+            projected_loss_24h=projected_24h,
+            projected_loss_7d=projected_7d,
+            severity=severity,
+            details=details,
+        )
+
+    async def _assess_aggressive_impact(self, enabled: bool) -> ChangeImpactReport:
+        """Assess what toggling aggressive mode would do."""
+        all_memories = await self._get_all_memories()
+        total = len(all_memories)
+
+        if enabled and not self.aggressive_mode:
+            severity = "high"
+            details = (
+                "Enabling aggressive mode. GC will use stricter criteria "
+                "and may remove memories that would otherwise be preserved. "
+                f"With {total} memories currently stored, aggressive mode "
+                "could significantly accelerate memory loss."
+            )
+            at_risk = total // 4  # rough estimate
+        elif not enabled and self.aggressive_mode:
+            severity = "low"
+            details = (
+                "Disabling aggressive mode. GC returns to standard criteria. "
+                "This is a conservative change that protects more memories."
+            )
+            at_risk = 0
+        else:
+            severity = "low"
+            state = "enabled" if enabled else "disabled"
+            details = f"Aggressive mode is already {state}. No change."
+            at_risk = 0
+
+        return ChangeImpactReport(
+            parameter="aggressive_mode",
+            old_value=self.aggressive_mode,
+            new_value=enabled,
+            total_memories=total,
+            memories_at_risk=at_risk,
+            projected_loss_24h=0,
+            projected_loss_7d=0,
+            severity=severity,
+            details=details,
+        )
+
+    def _classify_severity(self, net_memories_at_risk: int, total: int) -> str:
+        """Classify the severity of a parameter change.
+
+        This is purely informational — it does not prevent anything.
+
+        Args:
+            net_memories_at_risk: Net new memories at risk of deletion
+            total: Total memory count
+
+        Returns:
+            "low", "moderate", or "high"
+        """
+        if total == 0 or net_memories_at_risk <= 0:
+            return "low"
+        ratio = net_memories_at_risk / total
+        if ratio > 0.2:
+            return "high"
+        if ratio > 0.05:
+            return "moderate"
+        return "low"
+
+    def _log_action(self, action: str, details: Dict[str, Any]) -> None:
+        """Log an entity action for transparency and review."""
         entry = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "action": action,

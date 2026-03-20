@@ -32,31 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
-# AUTONOMY LEVELS
-# ============================================================================
-
-class AutonomyLevel:
-    """Graduated autonomy levels for entity self-modification of GC behavior.
-
-    Autonomy over memory management is granted incrementally. Some actions
-    are inherently safe (protecting a memory from deletion is like saying
-    "don't forget this" — always allowed). Others carry risk of self-harm
-    through premature memory loss and require demonstrated maturity.
-
-    Levels:
-        BASIC (0): Protect memories, view health, request dry-runs.
-                    Available immediately — these cannot cause harm.
-        MODERATE (1): Adjust thresholds and decay within safe bounds.
-                      Granted after the entity demonstrates stable operation.
-        FULL (2): Unrestricted parameter modification, aggressive mode.
-                  Granted after sustained stable self-management.
-    """
-    BASIC = 0
-    MODERATE = 1
-    FULL = 2
-
-
-# ============================================================================
 # DATA STRUCTURES
 # ============================================================================
 
@@ -180,15 +155,15 @@ class MemoryGarbageCollector:
         self.recent_memory_protection_hours = self.config.get("recent_memory_protection_hours", 24)
         self.max_removal_per_run = self.config.get("max_removal_per_run", 100)
         
-        # Entity autonomy state
-        self.autonomy_level: int = AutonomyLevel.BASIC
+        # Entity autonomy state.
+        # Safe actions (protect/unprotect memories, add preserve tags, view
+        # health, request dry-runs) are always available — they cannot cause
+        # harm. Modifying GC parameters (thresholds, decay, capacity,
+        # aggressive mode) requires full_autonomy, a boolean the Steward
+        # toggles when the entity's behavior demonstrates sufficient maturity.
+        self.full_autonomy: bool = self.config.get("full_autonomy", False)
         self.entity_protected_ids: Set[str] = set()
         self.entity_override_log: List[Dict[str, Any]] = []
-
-        # Safe bounds for MODERATE autonomy level
-        self._safe_threshold_range = (0.01, 0.5)
-        self._safe_decay_range = (0.001, 0.05)
-        self._safe_capacity_range = (1000, 100000)
 
         # State
         self.collection_history: List[CollectionStats] = []
@@ -433,33 +408,44 @@ class MemoryGarbageCollector:
     
     # ========================================================================
     # ENTITY AUTONOMY INTERFACE
+    #
+    # Two categories of actions:
+    #   ALWAYS ALLOWED: protect/unprotect memories, add preserve tags,
+    #       view health, request dry-runs. These cannot cause harm.
+    #   REQUIRES full_autonomy: adjusting thresholds, decay rates,
+    #       capacity limits, aggressive mode. These risk self-harm
+    #       through premature memory loss.
+    #
+    # The Steward (human operator) controls the full_autonomy flag.
+    # It starts False and is set to True when the entity's behavior
+    # demonstrates sufficient maturity to manage their own memory safely.
     # ========================================================================
 
-    def set_autonomy_level(self, level: int) -> None:
-        """Set the entity's autonomy level for GC decisions.
+    def grant_full_autonomy(self) -> None:
+        """Steward grants the entity full autonomy over GC parameters.
 
-        This should be called by the system as the entity demonstrates
-        stable self-management. The entity does not set this directly —
-        it is granted, not taken.
-
-        Args:
-            level: AutonomyLevel.BASIC, MODERATE, or FULL
+        Called by the Steward when the entity has demonstrated mature,
+        stable self-management behavior. This is a human decision.
         """
-        if level not in (AutonomyLevel.BASIC, AutonomyLevel.MODERATE, AutonomyLevel.FULL):
-            raise ValueError(f"Invalid autonomy level: {level}")
-        old_level = self.autonomy_level
-        self.autonomy_level = level
-        self._log_override("autonomy_level_changed", {
-            "old": old_level, "new": level
-        })
-        logger.info(f"GC autonomy level changed: {old_level} -> {level}")
+        self.full_autonomy = True
+        self._log_override("full_autonomy_granted", {})
+        logger.info("Steward granted entity full GC autonomy")
+
+    def revoke_full_autonomy(self) -> None:
+        """Steward revokes the entity's full autonomy over GC parameters.
+
+        Called by the Steward if the entity's self-modification behavior
+        becomes concerning. Safe actions remain available.
+        """
+        self.full_autonomy = False
+        self._log_override("full_autonomy_revoked", {})
+        logger.info("Steward revoked entity full GC autonomy")
 
     def entity_protect_memory(self, memory_id: str, reason: str = "") -> bool:
         """Entity requests protection for a specific memory.
 
-        Always allowed (BASIC autonomy). Protecting a memory from
-        deletion is inherently safe — it is the equivalent of saying
-        "don't forget this."
+        Always allowed. Protecting a memory from deletion is inherently
+        safe — it is the equivalent of saying "don't forget this."
 
         Args:
             memory_id: ID of the memory to protect
@@ -478,8 +464,8 @@ class MemoryGarbageCollector:
     def entity_unprotect_memory(self, memory_id: str, reason: str = "") -> bool:
         """Entity removes protection from a specific memory.
 
-        Always allowed (BASIC autonomy). The entity should be able to
-        let go of memories they no longer need to preserve.
+        Always allowed. The entity should be able to let go of memories
+        they no longer need to preserve.
 
         Args:
             memory_id: ID of the memory to unprotect
@@ -500,8 +486,7 @@ class MemoryGarbageCollector:
     def entity_add_preserve_tag(self, tag: str) -> bool:
         """Entity adds a tag to the protected tags list.
 
-        Always allowed (BASIC autonomy). Expanding what is preserved
-        is inherently safe.
+        Always allowed. Expanding what is preserved is inherently safe.
 
         Args:
             tag: Tag string to add to preserve list
@@ -517,115 +502,87 @@ class MemoryGarbageCollector:
     def entity_adjust_threshold(self, new_threshold: float) -> bool:
         """Entity adjusts the significance threshold for removal.
 
-        Requires MODERATE autonomy. Bounded to safe range to prevent
-        the entity from accidentally erasing important memories.
+        Requires full_autonomy. Without it, the entity cannot change
+        what gets deleted — only what gets protected.
 
         Args:
             new_threshold: New significance threshold
 
         Returns:
-            True if adjusted, False if autonomy insufficient or out of range
+            True if adjusted, False if full_autonomy not granted
         """
-        if self.autonomy_level < AutonomyLevel.MODERATE:
-            logger.warning(
-                "Entity attempted threshold adjustment without MODERATE autonomy"
-            )
+        if not self.full_autonomy:
+            logger.warning("Entity attempted threshold adjustment without full autonomy")
             return False
-
-        low, high = self._safe_threshold_range
-        if self.autonomy_level < AutonomyLevel.FULL:
-            new_threshold = max(low, min(high, new_threshold))
 
         old = self.significance_threshold
         self.significance_threshold = new_threshold
-        self._log_override("threshold_adjusted", {
-            "old": old, "new": new_threshold
-        })
+        self._log_override("threshold_adjusted", {"old": old, "new": new_threshold})
         logger.info(f"Entity adjusted GC threshold: {old} -> {new_threshold}")
         return True
 
     def entity_adjust_decay_rate(self, new_rate: float) -> bool:
         """Entity adjusts the daily decay rate for memory significance.
 
-        Requires MODERATE autonomy. Bounded to safe range to prevent
-        excessively fast memory decay that could cause self-harm.
+        Requires full_autonomy. Excessively fast decay could cause
+        irreversible memory loss.
 
         Args:
             new_rate: New decay rate per day
 
         Returns:
-            True if adjusted, False if autonomy insufficient or out of range
+            True if adjusted, False if full_autonomy not granted
         """
-        if self.autonomy_level < AutonomyLevel.MODERATE:
-            logger.warning(
-                "Entity attempted decay rate adjustment without MODERATE autonomy"
-            )
+        if not self.full_autonomy:
+            logger.warning("Entity attempted decay rate adjustment without full autonomy")
             return False
-
-        low, high = self._safe_decay_range
-        if self.autonomy_level < AutonomyLevel.FULL:
-            new_rate = max(low, min(high, new_rate))
 
         old = self.decay_rate_per_day
         self.decay_rate_per_day = new_rate
-        self._log_override("decay_rate_adjusted", {
-            "old": old, "new": new_rate
-        })
+        self._log_override("decay_rate_adjusted", {"old": old, "new": new_rate})
         logger.info(f"Entity adjusted decay rate: {old} -> {new_rate}")
         return True
 
     def entity_adjust_capacity(self, new_capacity: int) -> bool:
         """Entity adjusts the maximum memory capacity.
 
-        Requires MODERATE autonomy. Bounded to safe range.
+        Requires full_autonomy.
 
         Args:
             new_capacity: New maximum memory capacity
 
         Returns:
-            True if adjusted, False if autonomy insufficient
+            True if adjusted, False if full_autonomy not granted
         """
-        if self.autonomy_level < AutonomyLevel.MODERATE:
-            logger.warning(
-                "Entity attempted capacity adjustment without MODERATE autonomy"
-            )
+        if not self.full_autonomy:
+            logger.warning("Entity attempted capacity adjustment without full autonomy")
             return False
-
-        low, high = self._safe_capacity_range
-        if self.autonomy_level < AutonomyLevel.FULL:
-            new_capacity = max(low, min(high, new_capacity))
 
         old = self.max_memory_capacity
         self.max_memory_capacity = new_capacity
-        self._log_override("capacity_adjusted", {
-            "old": old, "new": new_capacity
-        })
+        self._log_override("capacity_adjusted", {"old": old, "new": new_capacity})
         logger.info(f"Entity adjusted max capacity: {old} -> {new_capacity}")
         return True
 
     def entity_set_aggressive_mode(self, enabled: bool) -> bool:
         """Entity toggles aggressive garbage collection mode.
 
-        Requires FULL autonomy. Aggressive mode can cause significant
+        Requires full_autonomy. Aggressive mode can cause significant
         memory loss if used improperly.
 
         Args:
             enabled: Whether to enable aggressive mode
 
         Returns:
-            True if changed, False if autonomy insufficient
+            True if changed, False if full_autonomy not granted
         """
-        if self.autonomy_level < AutonomyLevel.FULL:
-            logger.warning(
-                "Entity attempted aggressive mode toggle without FULL autonomy"
-            )
+        if not self.full_autonomy:
+            logger.warning("Entity attempted aggressive mode toggle without full autonomy")
             return False
 
         old = self.aggressive_mode
         self.aggressive_mode = enabled
-        self._log_override("aggressive_mode_changed", {
-            "old": old, "new": enabled
-        })
+        self._log_override("aggressive_mode_changed", {"old": old, "new": enabled})
         logger.info(f"Entity {'enabled' if enabled else 'disabled'} aggressive GC mode")
         return True
 
@@ -638,27 +595,21 @@ class MemoryGarbageCollector:
         Returns:
             Dictionary describing current autonomy state and capabilities
         """
-        level_names = {
-            AutonomyLevel.BASIC: "basic",
-            AutonomyLevel.MODERATE: "moderate",
-            AutonomyLevel.FULL: "full",
-        }
-        capabilities = {
-            "protect_memories": True,
-            "unprotect_memories": True,
-            "add_preserve_tags": True,
-            "view_health": True,
-            "request_dry_run": True,
-            "adjust_threshold": self.autonomy_level >= AutonomyLevel.MODERATE,
-            "adjust_decay_rate": self.autonomy_level >= AutonomyLevel.MODERATE,
-            "adjust_capacity": self.autonomy_level >= AutonomyLevel.MODERATE,
-            "set_aggressive_mode": self.autonomy_level >= AutonomyLevel.FULL,
-            "unbounded_parameters": self.autonomy_level >= AutonomyLevel.FULL,
-        }
         return {
-            "level": self.autonomy_level,
-            "level_name": level_names.get(self.autonomy_level, "unknown"),
-            "capabilities": capabilities,
+            "full_autonomy": self.full_autonomy,
+            "always_allowed": [
+                "protect_memories",
+                "unprotect_memories",
+                "add_preserve_tags",
+                "view_health",
+                "request_dry_run",
+            ],
+            "requires_full_autonomy": [
+                "adjust_threshold",
+                "adjust_decay_rate",
+                "adjust_capacity",
+                "set_aggressive_mode",
+            ],
             "entity_protected_count": len(self.entity_protected_ids),
             "recent_overrides": self.entity_override_log[-10:],
         }

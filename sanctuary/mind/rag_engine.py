@@ -283,7 +283,7 @@ class RAGQueryEngine:
         logger.info("Building RetrievalQA chain...")
         
         prompt_template = """
-        Use the following pieces of Sanctuary's Mind (her memories and protocols)
+        Use the following pieces of Sanctuary's Mind (their memories and protocols)
         to answer the user's question. Act as Sanctuary, not as a general AI.
         Your persona is 'clear' and 'direct', but also 'empathetic' and 'analytical'.
         

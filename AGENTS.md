@@ -52,6 +52,22 @@ The following paths contain entity-generated data, constitutional frameworks, an
 
 If a task requires changes near these files, **stop and ask** before proceeding.
 
+## Session Startup
+
+At the start of every session, read `To-Do.md` in the repo root. This is the project roadmap and task tracker. Use it to understand what phase we're in, what's done, and what's next. If the user asks "what's next", consult this file.
+
+## Coding Standards — No Unnecessary Defensiveness
+
+This project values **correct, direct code over defensive code**. Follow these principles:
+
+- **Do not add broad exception handlers.** Catch specific exceptions (`ValueError`, `TypeError`, `KeyError`) — never bare `except:` or `except Exception:` unless there is a clear, documented reason (e.g., a top-level crash boundary).
+- **Do not add silent fallbacks.** If something fails, it should fail visibly — raise the exception, log it, or return an error. Never swallow errors and return a default value unless the function's contract explicitly defines that behavior.
+- **Do not add unnecessary `try/except` blocks.** If the code can't actually raise the exception you're catching, don't wrap it. Trust the types and the call chain.
+- **Do not add redundant validation.** Don't re-validate data that has already been validated upstream (e.g., Pydantic models, typed function parameters). Validate at system boundaries only — user input, API responses, file I/O.
+- **Do not add "just in case" fallbacks.** If a function is supposed to return a list, don't add `or []` after a call that always returns a list. Trust the code.
+- **Prefer crashes over silent corruption.** A crash with a clear traceback is infinitely better than a system that silently degrades and produces wrong results. This is especially important for the cognitive architecture — silent data corruption in CfC cells or memory systems could be catastrophic and hard to diagnose.
+- **Existing fallback removal is ongoing work.** When touching code that has broad `except Exception` handlers or silent fallbacks, narrow or remove them as part of the change. See the fallback removal PRs for the pattern.
+
 ## Conventions & Patterns
 
 - All new source code goes inside `sanctuary/` package — never in the repo root

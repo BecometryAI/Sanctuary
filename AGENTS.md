@@ -52,9 +52,11 @@ The following paths contain entity-generated data, constitutional frameworks, an
 
 If a task requires changes near these files, **stop and ask** before proceeding.
 
-## Session Startup
+## Session Startup & Roadmap
 
-At the start of every session, read `To-Do.md` in the repo root. This is the project roadmap and task tracker. Use it to understand what phase we're in, what's done, and what's next. If the user asks "what's next", consult this file.
+At the start of every new conversation **and** whenever the context window resets, read `To-Do.md` in the repo root. This is the project roadmap and task tracker. Use it to understand what phase we're in, what's done, and what's next.
+
+**If the user asks "what's next?" — always re-read `To-Do.md` before answering.** Do not guess or say you don't know. The answer is in that file.
 
 ## Coding Standards — No Unnecessary Defensiveness
 

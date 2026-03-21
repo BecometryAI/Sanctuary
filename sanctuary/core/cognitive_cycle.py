@@ -352,13 +352,22 @@ class CognitiveCycle:
 
         # 5b. Route value updates to identity system
         if cognitive_output.self_model_updates:
-            self.identity.process_value_updates(cognitive_output.self_model_updates)
+            try:
+                self.identity.process_value_updates(cognitive_output.self_model_updates)
+            except Exception as e:
+                logger.error("Identity value update error (non-fatal): %s", e)
 
         # 6. Execute actions
-        await self._execute(integrated)
+        try:
+            await self._execute(integrated)
+        except Exception as e:
+            logger.error("Action execution error (non-fatal): %s", e)
 
         # 7. Broadcast
-        await self.scaffold.broadcast(integrated)
+        try:
+            await self.scaffold.broadcast(integrated)
+        except Exception as e:
+            logger.error("Broadcast error (non-fatal): %s", e)
 
         # 8. Update prediction tracking
         self.sensorium.update_predictions(cognitive_output.predictions)

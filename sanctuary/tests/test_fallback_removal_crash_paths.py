@@ -15,7 +15,7 @@ import json
 import os
 import tempfile
 import pytest
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from pathlib import Path
 
 
@@ -56,25 +56,17 @@ class TestProducerFailFast:
             await substrate.surface("some context")
 
     @pytest.mark.asyncio
-    async def test_substrate_propagates_queued_retrieval_error(self):
-        """Error during queued retrieval also propagates through substrate."""
+    async def test_substrate_context_surfacing_error_propagates(self):
+        """Context surfacing error (step 1) still propagates — no partial results yet."""
         from memory.manager import MemorySubstrate
 
         substrate = MemorySubstrate.__new__(MemorySubstrate)
-
-        call_count = 0
-        async def surface_side_effect(context):
-            nonlocal call_count
-            call_count += 1
-            if call_count == 1:
-                return []
-            raise RuntimeError("Memory surfacing failed: disk error")
-
         substrate._surfacer = AsyncMock()
-        substrate._surfacer.surface = AsyncMock(side_effect=surface_side_effect)
+        substrate._surfacer.surface = AsyncMock(
+            side_effect=RuntimeError("Memory surfacing failed: disk error")
+        )
         substrate._prospective = MagicMock()
-        substrate._prospective.check = MagicMock(return_value=[])
-        substrate._retrieval_queue = ["queued query"]
+        substrate._retrieval_queue = []
 
         with pytest.raises(RuntimeError, match="Memory surfacing failed"):
             await substrate.surface("some context")
@@ -496,6 +488,233 @@ class TestTransientFailureEdgeCases:
 
         percepts = await state.gather_percepts(perception)
         assert len(percepts) == 3  # 3 good inputs survived
+
+
+# ============================================================
+# 4. Partial memory retrieval: queued retrieval failure
+# ============================================================
+
+class TestMemorySubstratePartialFailure:
+    """Test that queued retrieval errors don't discard earlier memories."""
+
+    @pytest.mark.asyncio
+    async def test_queued_retrieval_failure_preserves_context_memories(self):
+        """If queued retrieval fails, context-surfaced memories are still returned."""
+        from memory.manager import MemorySubstrate
+
+        substrate = MemorySubstrate.__new__(MemorySubstrate)
+
+        call_count = 0
+        async def surface_side_effect(context):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return [MagicMock(content="context memory")]
+            raise RuntimeError("Queued retrieval DB error")
+
+        substrate._surfacer = AsyncMock()
+        substrate._surfacer.surface = AsyncMock(side_effect=surface_side_effect)
+        substrate._prospective = MagicMock()
+        substrate._prospective.check = MagicMock(return_value=[MagicMock(content="prospective")])
+        substrate._retrieval_queue = ["some query"]
+
+        # Should return memories from steps 1 and 2, despite step 3 failing
+        result = await substrate.surface("test context")
+        assert len(result) == 2
+
+    @pytest.mark.asyncio
+    async def test_multiple_queued_retrievals_partial_failure(self):
+        """If one of three queued retrievals fails, the other two succeed."""
+        from memory.manager import MemorySubstrate
+
+        substrate = MemorySubstrate.__new__(MemorySubstrate)
+
+        call_count = 0
+        async def surface_side_effect(context):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return []  # context surfacing
+            if call_count == 3:
+                raise RuntimeError("DB hiccup")
+            return [MagicMock(content=f"queued_{call_count}")]
+
+        substrate._surfacer = AsyncMock()
+        substrate._surfacer.surface = AsyncMock(side_effect=surface_side_effect)
+        substrate._prospective = MagicMock()
+        substrate._prospective.check = MagicMock(return_value=[])
+        substrate._retrieval_queue = ["q1", "q2", "q3"]
+
+        result = await substrate.surface("context")
+        assert len(result) == 2  # q1 and q3 succeed, q2 fails
+        # Queue should be cleared regardless
+        assert substrate._retrieval_queue == []
+
+    @pytest.mark.asyncio
+    async def test_retrieval_queue_cleared_even_on_all_failures(self):
+        """Queue is always cleared, even if every queued retrieval fails."""
+        from memory.manager import MemorySubstrate
+
+        substrate = MemorySubstrate.__new__(MemorySubstrate)
+        substrate._surfacer = AsyncMock()
+
+        call_count = 0
+        async def surface_side_effect(context):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return []  # context surfacing
+            raise RuntimeError("All retrievals fail")
+
+        substrate._surfacer.surface = AsyncMock(side_effect=surface_side_effect)
+        substrate._prospective = MagicMock()
+        substrate._prospective.check = MagicMock(return_value=[])
+        substrate._retrieval_queue = ["q1", "q2"]
+
+        result = await substrate.surface("context")
+        assert result == []
+        assert substrate._retrieval_queue == []  # Must be cleared
+
+
+# ============================================================
+# 5. Post-LLM interior crash paths in _cycle()
+# ============================================================
+
+class TestCycleInteriorCrashPaths:
+    """Test that post-LLM operations don't kill the cycle.
+
+    These tests mock _assemble_input to skip Pydantic construction,
+    focusing on the post-LLM error handling in _cycle().
+    """
+
+    def _make_cycle(self):
+        """Build a CognitiveCycle with _assemble_input mocked out."""
+        from core.cognitive_cycle import CognitiveCycle
+
+        cycle = CognitiveCycle.__new__(CognitiveCycle)
+        cycle.running = True
+        cycle._cycle_delay = 0.001
+        cycle.cycle_count = 0
+        cycle._last_output = None
+        cycle._output_handlers = []
+
+        # Mock _assemble_input to return a MagicMock (skips Pydantic)
+        cycle._assemble_input = AsyncMock(return_value=MagicMock())
+        cycle.context_mgr = MagicMock()
+        cycle.model = AsyncMock()
+        cycle.model.think = AsyncMock(return_value=MagicMock(
+            self_model_updates={"values": "test"},
+            predictions=[]
+        ))
+        cycle.scaffold = MagicMock()
+        cycle.scaffold.integrate = AsyncMock(return_value=MagicMock())
+        cycle.scaffold.broadcast = AsyncMock()
+        cycle.stream = MagicMock()
+        cycle.sensorium = MagicMock()
+        cycle.identity = MagicMock()
+        cycle.authority = MagicMock()
+        cycle.environment = None
+        cycle.growth = None
+        cycle._execute = AsyncMock()
+
+        return cycle
+
+    @pytest.mark.asyncio
+    async def test_identity_update_failure_doesnt_kill_cycle(self):
+        """identity.process_value_updates() failure doesn't prevent execution."""
+        cycle = self._make_cycle()
+        cycle.identity.process_value_updates = MagicMock(
+            side_effect=RuntimeError("Identity DB locked")
+        )
+
+        await cycle._cycle()
+
+        # Execute and broadcast should still have been called
+        cycle._execute.assert_called_once()
+        cycle.scaffold.broadcast.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_execute_failure_doesnt_prevent_broadcast(self):
+        """_execute() failure doesn't prevent broadcast."""
+        cycle = self._make_cycle()
+        cycle._execute = AsyncMock(side_effect=RuntimeError("Action failed"))
+
+        await cycle._cycle()
+
+        cycle.scaffold.broadcast.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_broadcast_failure_doesnt_kill_cycle(self):
+        """broadcast() failure doesn't prevent bookkeeping."""
+        cycle = self._make_cycle()
+        cycle.scaffold.broadcast = AsyncMock(
+            side_effect=RuntimeError("Broadcast failed")
+        )
+
+        await cycle._cycle()
+
+        assert cycle.cycle_count == 1
+        assert cycle._last_output is not None
+
+
+# ============================================================
+# 6. PerceptionSubsystem boot-time init failure
+# ============================================================
+
+class TestPerceptionBootFailure:
+    """Test the PerceptionSubsystem init fallback logic in isolation.
+
+    SubsystemCoordinator.__init__ has many dependencies, so we test the
+    perception init/fallback logic directly rather than through the full
+    constructor.
+    """
+
+    def test_perception_init_failure_falls_back_to_mock(self):
+        """When PerceptionSubsystem raises, the fallback code creates MockPerception."""
+        from mind.cognitive_core.core.subsystem_coordinator import SubsystemCoordinator
+        from mind.cognitive_core.mock_perception import MockPerceptionSubsystem
+
+        # Simulate the perception init logic from SubsystemCoordinator.__init__
+        perception_config = {"mock_mode": False}
+
+        with patch(
+            "mind.cognitive_core.core.subsystem_coordinator.PerceptionSubsystem",
+            side_effect=ImportError("No sentence-transformers")
+        ):
+            # Replicate the exact logic from subsystem_coordinator.py
+            if perception_config.get("mock_mode", False):
+                perception = MockPerceptionSubsystem(config=perception_config)
+            else:
+                try:
+                    from mind.cognitive_core.core.subsystem_coordinator import PerceptionSubsystem
+                    perception = PerceptionSubsystem(config=perception_config)
+                except Exception:
+                    perception = MockPerceptionSubsystem(config=perception_config)
+
+            assert isinstance(perception, MockPerceptionSubsystem)
+
+    def test_perception_init_failure_in_real_coordinator(self):
+        """Full SubsystemCoordinator boots with mock perception when real init fails."""
+        from mind.cognitive_core.core.subsystem_coordinator import SubsystemCoordinator
+        from mind.cognitive_core.mock_perception import MockPerceptionSubsystem
+        from mind.cognitive_core.workspace import GlobalWorkspace
+
+        workspace = GlobalWorkspace()
+        # Provide the full config that SubsystemCoordinator needs
+        config = {
+            "perception": {"mock_mode": False},
+            "action": {},
+            "affect": {},
+            "attention_budget": 100,
+            "cycle_rate_hz": 1,
+        }
+
+        with patch(
+            "mind.cognitive_core.core.subsystem_coordinator.PerceptionSubsystem",
+            side_effect=ImportError("No sentence-transformers")
+        ):
+            coordinator = SubsystemCoordinator(workspace, config)
+            assert isinstance(coordinator.perception, MockPerceptionSubsystem)
 
 
 try:

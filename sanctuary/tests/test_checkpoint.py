@@ -426,11 +426,12 @@ class TestCognitiveCoreIntegration:
                     "enabled": True,
                     "checkpoint_dir": str(Path(tmpdir) / "checkpoints"),
                     "max_checkpoints": 10,
-                }
+                },
+                "perception": {"mock_mode": True},
             }
-            
+
             core = CognitiveCore(config=config)
-            
+
             assert core.checkpoint_manager is not None
             assert core.checkpoint_manager.max_checkpoints == 10
     
@@ -439,11 +440,12 @@ class TestCognitiveCoreIntegration:
         config = {
             "checkpointing": {
                 "enabled": False,
-            }
+            },
+            "perception": {"mock_mode": True},
         }
-        
+
         core = CognitiveCore(config=config)
-        
+
         assert core.checkpoint_manager is None
     
     def test_save_state_method(self):
@@ -453,11 +455,12 @@ class TestCognitiveCoreIntegration:
                 "checkpointing": {
                     "enabled": True,
                     "checkpoint_dir": str(Path(tmpdir) / "checkpoints"),
-                }
+                },
+                "perception": {"mock_mode": True},
             }
-            
+
             core = CognitiveCore(config=config)
-            
+
             # Add some state
             goal = Goal(type=GoalType.LEARN, description="Test")
             core.workspace.add_goal(goal)
@@ -480,11 +483,12 @@ class TestCognitiveCoreIntegration:
                 "checkpointing": {
                     "enabled": True,
                     "checkpoint_dir": str(Path(tmpdir) / "checkpoints"),
-                }
+                },
+                "perception": {"mock_mode": True},
             }
-            
+
             core = CognitiveCore(config=config)
-            
+
             # Create state and save
             goal = Goal(type=GoalType.CREATE, description="Original")
             core.workspace.add_goal(goal)
@@ -509,9 +513,10 @@ class TestCognitiveCoreIntegration:
                 "checkpointing": {
                     "enabled": True,
                     "checkpoint_dir": str(Path(tmpdir) / "checkpoints"),
-                }
+                },
+                "perception": {"mock_mode": True},
             }
-            
+
             # First session: create state and save
             core1 = CognitiveCore(config=config)
             goal = Goal(type=GoalType.INTROSPECT, description="Reflect")
@@ -540,9 +545,10 @@ class TestCognitiveCoreIntegration:
                     "enabled": True,
                     "checkpoint_dir": str(Path(tmpdir) / "checkpoints"),
                     "checkpoint_on_shutdown": True,
-                }
+                },
+                "perception": {"mock_mode": True},
             }
-            
+
             core = CognitiveCore(config=config)
             
             # Add some state
@@ -569,11 +575,12 @@ class TestCognitiveCoreIntegration:
                 "checkpointing": {
                     "enabled": True,
                     "checkpoint_dir": str(Path(tmpdir) / "checkpoints"),
-                }
+                },
+                "perception": {"mock_mode": True},
             }
-            
+
             core = CognitiveCore(config=config)
-            
+
             # Cannot enable when not running
             success = core.enable_auto_checkpoint()
             assert success is False
@@ -641,11 +648,12 @@ class TestErrorHandling:
         config = {
             "checkpointing": {
                 "enabled": False,
-            }
+            },
+            "perception": {"mock_mode": True},
         }
-        
+
         core = CognitiveCore(config=config)
-        
+
         # Should return None and log warning
         path = core.save_state()
         assert path is None
@@ -657,14 +665,15 @@ class TestErrorHandling:
                 "checkpointing": {
                     "enabled": True,
                     "checkpoint_dir": str(Path(tmpdir) / "checkpoints"),
-                }
+                },
+                "perception": {"mock_mode": True},
             }
-            
+
             core = CognitiveCore(config=config)
-            
+
             # Save a checkpoint
             path = core.save_state()
-            
+
             # Simulate running state
             core.state.running = True
             

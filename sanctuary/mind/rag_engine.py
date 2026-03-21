@@ -219,8 +219,8 @@ class MindVectorDB:
                         SharedSystemClient._identifer_to_system.pop(identifier, None)
                     if hasattr(SharedSystemClient, '_identifier_to_system'):
                         SharedSystemClient._identifier_to_system.pop(identifier, None)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("ChromaDB cache cleanup failed: %s", e)
                 self.client = None
             logger.info("MindVectorDB closed")
         except Exception as e:

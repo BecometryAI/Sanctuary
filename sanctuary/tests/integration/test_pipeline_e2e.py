@@ -27,6 +27,7 @@ def _mock_config(**overrides):
         "checkpointing": {"enabled": False},
         "input_llm": {"use_real_model": False},
         "output_llm": {"use_real_model": False},
+        "perception": {"mock_mode": True},
     }
     cfg.update(overrides)
     return cfg

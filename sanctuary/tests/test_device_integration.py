@@ -335,11 +335,11 @@ class TestDeviceToPerceptionFlow:
 
         # Import perception subsystem (may fail if sentence-transformers not installed)
         try:
-            from sanctuary.mind.cognitive_core.perception import PerceptionSubsystem
+            from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem
         except ImportError:
-            pytest.skip("sentence-transformers not installed")
+            pytest.skip("perception module not available")
 
-        perception = PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        perception = MockPerceptionSubsystem()
 
         # Encode audio
         percept = await perception.encode(audio_data, "audio")
@@ -355,15 +355,11 @@ class TestDeviceToPerceptionFlow:
         image_data = np.random.randint(0, 255, (480, 640, 3), dtype=np.uint8)
 
         try:
-            from sanctuary.mind.cognitive_core.perception import PerceptionSubsystem
+            from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem
         except ImportError:
-            pytest.skip("sentence-transformers not installed")
+            pytest.skip("perception module not available")
 
-        # Note: Image encoding requires CLIP, which may not be available
-        perception = PerceptionSubsystem(config={
-            "text_model": "all-MiniLM-L6-v2",
-            "enable_image": False,  # Don't try to load CLIP
-        })
+        perception = MockPerceptionSubsystem()
 
         # Encode image (will return placeholder if CLIP not loaded)
         percept = await perception.encode(image_data, "image")
@@ -381,11 +377,11 @@ class TestDeviceToPerceptionFlow:
         }
 
         try:
-            from sanctuary.mind.cognitive_core.perception import PerceptionSubsystem
+            from sanctuary.mind.cognitive_core.mock_perception import MockPerceptionSubsystem
         except ImportError:
-            pytest.skip("sentence-transformers not installed")
+            pytest.skip("perception module not available")
 
-        perception = PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        perception = MockPerceptionSubsystem()
 
         percept = await perception.encode(sensor_data, "sensor")
 
@@ -547,7 +543,7 @@ class TestPerceptionEdgeCases:
         """Create perception subsystem for tests."""
         try:
             from sanctuary.mind.cognitive_core.perception import PerceptionSubsystem
-            return PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+            return PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2", "mock_mode": True})
         except ImportError:
             pytest.skip("sentence-transformers not installed")
 

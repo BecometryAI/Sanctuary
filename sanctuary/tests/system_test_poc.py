@@ -210,6 +210,7 @@ async def layer_1_does_it_breathe(result: POCResult) -> CognitiveCore:
         "checkpointing": {"enabled": False},
         "input_llm": {"use_real_model": False},
         "output_llm": {"use_real_model": False},
+        "perception": {"mock_mode": True},
         "iwmt": {"enabled": False},  # Disable IWMT for minimal test
         "devices": {"enabled": False},  # No physical devices
     }

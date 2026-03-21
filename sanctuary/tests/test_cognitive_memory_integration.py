@@ -447,9 +447,10 @@ class TestIntegrationWithCognitiveCore:
                     "chroma_dir": str(tmp_path / "chroma"),
                     "blockchain_enabled": False,
                 }
-            }
+            },
+            "perception": {"mock_mode": True},
         }
-        
+
         core = CognitiveCore(config=config)
         
         # Verify memory integration is initialized

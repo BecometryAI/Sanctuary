@@ -159,13 +159,13 @@ class TestSurfacerEntryConversion:
         assert result[0].significance == 8
 
     @pytest.mark.asyncio
-    async def test_handles_store_exception(self):
-        """Surfacer should handle store errors gracefully."""
+    async def test_raises_on_store_exception(self):
+        """Surfacer should propagate store errors instead of hiding them."""
 
         class FailingStore:
             async def recall(self, query, n_results=5, min_significance=None):
                 raise RuntimeError("store failure")
 
         surfacer = MemorySurfacer(store=FailingStore())
-        result = await surfacer.surface("test")
-        assert result == []
+        with pytest.raises(RuntimeError, match="Memory surfacing failed"):
+            await surfacer.surface("test")

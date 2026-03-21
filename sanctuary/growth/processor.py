@@ -398,8 +398,8 @@ class GrowthProcessor:
             # Always reset consent gate for next batch
             try:
                 self._consent_gate.reset()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error("Failed to reset consent gate: %s", e)
 
             # Record in history
             self._processing_history.append(result)

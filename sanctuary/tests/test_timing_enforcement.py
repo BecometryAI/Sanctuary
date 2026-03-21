@@ -69,6 +69,7 @@ async def test_metrics_include_timing_stats():
         "checkpointing": {"enabled": False},
         "input_llm": {"use_real_model": False},
         "output_llm": {"use_real_model": False},
+        "perception": {"mock_mode": True},
     }
     core = CognitiveCore(workspace=workspace, config=config)
 

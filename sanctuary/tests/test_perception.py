@@ -29,9 +29,10 @@ requires_sentence_transformers = pytest.mark.skipif(
 )
 
 
+@requires_sentence_transformers
 class TestPerceptionSubsystemInitialization:
     """Test PerceptionSubsystem initialization."""
-    
+
     def test_initialization_default(self):
         """Test creating PerceptionSubsystem with default config."""
         perception = PerceptionSubsystem()
@@ -67,6 +68,7 @@ class TestPerceptionSubsystemInitialization:
         assert stats["cache_hit_rate"] == 0.0
 
 
+@requires_sentence_transformers
 class TestTextEncoding:
     """Test text encoding functionality."""
     
@@ -112,6 +114,7 @@ class TestTextEncoding:
         assert abs(norm - 1.0) < 0.01
 
 
+@requires_sentence_transformers
 class TestCacheFunctionality:
     """Test embedding cache with LRU eviction."""
     
@@ -239,6 +242,7 @@ class TestSimilarity:
         assert similarity < 0.5
 
 
+@requires_sentence_transformers
 class TestComplexityEstimation:
     """Test complexity estimation for different inputs."""
     
@@ -306,6 +310,7 @@ class TestComplexityEstimation:
         assert percept.complexity == 20
 
 
+@requires_sentence_transformers
 class TestErrorHandling:
     """Test error handling and robustness."""
     
@@ -344,6 +349,7 @@ class TestErrorHandling:
         assert len(percept.embedding) == perception.embedding_dim
 
 
+@requires_sentence_transformers
 class TestEmbeddingConsistency:
     """Test that embeddings are consistent across multiple calls."""
     
@@ -378,6 +384,7 @@ class TestEmbeddingConsistency:
         assert percept1.embedding == percept2.embedding
 
 
+@requires_sentence_transformers
 class TestStatistics:
     """Test statistics tracking."""
     
@@ -415,9 +422,10 @@ class TestStatistics:
         assert stats["average_encoding_time_ms"] > 0
 
 
+@requires_sentence_transformers
 class TestLegacyCompatibility:
     """Test backward compatibility with legacy interface."""
-    
+
     @pytest.mark.asyncio
     async def test_process_method(self):
         """Test that legacy process() method still works."""
@@ -430,9 +438,10 @@ class TestLegacyCompatibility:
         assert len(percept.embedding) == perception.embedding_dim
 
 
+@requires_sentence_transformers
 class TestIntegrationWithWorkspace:
     """Test integration with workspace Percept model."""
-    
+
     @pytest.mark.asyncio
     async def test_percept_has_required_fields(self):
         """Test that generated Percept has all required fields."""

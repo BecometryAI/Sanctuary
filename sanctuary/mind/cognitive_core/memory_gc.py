@@ -711,7 +711,8 @@ class MemoryGarbageCollector:
         if isinstance(timestamp, str):
             try:
                 timestamp = datetime.fromisoformat(timestamp)
-            except Exception:
+            except (ValueError, TypeError) as e:
+                logger.warning("Failed to parse memory timestamp %r: %s", timestamp, e)
                 return False
 
         age_hours = (now - timestamp).total_seconds() / 3600
@@ -741,7 +742,8 @@ class MemoryGarbageCollector:
         if isinstance(timestamp, str):
             try:
                 timestamp = datetime.fromisoformat(timestamp)
-            except Exception:
+            except (ValueError, TypeError) as e:
+                logger.warning("Failed to parse memory timestamp %r: %s", timestamp, e)
                 return original_significance
 
         age_days = (now - timestamp).total_seconds() / 86400

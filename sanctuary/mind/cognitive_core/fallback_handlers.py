@@ -388,8 +388,8 @@ class FallbackOutputGenerator:
             variables = self._extract_variables(workspace_state)
             try:
                 response = template.format(**variables)
-            except KeyError:
-                # If template variables not available, use as-is
+            except KeyError as e:
+                logger.warning("Template variable missing: %s, truncating template", e)
                 response = template.split("{")[0].strip()
         else:
             response = template.split("{")[0].strip()

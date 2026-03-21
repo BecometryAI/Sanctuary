@@ -305,7 +305,12 @@ class CognitiveCycle:
         cycles = 0
 
         while self.running:
-            await self._cycle()
+            try:
+                await self._cycle()
+            except Exception as e:
+                logger.error("Cognitive cycle %d failed: %s", cycles, e, exc_info=True)
+                # Continue running — a single bad cycle should not kill the system
+
             cycles += 1
 
             if max_cycles is not None and cycles >= max_cycles:
@@ -397,9 +402,13 @@ class CognitiveCycle:
         # Inform scaffold about percepts (updates affect, detects user input)
         self.scaffold.notify_percepts(percepts)
 
-        surfaced = await self.memory.surface(
-            context=self.stream.get_recent_context()
-        )
+        try:
+            surfaced = await self.memory.surface(
+                context=self.stream.get_recent_context()
+            )
+        except Exception as e:
+            logger.error("Memory surfacing failed (cycle continues without memories): %s", e)
+            surfaced = []
 
         # Step the experiential layer (CfC cells evolve)
         experiential_signals = ExperientialSignals()

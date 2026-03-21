@@ -114,8 +114,11 @@ class StateManager:
         # Encode all inputs using perception subsystem
         percepts = []
         for raw_input, modality in raw_inputs:
-            percept = await perception_subsystem.encode(raw_input, modality)
-            percepts.append(percept)
+            try:
+                percept = await perception_subsystem.encode(raw_input, modality)
+                percepts.append(percept)
+            except Exception as e:
+                logger.error("Failed to encode %s input, skipping: %s", modality, e)
         
         # Add any pending tool result percepts from previous cycle
         if self._pending_tool_percepts:

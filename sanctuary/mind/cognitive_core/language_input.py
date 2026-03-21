@@ -746,8 +746,12 @@ JSON Response:"""
             Percept object ready for workspace processing
         """
         # Use perception subsystem to encode text
-        percept = await self.perception.encode(text, modality="text")
-        
+        try:
+            percept = await self.perception.encode(text, modality="text")
+        except Exception as e:
+            logger.error("Perception encoding failed, creating percept without embedding: %s", e)
+            percept = Percept(modality="text", raw=text, embedding=None, complexity=1)
+
         # Enhance with parsing metadata
         percept.metadata.update({
             "intent": intent.type,

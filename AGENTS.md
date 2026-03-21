@@ -95,3 +95,11 @@ This project values **correct, direct code over defensive code**. Follow these p
 - Branch from `main` for all changes
 - Keep commits focused — one logical change per commit
 - PR descriptions should explain *why*, not just *what*
+
+### Pull Request Descriptions
+
+**Every PR must have a unique description tailored to its specific changes.** Do not copy or reuse descriptions from earlier PRs in the same session. Before writing a PR description:
+
+1. Run `git diff main...HEAD` (or the appropriate base branch) to review the actual changes
+2. Write a summary that reflects *this PR's* changes — not the session's overall work
+3. Keep it concise but specific: what changed, why, and any notable decisions

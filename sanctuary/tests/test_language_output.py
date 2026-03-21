@@ -276,8 +276,8 @@ class TestCognitiveCoreIntegration:
         """Test that output queue is initialized on start."""
         from mind.cognitive_core.core import CognitiveCore
         
-        core = CognitiveCore()
-        
+        core = CognitiveCore(config={"perception": {"mock_mode": True}})
+
         # Initially None
         assert core.output_queue is None
         

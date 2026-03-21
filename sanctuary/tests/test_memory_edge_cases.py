@@ -3,6 +3,7 @@ Comprehensive edge case tests for memory modules.
 
 Tests unusual inputs, error conditions, and boundary cases to ensure robustness.
 """
+import pytest
 from datetime import datetime
 from unittest.mock import Mock, MagicMock
 
@@ -226,23 +227,20 @@ class TestMemoryRetrieverEdgeCases:
         vector_db = Mock()
         retriever = MemoryRetriever(storage, vector_db)
         
-        # Should default to k=5
-        retriever._retrieve_with_rag = Mock(return_value=[])
-        result = retriever.retrieve_memories("test", k=0)
-        # Function should handle this gracefully
-        assert isinstance(result, list)
-    
+        # Should raise on invalid k
+        with pytest.raises(ValueError, match="k must be positive"):
+            retriever.retrieve_memories("test", k=0)
+
     def test_retrieve_with_negative_k(self):
-        """Test retrieval with negative k."""
+        """Test retrieval with negative k raises ValueError."""
         from mind.memory.retrieval import MemoryRetriever
-        
+
         storage = Mock()
         vector_db = Mock()
         retriever = MemoryRetriever(storage, vector_db)
-        
-        retriever._retrieve_with_rag = Mock(return_value=[])
-        result = retriever.retrieve_memories("test", k=-5)
-        assert isinstance(result, list)
+
+        with pytest.raises(ValueError, match="k must be positive"):
+            retriever.retrieve_memories("test", k=-5)
 
 
 class TestMemoryStorageEdgeCases:

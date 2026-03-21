@@ -19,16 +19,16 @@ from mind.cognitive_core.language_input import (
     ParseResult
 )
 from mind.cognitive_core.workspace import Goal, GoalType, Percept
-from mind.cognitive_core.perception import PerceptionSubsystem
+from mind.cognitive_core.mock_perception import MockPerceptionSubsystem
 
 
 class TestIntentClassification:
     """Test intent classification for different input types."""
-    
+
     @pytest.fixture
     def parser(self):
         """Create parser with mock perception subsystem."""
-        perception = PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        perception = MockPerceptionSubsystem()
         return LanguageInputParser(perception)
     
     def test_question_intent_what(self, parser):
@@ -98,7 +98,7 @@ class TestEntityExtraction:
     @pytest.fixture
     def parser(self):
         """Create parser with mock perception subsystem."""
-        perception = PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        perception = MockPerceptionSubsystem()
         return LanguageInputParser(perception)
     
     def test_extract_names(self, parser):
@@ -151,7 +151,7 @@ class TestGoalGeneration:
     @pytest.fixture
     def parser(self):
         """Create parser with mock perception subsystem."""
-        perception = PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        perception = MockPerceptionSubsystem()
         return LanguageInputParser(perception)
     
     def test_always_generates_response_goal(self, parser):
@@ -202,7 +202,7 @@ class TestPerceptCreation:
     @pytest.fixture
     def parser(self):
         """Create parser with real perception subsystem."""
-        perception = PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        perception = MockPerceptionSubsystem()
         return LanguageInputParser(perception)
     
     @pytest.mark.asyncio
@@ -266,7 +266,7 @@ class TestContextTracking:
     @pytest.fixture
     def parser(self):
         """Create parser with real perception subsystem."""
-        perception = PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        perception = MockPerceptionSubsystem()
         return LanguageInputParser(perception)
     
     @pytest.mark.asyncio
@@ -324,7 +324,7 @@ class TestFullParsing:
     @pytest.fixture
     def parser(self):
         """Create parser with real perception subsystem."""
-        perception = PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        perception = MockPerceptionSubsystem()
         return LanguageInputParser(perception)
     
     @pytest.mark.asyncio

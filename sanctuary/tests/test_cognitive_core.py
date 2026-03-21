@@ -31,6 +31,14 @@ from mind.cognitive_core.affect import AffectSubsystem, EmotionalState
 from mind.cognitive_core.meta_cognition import SelfMonitor
 
 
+def _has_sentence_transformers() -> bool:
+    try:
+        import sentence_transformers  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 @pytest.fixture
 def temp_dirs():
     """Create temporary directories for ChromaDB to avoid schema conflicts."""
@@ -526,12 +534,20 @@ class TestAttentionController:
 class TestPerceptionSubsystem:
     """Test PerceptionSubsystem class initialization and data models"""
     
+    @pytest.mark.skipif(
+        not _has_sentence_transformers(),
+        reason="sentence-transformers not installed",
+    )
     def test_perception_initialization_default(self):
         """Test creating PerceptionSubsystem with default parameters"""
         perception = PerceptionSubsystem()
         assert perception is not None
         assert isinstance(perception, PerceptionSubsystem)
-    
+
+    @pytest.mark.skipif(
+        not _has_sentence_transformers(),
+        reason="sentence-transformers not installed",
+    )
     def test_perception_initialization_custom(self):
         """Test creating PerceptionSubsystem with custom parameters"""
         config = {
@@ -542,6 +558,16 @@ class TestPerceptionSubsystem:
         perception = PerceptionSubsystem(config=config)
         assert perception is not None
         assert perception.cache_size == 500
+
+    def test_perception_fails_without_sentence_transformers(self):
+        """Test that PerceptionSubsystem raises ImportError without dependencies."""
+        # This test verifies the subsystem fails loudly instead of silently degrading
+        try:
+            from sentence_transformers import SentenceTransformer  # noqa: F401
+            pytest.skip("sentence-transformers is installed")
+        except ImportError:
+            with pytest.raises(ImportError, match="sentence-transformers is required"):
+                PerceptionSubsystem()
     
     def test_modality_type_enum(self):
         """Test ModalityType enum values"""

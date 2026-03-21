@@ -22,6 +22,7 @@ class TestMemoryConsolidation:
             "checkpointing": {"enabled": False},
             "input_llm": {"use_real_model": False},
             "output_llm": {"use_real_model": False},
+            "perception": {"mock_mode": True},
             "memory": {"consolidation_threshold": 0.5}
         }
         
@@ -63,14 +64,15 @@ class TestMemoryRetrieval:
             "checkpointing": {"enabled": False},
             "input_llm": {"use_real_model": False},
             "output_llm": {"use_real_model": False},
+            "perception": {"mock_mode": True},
         }
-        
+
         core = CognitiveCore(workspace=workspace, config=config)
-        
+
         try:
             start_task = asyncio.create_task(core.start())
             await asyncio.sleep(0.5)
-            
+
             # Add retrieval goal
             goal = Goal(
                 type=GoalType.RETRIEVE_MEMORY,

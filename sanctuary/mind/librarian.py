@@ -80,13 +80,9 @@ class SanctuaryLibrarian:
 
     def process_documents(self, documents: List[Document]) -> List[Document]:
         """Process and split documents into chunks."""
-        try:
-            split_docs = self.text_splitter.split_documents(documents)
-            print(f"Split {len(documents)} documents into {len(split_docs)} chunks")
-            return split_docs
-        except Exception as e:
-            print(f"Error splitting documents: {e}")
-            return []
+        split_docs = self.text_splitter.split_documents(documents)
+        print(f"Split {len(documents)} documents into {len(split_docs)} chunks")
+        return split_docs
 
     def create_vector_store(self, documents: List[Document]) -> None:
         """Create and persist the vector store."""

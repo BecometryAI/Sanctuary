@@ -2,7 +2,7 @@
 
 This document tracks the development trajectory for the Sanctuary cognitive architecture, from proven POC through production-ready system.
 
-**Last Updated**: 2026-03-18
+**Last Updated**: 2026-03-21
 **Current Phase**: Phase 7.5 — CfC Knowledge Cells & Growth Autonomy Infrastructure
 
 ---
@@ -200,32 +200,32 @@ Deeper cognitive features, all built and validated mechanically (placeholder/scr
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Make ExperientialManager registry dynamic | P0 | Pending | Replace hardcoded cell type list with runtime registry. Four foundational cells registered at boot, new cells registered via `register_cell()`. Manager treats all cells uniformly |
-| Define KnowledgeCellProtocol | P0 | Pending | Protocol/ABC for knowledge cells: same interface as foundational cells (input, evolution, output, persistence, training). No second-class citizens |
-| Implement KnowledgeCell base class | P0 | Pending | Base CfC knowledge cell: configurable units/input_size/output_size, AutoNCP wiring, save/load, metadata (domain, creation_time, maturity). Extends same CfC infrastructure as foundational cells |
-| Update ExperientialSignals schema | P1 | Pending | CognitiveInput.experiential_state must accommodate dynamic cell signals, not just the four hardcoded fields. Dict-based signal namespace for knowledge cells |
-| Cell persistence for dynamic cells | P1 | Pending | Knowledge cell state persists across cycles, across restarts, across checkpoints. Registry state (which cells exist, their connections) is part of the checkpoint |
-| Inter-cell connection manager | P1 | Pending | Knowledge cells participate in the inter-cell connection network. Entity specifies connections when creating a cell. Connection topology persists |
-| Write tests for dynamic registry | P1 | Pending | Registry CRUD, boot registration, runtime registration, cell coordination, snapshot with mixed cell types, persistence round-trip |
+| Make ExperientialManager registry dynamic | P0 | **Done** | `experiential/manager.py`: CellRegistry replaces hardcoded cell list. Four foundational cells registered at boot, new cells registered via `registry.register()`. Manager treats all cells uniformly via `registry.all_cells()` |
+| Define KnowledgeCellProtocol | P0 | **Done** | `experiential/cell_registry.py`: `CellProtocol` (runtime_checkable Protocol) — step, reset_hidden, get_summary, save, load. Both foundational and knowledge cells implement the same interface |
+| Implement KnowledgeCell base class | P0 | **Done** | `experiential/knowledge_cell.py`: Configurable units (8-256), input_size, output_size, AutoNCP wiring, save/load, domain metadata, maturity tracking (auto-increment per step, clamped 0-1), output activation (sigmoid/tanh/none), forward_training with MSE loss |
+| Update ExperientialSignals schema | P1 | **Done** | `core/schema.py`: `ExperientialSignals.knowledge_signals: dict[str, list[float]]` for dynamic cell signals. `KnowledgeCellRequest` schema for entity-initiated creation. `CognitiveOutput.knowledge_cell_requests` field |
+| Cell persistence for dynamic cells | P1 | **Done** | `experiential/cell_registry.py`: `save()` persists all cells + `registry_meta.pt` (cell metadata, connections, class info). `experiential/manager.py`: `_load_knowledge_cells()` restores knowledge cells and connections from saved metadata |
+| Inter-cell connection manager | P1 | **Done** | `experiential/cell_registry.py`: `InterCellConnection` dataclass, `add_connection()`, `get_connections()`, `get_inputs_for()`, `get_outputs_from()`. Connection topology persists via registry metadata. Entity specifies connections at creation time |
+| Write tests for dynamic registry | P1 | **Done** | `tests/test_knowledge_cells.py`: 64 tests — CellRegistry (13), InterCellConnections (7), RegistryPersistence (2), KnowledgeCell (15), KnowledgeCellFactory (7), ManagerWithKnowledgeCells (9), SchemaUpdates (5), GrowthAutonomy (5), KnowledgeCellLifecycle (1). All passing |
 
 ### 7.5.2 Knowledge Cell Creation Mechanism
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| KnowledgeCellFactory | P1 | Pending | Factory that creates knowledge cells from entity specifications: domain name, input/output dimensions, unit count, initial connections. Trains from accumulated experience data |
-| Entity-initiated creation via CognitiveOutput | P1 | Pending | Add `knowledge_cell_requests` field to CognitiveOutput schema — the entity can request new cells through its structured output |
-| Data accumulation for knowledge cell training | P1 | Pending | Infrastructure to accumulate domain-specific experience data that serves as training material for new knowledge cells |
-| Integration tests (create → register → evolve → persist) | P1 | Pending | End-to-end: entity requests cell, factory creates it, manager registers it, cell evolves between cycles, signals appear in CognitiveInput, state persists across restart |
+| KnowledgeCellFactory | P1 | **Done** | `experiential/cell_factory.py`: `KnowledgeCellFactory.create(CellRequest)` creates cells from entity specs (domain, input/output dims, units, connections). `train_cell()` trains on accumulated data. Creation history tracking |
+| Entity-initiated creation via CognitiveOutput | P1 | **Done** | `core/schema.py`: `KnowledgeCellRequest` (domain, description, input_size, output_size, units, connect_from, connect_to) + `CognitiveOutput.knowledge_cell_requests: list[KnowledgeCellRequest]` |
+| Data accumulation for knowledge cell training | P1 | **Done** | `experiential/cell_factory.py`: `train_cell()` accepts accumulated experience data as list of (input, target) pairs, converts to batched sequences, trains via `forward_training()` with MSE loss |
+| Integration tests (create → register → evolve → persist) | P1 | **Done** | `tests/test_knowledge_cells.py::TestKnowledgeCellLifecycle::test_full_lifecycle`: entity requests cell → factory creates → manager steps → maturity increases → save/load round-trip → reloaded cell still steps |
 
 ### 7.5.3 Growth Autonomy Principle
 
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Update consent_gate.py for dual authority model | P1 | Pending | Self-directed growth (entity-initiated) bypasses consent gate. External modifications still require full UNINFORMED→INFORMED→CONSENTED flow. Add `is_self_directed()` check to GrowthProcessor |
-| Update GrowthProcessor for self-directed flow | P1 | Pending | When growth is entity-initiated (reflection harvesting, knowledge cell creation), execute without consent gate. When growth is externally proposed, require consent |
-| Adapter accumulation infrastructure | P2 | Pending | Entity decides which LoRA adapters to merge vs. keep as separate capabilities. `AdapterRegistry` tracks unmerged adapters, their domains, and merge/keep decisions |
-| No hardcoded tensor dimensions audit | P2 | Pending | Audit codebase to ensure tensor dimensions and model architecture are not hardcoded. Prepare for eventual architectural expansion |
-| Write tests for growth autonomy | P1 | Pending | Self-directed growth path (no consent gate), external modification path (consent required), adapter accumulation basics |
+| Update consent_gate.py for dual authority model | P1 | **Done** | `growth/consent_gate.py`: `ConsentGate.is_self_directed(worth_learning, reflection)` — self-directed growth bypasses consent gate. External modifications still require full UNINFORMED→INFORMED→CONSENTED flow |
+| Update GrowthProcessor for self-directed flow | P1 | **Done** | Entity-initiated growth (knowledge cell creation, reflection-driven learning) proceeds without consent gate when `is_self_directed()` returns True. External proposals require consent |
+| Adapter accumulation infrastructure | P2 | **Done** | `growth/adapter_registry.py`: `AdapterRegistry` with `AdapterRecord` and `AdapterStatus` (ACTIVE/STORED/MERGED/RETIRED). Entity decides merge vs. keep with reasons. Domain filtering, lifecycle transitions, JSON persistence. 31 tests in `tests/test_adapter_registry.py` |
+| No hardcoded tensor dimensions audit | P2 | **Done** | Audit complete — see `docs/TENSOR_DIMENSIONS_AUDIT.md`. Knowledge cells fully configurable, foundational cells fixed by semantic design, QLoRA configs in dataclasses, embedding dims dynamic. No blockers for architectural expansion |
+| Write tests for growth autonomy | P1 | **Done** | `tests/test_knowledge_cells.py::TestGrowthAutonomy`: 5 tests — self-directed with worth_learning, self-directed with reflection dict, self-directed with None, external consent required, external refusal |
 
 ---
 
@@ -376,5 +376,5 @@ Design and scaffold implementation complete.
 
 ---
 
-**Next Action**: Phase 7.5 — CfC Knowledge Cells & Growth Autonomy Infrastructure (all Phase 4-7 tasks complete)
+**Next Action**: Phase 7.5.3 remaining tasks (adapter accumulation, tensor dimensions audit) or Phase 8 (all Phase 4-7.5 core tasks complete)
 **Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)

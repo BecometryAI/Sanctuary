@@ -98,8 +98,7 @@ class MemorySurfacer:
                 min_significance=self._config.min_significance,
             )
         except Exception as e:
-            logger.error("Memory surfacing failed: %s", e)
-            return []
+            raise RuntimeError(f"Memory surfacing failed: {e}") from e
 
         # Convert raw results to SurfacedMemory and deduplicate
         surfaced: list[SurfacedMemory] = []

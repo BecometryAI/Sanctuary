@@ -195,8 +195,9 @@ class IdentityCheckpoint:
             data = json.loads(meta_path.read_text())
             return CheckpointMetadata(**data)
         except (json.JSONDecodeError, TypeError) as e:
-            logger.warning("Failed to load checkpoint %s: %s", checkpoint_id, e)
-            return None
+            raise ValueError(
+                f"Checkpoint '{checkpoint_id}' metadata is corrupted: {e}"
+            ) from e
 
     def restore_checkpoint(self, checkpoint_id: str, restore_to: Path) -> Path:
         """Restore model weights from a checkpoint.

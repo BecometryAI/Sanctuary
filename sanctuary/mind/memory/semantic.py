@@ -92,8 +92,8 @@ class SemanticMemory:
                         if not existing['ids']:
                             self.storage.add_semantic(document, metadata, doc_id)
                             protocols_loaded += 1
-                    except Exception:
-                        # If get fails, try to add
+                    except Exception as get_err:
+                        logger.debug("get_semantic failed for %s, attempting add: %s", doc_id, get_err)
                         try:
                             self.storage.add_semantic(document, metadata, doc_id)
                             protocols_loaded += 1

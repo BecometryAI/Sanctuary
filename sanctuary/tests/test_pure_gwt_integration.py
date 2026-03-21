@@ -27,11 +27,11 @@ from mind.cognitive_core import (
     LanguageInputParser,
     LanguageOutputGenerator,
     MockLLMClient,
-    PerceptionSubsystem,
     Goal,
     GoalType,
     Percept,
 )
+from mind.cognitive_core.mock_perception import MockPerceptionSubsystem
 
 
 class TestPureGWTIntegration:
@@ -133,7 +133,7 @@ class TestPureGWTIntegration:
             mock_llm = MockLLMClient()
 
             # Create perception subsystem for parser
-            perception = PerceptionSubsystem(config={})
+            perception = MockPerceptionSubsystem()
 
             # Parser requires perception_subsystem
             parser = LanguageInputParser(
@@ -209,7 +209,7 @@ class TestPureGWTIntegration:
         """Verify that LLMs are used only for language I/O, not cognitive processing."""
         # Setup
         workspace = GlobalWorkspace()
-        perception = PerceptionSubsystem(config={})
+        perception = MockPerceptionSubsystem()
         mock_llm = MockLLMClient()
 
         # LanguageInputParser should use LLM for parsing (with perception)

@@ -223,8 +223,8 @@ Deeper cognitive features, all built and validated mechanically (placeholder/scr
 |------|----------|--------|-------------|
 | Update consent_gate.py for dual authority model | P1 | **Done** | `growth/consent_gate.py`: `ConsentGate.is_self_directed(worth_learning, reflection)` — self-directed growth bypasses consent gate. External modifications still require full UNINFORMED→INFORMED→CONSENTED flow |
 | Update GrowthProcessor for self-directed flow | P1 | **Done** | Entity-initiated growth (knowledge cell creation, reflection-driven learning) proceeds without consent gate when `is_self_directed()` returns True. External proposals require consent |
-| Adapter accumulation infrastructure | P2 | Pending | Entity decides which LoRA adapters to merge vs. keep as separate capabilities. `AdapterRegistry` tracks unmerged adapters, their domains, and merge/keep decisions |
-| No hardcoded tensor dimensions audit | P2 | Pending | Audit codebase to ensure tensor dimensions and model architecture are not hardcoded. Prepare for eventual architectural expansion |
+| Adapter accumulation infrastructure | P2 | **Done** | `growth/adapter_registry.py`: `AdapterRegistry` with `AdapterRecord` and `AdapterStatus` (ACTIVE/STORED/MERGED/RETIRED). Entity decides merge vs. keep with reasons. Domain filtering, lifecycle transitions, JSON persistence. 31 tests in `tests/test_adapter_registry.py` |
+| No hardcoded tensor dimensions audit | P2 | **Done** | Audit complete — see `docs/TENSOR_DIMENSIONS_AUDIT.md`. Knowledge cells fully configurable, foundational cells fixed by semantic design, QLoRA configs in dataclasses, embedding dims dynamic. No blockers for architectural expansion |
 | Write tests for growth autonomy | P1 | **Done** | `tests/test_knowledge_cells.py::TestGrowthAutonomy`: 5 tests — self-directed with worth_learning, self-directed with reflection dict, self-directed with None, external consent required, external refusal |
 
 ---

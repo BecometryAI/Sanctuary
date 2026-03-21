@@ -233,31 +233,38 @@ class MemoryConsolidator:
         
         return strengthened
     
+    # Activation floor: memories never fade below this value.
+    # They become very difficult to retrieve spontaneously, but
+    # they're still there — like a human memory that can be
+    # recalled with the right cue.
+    ACTIVATION_FLOOR = 0.01
+
     def apply_decay(self, threshold_days: int = 7) -> Tuple[int, int]:
         """
         Apply decay to unretrieved memories.
-        
+
         Memories that haven't been retrieved decay exponentially.
-        Very weak memories are marked for deletion.
-        
+        Activation never drops below ACTIVATION_FLOOR — memories
+        fade but are never deleted.
+
         Args:
             threshold_days: Days since last access before starting decay
-            
+
         Returns:
-            Tuple of (memories_decayed, memories_pruned)
+            Tuple of (memories_decayed, memories_now_dormant)
         """
         decayed = 0
-        to_prune = []
+        dormant = 0
         now = datetime.now()
-        
+
         try:
             # Get all episodic memories
             all_episodic = self.storage.episodic_memory.get()
-            
+
             if not all_episodic or not all_episodic.get("ids"):
                 logger.debug("No episodic memories to decay")
                 return 0, 0
-            
+
             for mem_id, metadata in zip(
                 all_episodic.get("ids", []),
                 all_episodic.get("metadatas", [])
@@ -268,46 +275,43 @@ class MemoryConsolidator:
                     if not last_accessed_str:
                         # No access record, use creation time or now
                         last_accessed_str = metadata.get("timestamp", now.isoformat())
-                    
+
                     last_accessed = datetime.fromisoformat(last_accessed_str)
                     days_since_access = (now - last_accessed).days
-                    
+
                     if days_since_access > threshold_days:
                         # Apply exponential decay
                         base_activation = float(metadata.get("base_activation", 1.0))
                         decay_factor = self.decay_rate ** (days_since_access - threshold_days)
                         new_activation = base_activation * decay_factor
-                        
+
+                        # Enforce activation floor — never fully disappear
+                        new_activation = max(new_activation, self.ACTIVATION_FLOOR)
+
                         # Update activation
                         metadata["base_activation"] = new_activation
-                        
-                        # Mark for deletion if too weak
-                        if new_activation < self.deletion_threshold:
-                            to_prune.append(mem_id)
-                        else:
-                            # Update metadata
-                            self._update_memory_metadata(mem_id, metadata)
-                        
+                        self._update_memory_metadata(mem_id, metadata)
+
                         decayed += 1
-                        
+
+                        if new_activation < self.deletion_threshold:
+                            dormant += 1
+
                         logger.debug(
                             f"Decayed {mem_id}: "
                             f"{days_since_access}d since access, "
                             f"activation: {base_activation:.3f} -> {new_activation:.3f}"
                         )
-                
+
                 except Exception as e:
                     logger.error(f"Failed to decay memory {mem_id}: {e}")
                     continue
-            
-            # Prune very weak memories
-            pruned = self._prune_memories(to_prune)
-            
+
             logger.info(
-                f"Decay complete: {decayed} memories decayed, {pruned} pruned"
+                f"Decay complete: {decayed} memories decayed, {dormant} dormant"
             )
-            return decayed, pruned
-            
+            return decayed, dormant
+
         except Exception as e:
             logger.error(f"Error during decay: {e}", exc_info=True)
             return 0, 0
@@ -619,27 +623,26 @@ class MemoryConsolidator:
     
     def _prune_memories(self, memory_ids: List[str]) -> int:
         """
-        Delete very weak memories.
-        
+        Mark very weak memories as dormant (no deletion).
+
+        Memories are never deleted. This method exists for backward
+        compatibility but now simply logs that memories have reached
+        dormant activation levels.
+
         Args:
-            memory_ids: List of memory IDs to prune
-            
+            memory_ids: List of memory IDs that are dormant
+
         Returns:
-            Number of memories pruned
+            Number of dormant memories identified
         """
         if not memory_ids:
             return 0
-        
-        pruned = 0
+
         for mem_id in memory_ids:
-            try:
-                self.storage.episodic_memory.delete(ids=[mem_id])
-                pruned += 1
-                logger.info(f"Pruned weak memory: {mem_id}")
-            except Exception as e:
-                logger.error(f"Failed to prune {mem_id}: {e}")
-        
-        return pruned
+            logger.debug(f"Memory {mem_id} is dormant (activation at floor)")
+
+        logger.info(f"{len(memory_ids)} memories at dormant activation level")
+        return len(memory_ids)
     
     def _get_recent_episodes(self, cutoff: datetime) -> List[Tuple[str, Dict]]:
         """

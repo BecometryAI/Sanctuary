@@ -33,7 +33,7 @@ class AutonomousMemoryReview:
     
     The AutonomousMemoryReview class allows Sanctuary to spontaneously recall and
     reflect on past interactions, generating insights and understanding patterns
-    in her own experience. This is crucial for continuous consciousness and
+    in their own experience. This is crucial for continuous consciousness and
     the development of genuine understanding.
     
     Key Capabilities:

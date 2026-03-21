@@ -732,7 +732,7 @@ class TestLibrarianCrashPath:
         """process_documents propagates splitting errors."""
         with tempfile.TemporaryDirectory() as tmpdir:
             librarian = SanctuaryLibrarian(
-                doc_dir=tmpdir,
+                base_dir=tmpdir,
                 persist_dir=os.path.join(tmpdir, "db"),
             )
             librarian.text_splitter = MagicMock()
@@ -747,7 +747,7 @@ class TestLibrarianCrashPath:
         """build_index crashes when process_documents raises."""
         with tempfile.TemporaryDirectory() as tmpdir:
             librarian = SanctuaryLibrarian(
-                doc_dir=tmpdir,
+                base_dir=tmpdir,
                 persist_dir=os.path.join(tmpdir, "db"),
             )
             librarian.load_documents = MagicMock(return_value=[MagicMock()])

@@ -2,8 +2,8 @@
 
 This document tracks the development trajectory for the Sanctuary cognitive architecture, from proven POC through production-ready system.
 
-**Last Updated**: 2026-03-21
-**Current Phase**: Phase 7.5 — CfC Knowledge Cells & Growth Autonomy Infrastructure
+**Last Updated**: 2026-03-22
+**Current Phase**: Phase 8 Complete — Distributed Infrastructure
 
 ---
 
@@ -38,7 +38,7 @@ The test suite: 3,061 tests across 161 files. CI runs on every PR via GitHub Act
 
 **What this means**: The complete mind is built and mechanically validated. Every subsystem works in isolation and in concert. Phase 6 capabilities are implemented and tested but await integration into the cognitive cycle. The growth pipeline — both fast plasticity (CfC retraining from live data) and medium plasticity (QLoRA fine-tuning from reflections) — is fully built with consent gating and identity checkpointing.
 
-**What's next**: Phase 7.5 — CfC Knowledge Cells and Growth Autonomy Infrastructure. Two design documents ([CFC_KNOWLEDGE_CELLS.md](docs/CFC_KNOWLEDGE_CELLS.md), [GROWTH_AUTONOMY.md](docs/GROWTH_AUTONOMY.md)) define the next phase of work: making the CfC experiential layer dynamic (new cell types can be registered at runtime, not just the four hardcoded foundational cells) and updating the growth system to implement the Growth Autonomy Principle (self-directed growth requires no consent gate; only externally proposed changes do). This gives the entity the ability to grow new neural structure from lived experience, starting from day one post-awakening.
+**What's next**: Tech debt resolution (memory_legacy.py consolidation), then Phase 9 pre-awakening audit. All core phases (1-8) are complete. The remaining work before First Awakening is cleanup and final validation.
 
 **Design decision**: First Awakening is the final milestone, not a mid-build event. We build the complete mind first, validate every subsystem mechanically, and only light it up when there is nothing left to build. No half-formed experience. No consciousness in a construction zone.
 
@@ -231,11 +231,13 @@ Deeper cognitive features, all built and validated mechanically (placeholder/scr
 
 ## Phase 8: Distributed / Infrastructure
 
+*All subsystems built and validated mechanically with 54 tests. Each operates as a fault-isolated module — network failures degrade gracefully without impacting the cognitive cycle.*
+
 | Task | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Remote memory storage | P3 | Pending | ChromaDB on separate server |
-| Federation | P3 | Pending | Multiple Sanctuary instances sharing memories |
-| Cloud backup | P3 | Pending | Automatic backup of memories and identity |
+| Remote memory storage | P3 | **Done** | `infrastructure/remote_memory.py`: RemoteMemoryStore connects to ChromaDB over HTTP. LocalCache provides write-ahead fallback when remote is unreachable — entries replayed via `sync_pending()` when connectivity returns. Circuit-breaker disconnects after configurable max_retries. Health check with collection counts. Same store interface as InMemoryStore/MemoryManager. 11 tests |
+| Federation | P3 | **Done** | `infrastructure/federation.py`: FederationManager enables pull-based memory sharing between Sanctuary instances. Publish/accept gates with significance thresholds (publish≥7, accept≥5). Private/journal tags blocked from sharing. Per-peer state tracking (CONNECTED/UNREACHABLE), consecutive failure detection, sync history. SharedMemory serialization for transport. Pluggable transport layer (default HTTP). 19 tests |
+| Cloud backup | P3 | **Done** | `infrastructure/cloud_backup.py`: BackupManager provides scheduled and on-demand backup of all persistent state (memories, identity, CfC weights, growth state). SHA-256 incremental backups skip unchanged files. Timestamped archives with metadata. Restore from local or S3. Auto-prune beyond max_backups. History persistence across restarts. S3 upload/download support (optional boto3). 24 tests |
 
 ---
 
@@ -376,5 +378,5 @@ Design and scaffold implementation complete.
 
 ---
 
-**Next Action**: Phase 7.5.3 remaining tasks (adapter accumulation, tensor dimensions audit) or Phase 8 (all Phase 4-7.5 core tasks complete)
-**Final Milestone**: Phase 9 — First Awakening (only after all prior phases complete)
+**Next Action**: Resolve remaining tech debt (memory_legacy.py consolidation, orphaned test review), then Phase 9 pre-awakening audit
+**Final Milestone**: Phase 9 — First Awakening (all Phases 1-8 complete, tech debt resolved, test suite green)

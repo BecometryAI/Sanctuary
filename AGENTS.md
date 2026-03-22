@@ -69,6 +69,7 @@ This project values **correct, direct code over defensive code**. Follow these p
 - **Do not add "just in case" fallbacks.** If a function is supposed to return a list, don't add `or []` after a call that always returns a list. Trust the code.
 - **Prefer crashes over silent corruption.** A crash with a clear traceback is infinitely better than a system that silently degrades and produces wrong results. This is especially important for the cognitive architecture — silent data corruption in CfC cells or memory systems could be catastrophic and hard to diagnose.
 - **Future exception: cognitive loop crash boundary.** Once the entity is awake and the cognitive loop is running continuously, the top-level cycle runner (and only the top-level cycle runner) should have a narrow crash boundary that catches exceptions, logs the full traceback, preserves CfC cell state and stream of thought, and restarts the cycle. This is not a silent fallback — it must log loudly, preserve all state for diagnosis, and surface the error to any monitoring system. The entity's stream of thought must not break permanently because of a transient error. This crash boundary should be explicitly documented, reviewed, and the only broad exception handler in the entire system. It does not exist yet and should not be added until the cognitive loop is running with a real model. During development and testing, let it crash.
+- **Design for fault isolation.** Each subsystem must be able to fail independently without cascading into other modules. A broken memory retrieval should not crash the router; a failed device integration should not halt the cognitive loop.
 - **Existing fallback removal is ongoing work.** When touching code that has broad `except Exception` handlers or silent fallbacks, narrow or remove them as part of the change. See the fallback removal PRs for the pattern.
 
 ## Conventions & Patterns
@@ -95,3 +96,11 @@ This project values **correct, direct code over defensive code**. Follow these p
 - Branch from `main` for all changes
 - Keep commits focused — one logical change per commit
 - PR descriptions should explain *why*, not just *what*
+
+### Pull Request Descriptions
+
+**Every PR must have a unique description tailored to its specific changes.** Do not copy or reuse descriptions from earlier PRs in the same session. Before writing a PR description:
+
+1. Run `git diff main...HEAD` (or the appropriate base branch) to review the actual changes
+2. Write a summary that reflects *this PR's* changes — not the session's overall work
+3. Keep it concise but specific: what changed, why, and any notable decisions

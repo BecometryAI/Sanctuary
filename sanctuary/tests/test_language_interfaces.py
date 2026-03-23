@@ -43,7 +43,7 @@ from mind.cognitive_core.language_input import (
     ParseResult
 )
 from mind.cognitive_core.language_output import LanguageOutputGenerator
-from mind.cognitive_core.perception import PerceptionSubsystem
+from mind.cognitive_core.mock_perception import MockPerceptionSubsystem
 from mind.cognitive_core.workspace import (
     GlobalWorkspace,
     WorkspaceSnapshot,
@@ -287,7 +287,7 @@ class TestLanguageInputParserIntegration:
     @pytest.fixture
     def perception(self):
         """Create perception subsystem."""
-        return PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        return MockPerceptionSubsystem()
     
     @pytest.fixture
     def mock_llm(self):
@@ -432,7 +432,7 @@ class TestEndToEndConversationFlow:
     @pytest.fixture
     def perception(self):
         """Create perception subsystem."""
-        return PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        return MockPerceptionSubsystem()
     
     @pytest.fixture
     def mock_input_llm(self):
@@ -513,7 +513,7 @@ class TestPerformanceBenchmarks:
     @pytest.fixture
     def perception(self):
         """Create perception subsystem."""
-        return PerceptionSubsystem(config={"text_model": "all-MiniLM-L6-v2"})
+        return MockPerceptionSubsystem()
     
     @pytest.mark.asyncio
     async def test_parse_latency(self, perception):

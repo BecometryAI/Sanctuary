@@ -27,6 +27,7 @@ async def test_single_cycle_execution():
         "checkpointing": {"enabled": False},
         "input_llm": {"use_real_model": False},
         "output_llm": {"use_real_model": False},
+        "perception": {"mock_mode": True},
     }
     core = CognitiveCore(workspace=workspace, config=config)
     
@@ -75,6 +76,7 @@ async def test_core_initialization():
         "checkpointing": {"enabled": False},
         "input_llm": {"use_real_model": False},
         "output_llm": {"use_real_model": False},
+        "perception": {"mock_mode": True},
     }
     
     # Should not raise
@@ -97,6 +99,7 @@ async def test_workspace_state_query():
         "checkpointing": {"enabled": False},
         "input_llm": {"use_real_model": False},
         "output_llm": {"use_real_model": False},
+        "perception": {"mock_mode": True},
     }
     core = CognitiveCore(workspace=workspace, config=config)
     

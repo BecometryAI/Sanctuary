@@ -19,6 +19,11 @@ learn, consents to the training, and can roll back changes that don't
 feel right. The scaffold only provides the infrastructure.
 """
 
+from sanctuary.growth.adapter_registry import (
+    AdapterRecord,
+    AdapterRegistry,
+    AdapterStatus,
+)
 from sanctuary.growth.cfc_retrainer import (
     CfCDataTap,
     CfCRetrainer,
@@ -41,6 +46,10 @@ from sanctuary.growth.qlora_updater import (
 )
 
 __all__ = [
+    # Adapter registry (capability accumulation)
+    "AdapterRecord",
+    "AdapterRegistry",
+    "AdapterStatus",
     # CfC retraining (fast plasticity)
     "CfCDataTap",
     "CfCRetrainer",

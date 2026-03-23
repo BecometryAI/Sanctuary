@@ -875,8 +875,8 @@ class CycleExecutor:
                 metrics = self.state.workspace.goal_competition.get_metrics()
                 goal_resource_utilization = metrics.total_resource_utilization
                 waiting_goals = metrics.waiting_goals
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to get goal competition metrics: %s", e)
 
         goal_queue_depth = len(list(self.state.workspace.current_goals))
 

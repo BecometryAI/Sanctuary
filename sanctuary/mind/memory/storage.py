@@ -421,8 +421,8 @@ class MemoryStorage:
                         SharedSystemClient._identifer_to_system.pop(identifier, None)
                     if hasattr(SharedSystemClient, '_identifier_to_system'):
                         SharedSystemClient._identifier_to_system.pop(identifier, None)
-                except Exception:
-                    pass  # Reset may fail if already closed
+                except Exception as e:
+                    logger.debug("ChromaDB cache cleanup failed (may already be closed): %s", e)
                 self.client = None
 
             logger.info("Memory storage closed")

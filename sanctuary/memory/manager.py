@@ -173,8 +173,11 @@ class MemorySubstrate:
         # 3. Queued retrievals from last cycle's MemoryOps
         if self._retrieval_queue:
             for query in self._retrieval_queue:
-                retrieved = await self._surfacer.surface(query)
-                memories.extend(retrieved)
+                try:
+                    retrieved = await self._surfacer.surface(query)
+                    memories.extend(retrieved)
+                except Exception as e:
+                    logger.error("Queued retrieval failed for %r, skipping: %s", query[:80], e)
             self._retrieval_queue.clear()
 
         return memories

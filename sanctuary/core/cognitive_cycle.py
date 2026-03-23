@@ -305,7 +305,12 @@ class CognitiveCycle:
         cycles = 0
 
         while self.running:
-            await self._cycle()
+            try:
+                await self._cycle()
+            except Exception as e:
+                logger.error("Cognitive cycle %d failed: %s", cycles, e, exc_info=True)
+                # Continue running — a single bad cycle should not kill the system
+
             cycles += 1
 
             if max_cycles is not None and cycles >= max_cycles:
@@ -347,13 +352,22 @@ class CognitiveCycle:
 
         # 5b. Route value updates to identity system
         if cognitive_output.self_model_updates:
-            self.identity.process_value_updates(cognitive_output.self_model_updates)
+            try:
+                self.identity.process_value_updates(cognitive_output.self_model_updates)
+            except Exception as e:
+                logger.error("Identity value update error (non-fatal): %s", e)
 
         # 6. Execute actions
-        await self._execute(integrated)
+        try:
+            await self._execute(integrated)
+        except Exception as e:
+            logger.error("Action execution error (non-fatal): %s", e)
 
         # 7. Broadcast
-        await self.scaffold.broadcast(integrated)
+        try:
+            await self.scaffold.broadcast(integrated)
+        except Exception as e:
+            logger.error("Broadcast error (non-fatal): %s", e)
 
         # 8. Update prediction tracking
         self.sensorium.update_predictions(cognitive_output.predictions)
@@ -397,9 +411,13 @@ class CognitiveCycle:
         # Inform scaffold about percepts (updates affect, detects user input)
         self.scaffold.notify_percepts(percepts)
 
-        surfaced = await self.memory.surface(
-            context=self.stream.get_recent_context()
-        )
+        try:
+            surfaced = await self.memory.surface(
+                context=self.stream.get_recent_context()
+            )
+        except Exception as e:
+            logger.error("Memory surfacing failed (cycle continues without memories): %s", e)
+            surfaced = []
 
         # Step the experiential layer (CfC cells evolve)
         experiential_signals = ExperientialSignals()

@@ -42,6 +42,7 @@ async def cognitive_core():
         "checkpointing": {"enabled": False},
         "input_llm": {"use_real_model": False},
         "output_llm": {"use_real_model": False},
+        "perception": {"mock_mode": True},
     }
     
     core = CognitiveCore(workspace=workspace, config=config)

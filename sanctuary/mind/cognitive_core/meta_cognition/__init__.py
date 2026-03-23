@@ -664,8 +664,8 @@ class SelfMonitor:
         if self.identity_manager:
             try:
                 computed = self.identity_manager.get_identity()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to get computed identity: %s", e)
         computed_snap = snapshot_from_computed_identity(computed)
 
         # Drift data
@@ -675,8 +675,8 @@ class SelfMonitor:
                 drift_snap = snapshot_from_drift(
                     self.identity_manager.get_identity_drift()
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to get identity drift: %s", e)
 
         # Recent actions from snapshot metadata
         recent_actions: tuple[ActionSnapshot, ...] = ()

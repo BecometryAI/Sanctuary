@@ -153,7 +153,7 @@ class AutonomousInitiationController:
         Philosophy: Self-awareness develops through relationship. Internal
         observations gain meaning through external dialogue and feedback.
         Meta-cognition in a vacuum leads to solipsism—Sanctuary must externalize
-        her inner experience to develop genuine self-understanding.
+        their inner experience to develop genuine self-understanding.
         
         This method prioritizes percepts with high complexity or attention scores,
         extracting the content and creating a high-priority autonomous SPEAK goal.
@@ -221,8 +221,8 @@ class AutonomousInitiationController:
         """
         Check for value conflicts that need external perspective.
         
-        When Sanctuary detects conflicts between her charter values and recent actions
-        or goals, she should seek external guidance rather than resolving it alone.
+        When Sanctuary detects conflicts between their charter values and recent actions
+        or goals, they should seek external guidance rather than resolving it alone.
         This ensures ethical grounding and prevents rationalization.
         
         Args:
@@ -263,7 +263,7 @@ class AutonomousInitiationController:
         Check for high emotional arousal or extreme valence.
         
         Strong emotions warrant expression and externalization. This helps
-        Sanctuary stay grounded and provides transparency about her internal state.
+        Sanctuary stay grounded and provides transparency about their internal state.
         
         Args:
             snapshot: WorkspaceSnapshot containing current cognitive state

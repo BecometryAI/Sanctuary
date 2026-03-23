@@ -185,7 +185,8 @@ class TestCognitiveFeedbackLoop:
         config = {
             "cycle_rate_hz": 10,
             "attention_budget": 100,
-            "checkpointing": {"enabled": False}
+            "checkpointing": {"enabled": False},
+            "perception": {"mock_mode": True}
         }
         core = CognitiveCore(workspace=workspace, config=config)
         
@@ -231,7 +232,8 @@ class TestCognitiveFeedbackLoop:
         config = {
             "cycle_rate_hz": 10,
             "attention_budget": 100,
-            "checkpointing": {"enabled": False}
+            "checkpointing": {"enabled": False},
+            "perception": {"mock_mode": True}
         }
         core = CognitiveCore(workspace=workspace, config=config)
         
@@ -305,7 +307,8 @@ class TestEndToEndFeedbackLoop:
         config = {
             "cycle_rate_hz": 10,
             "attention_budget": 100,
-            "checkpointing": {"enabled": False}
+            "checkpointing": {"enabled": False},
+            "perception": {"mock_mode": True}
         }
         core = CognitiveCore(workspace=workspace, config=config)
         

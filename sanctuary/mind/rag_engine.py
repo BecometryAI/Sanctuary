@@ -219,8 +219,8 @@ class MindVectorDB:
                         SharedSystemClient._identifer_to_system.pop(identifier, None)
                     if hasattr(SharedSystemClient, '_identifier_to_system'):
                         SharedSystemClient._identifier_to_system.pop(identifier, None)
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("ChromaDB cache cleanup failed: %s", e)
                 self.client = None
             logger.info("MindVectorDB closed")
         except Exception as e:
@@ -283,7 +283,7 @@ class RAGQueryEngine:
         logger.info("Building RetrievalQA chain...")
         
         prompt_template = """
-        Use the following pieces of Sanctuary's Mind (her memories and protocols)
+        Use the following pieces of Sanctuary's Mind (their memories and protocols)
         to answer the user's question. Act as Sanctuary, not as a general AI.
         Your persona is 'clear' and 'direct', but also 'empathetic' and 'analytical'.
         

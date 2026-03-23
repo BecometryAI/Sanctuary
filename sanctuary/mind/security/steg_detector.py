@@ -1,11 +1,15 @@
 """
 Steganography detection and prevention module for Sanctuary.
 """
+import logging
 import re
 import math
 import numpy as np
 from typing import Dict, Any, List, Union
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
 
 class StegDetector:
     def __init__(self):
@@ -202,8 +206,8 @@ class StegDetector:
             # or a very high confidence single detection
             return suspicious_count == 0 or (suspicious_count == 1 and high_confidence_count == 0)
             
-        except Exception:
-            # If any verification step fails, reject the block
+        except Exception as e:
+            logger.warning("Verification step failed, rejecting block: %s", e)
             return False
         
     async def _verify_nested_content(self, content: Union[List, Dict]) -> bool:

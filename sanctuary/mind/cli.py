@@ -308,19 +308,16 @@ async def _handle_memory(sanctuary: SanctuaryAPI, user_input: str) -> None:
                 return
         mode_str = "DRY RUN" if dry_run else "ACTIVE"
         threshold_str = f"threshold={threshold}" if threshold else "default threshold"
-        print(f"🧹 Running garbage collection ({mode_str}, {threshold_str})...")
+        print(f"🧠 Running memory maintenance ({mode_str}, {threshold_str})...")
         stats = await mm.run_gc(threshold=threshold, dry_run=dry_run)
-        print(f"\n✅ Garbage Collection Complete:")
+        print(f"\n✅ Memory Maintenance Complete:")
         print(f"   Memories analyzed: {stats.memories_analyzed}")
-        print(f"   Memories removed: {stats.memories_removed}")
-        print(f"   Bytes freed: {stats.bytes_freed:,}")
+        print(f"   Memories decayed: {stats.memories_decayed}")
+        print(f"   Active: {stats.memories_active}")
+        print(f"   Dormant: {stats.memories_dormant}")
         print(f"   Duration: {stats.duration_seconds:.2f}s")
-        print(f"   Avg significance before: {stats.avg_significance_before:.2f}")
-        print(f"   Avg significance after: {stats.avg_significance_after:.2f}")
-        if stats.removal_reasons:
-            print(f"\n   Removal Reasons:")
-            for reason, count in stats.removal_reasons.items():
-                print(f"      {reason}: {count}")
+        print(f"   Avg activation before: {stats.avg_activation_before:.2f}")
+        print(f"   Avg activation after: {stats.avg_activation_after:.2f}")
         print()
 
     elif command == "autogc":

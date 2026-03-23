@@ -131,7 +131,14 @@ class SubsystemCoordinator:
             from ..mock_perception import MockPerceptionSubsystem
             self.perception = MockPerceptionSubsystem(config=perception_config)
         else:
-            self.perception = PerceptionSubsystem(config=perception_config)
+            try:
+                self.perception = PerceptionSubsystem(config=perception_config)
+            except Exception as e:
+                logger.warning(
+                    "PerceptionSubsystem init failed, falling back to mock: %s", e
+                )
+                from ..mock_perception import MockPerceptionSubsystem
+                self.perception = MockPerceptionSubsystem(config=perception_config)
         
         # Initialize action subsystem with behavior logger
         self.action = ActionSubsystem(

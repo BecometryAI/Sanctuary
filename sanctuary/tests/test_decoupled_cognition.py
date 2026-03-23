@@ -274,7 +274,10 @@ class TestDecoupledCognition:
         from mind.cognitive_core import CognitiveCore
         
         workspace = GlobalWorkspace()
-        config = {"cycle_rate_hz": 100}  # Fast for testing
+        config = {
+            "cycle_rate_hz": 100,  # Fast for testing
+            "perception": {"mock_mode": True},
+        }
         core = CognitiveCore(workspace=workspace, config=config)
         
         # Initialize queues
@@ -306,11 +309,14 @@ class TestDecoupledCognition:
         from mind.cognitive_core import CognitiveCore
         
         workspace = GlobalWorkspace()
-        config = {"cycle_rate_hz": 1000}  # Very fast for testing
+        config = {
+            "cycle_rate_hz": 1000,  # Very fast for testing
+            "perception": {"mock_mode": True},
+        }
         core = CognitiveCore(workspace=workspace, config=config)
-        
+
         core.state.initialize_queues()
-        
+
         # Run 10 cycles without providing any input
         for _ in range(10):
             await core.cycle_executor.execute_cycle()
@@ -324,10 +330,10 @@ class TestDecoupledCognition:
         from mind.cognitive_core import CognitiveCore
         
         workspace = GlobalWorkspace()
-        core = CognitiveCore(workspace=workspace)
-        
+        core = CognitiveCore(workspace=workspace, config={"perception": {"mock_mode": True}})
+
         core.state.initialize_queues()
-        
+
         # Cycle 1: No input
         await core.cycle_executor.execute_cycle()
         
@@ -369,10 +375,10 @@ class TestIntegration:
         
         queue = InputQueue()
         workspace = GlobalWorkspace()
-        core = CognitiveCore(workspace=workspace)
-        
+        core = CognitiveCore(workspace=workspace, config={"perception": {"mock_mode": True}})
+
         core.state.initialize_queues()
-        
+
         # Add input via the queue abstraction
         await queue.add_input("Test input", source="human")
         
@@ -406,11 +412,14 @@ class TestAcceptanceCriteria:
         from mind.cognitive_core import CognitiveCore
         
         workspace = GlobalWorkspace()
-        config = {"cycle_rate_hz": 1000}  # Very fast
+        config = {
+            "cycle_rate_hz": 1000,  # Very fast
+            "perception": {"mock_mode": True},
+        }
         core = CognitiveCore(workspace=workspace, config=config)
-        
+
         core.state.initialize_queues()
-        
+
         # Run 100 cycles without providing any input
         for i in range(100):
             await core.cycle_executor.execute_cycle()

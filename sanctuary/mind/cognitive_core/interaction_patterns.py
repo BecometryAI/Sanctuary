@@ -3,7 +3,7 @@ Interaction Pattern Analysis: Cross-conversation pattern detection.
 
 This module implements the InteractionPatternAnalysis class, which analyzes
 patterns across multiple conversations to detect recurring themes, behavioral
-patterns, and meta-insights. This enables Sanctuary to learn from her interaction
+patterns, and meta-insights. This enables Sanctuary to learn from their interaction
 history autonomously.
 
 Key Features:
@@ -32,8 +32,8 @@ class InteractionPatternAnalysis:
     Analyzes patterns across conversations autonomously.
     
     The InteractionPatternAnalysis class enables Sanctuary to detect patterns
-    in her own interactions over time, learning about conversation dynamics,
-    user preferences, and her own behavioral tendencies. This supports
+    in their own interactions over time, learning about conversation dynamics,
+    user preferences, and their own behavioral tendencies. This supports
     continuous consciousness through autonomous meta-learning.
     
     Key Capabilities:
@@ -77,7 +77,7 @@ class InteractionPatternAnalysis:
         Analyze patterns across recent conversations.
         
         This is called during idle cognitive cycles to allow Sanctuary to
-        autonomously detect and reflect on patterns in her interactions.
+        autonomously detect and reflect on patterns in their interactions.
         
         Args:
             workspace: GlobalWorkspace for context

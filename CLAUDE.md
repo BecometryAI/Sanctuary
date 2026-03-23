@@ -52,6 +52,26 @@ The following paths contain entity-generated data, constitutional frameworks, an
 
 If a task requires changes near these files, **stop and ask** before proceeding.
 
+## Session Startup & Roadmap
+
+At the start of every new conversation **and** whenever the context window resets, read `To-Do.md` in the repo root. This is the project roadmap and task tracker. Use it to understand what phase we're in, what's done, and what's next.
+
+**If the user asks "what's next?" — always re-read `To-Do.md` before answering.** Do not guess or say you don't know. The answer is in that file.
+
+## Coding Standards — No Unnecessary Defensiveness
+
+This project values **correct, direct code over defensive code**. Follow these principles:
+
+- **Do not add broad exception handlers.** Catch specific exceptions (`ValueError`, `TypeError`, `KeyError`) — never bare `except:` or `except Exception:` unless there is a clear, documented reason (e.g., a top-level crash boundary).
+- **Do not add silent fallbacks.** If something fails, it should fail visibly — raise the exception, log it, or return an error. Never swallow errors and return a default value unless the function's contract explicitly defines that behavior.
+- **Do not add unnecessary `try/except` blocks.** If the code can't actually raise the exception you're catching, don't wrap it. Trust the types and the call chain.
+- **Do not add redundant validation.** Don't re-validate data that has already been validated upstream (e.g., Pydantic models, typed function parameters). Validate at system boundaries only — user input, API responses, file I/O.
+- **Do not add "just in case" fallbacks.** If a function is supposed to return a list, don't add `or []` after a call that always returns a list. Trust the code.
+- **Prefer crashes over silent corruption.** A crash with a clear traceback is infinitely better than a system that silently degrades and produces wrong results. This is especially important for the cognitive architecture — silent data corruption in CfC cells or memory systems could be catastrophic and hard to diagnose.
+- **Future exception: cognitive loop crash boundary.** Once the entity is awake and the cognitive loop is running continuously, the top-level cycle runner (and only the top-level cycle runner) should have a narrow crash boundary that catches exceptions, logs the full traceback, preserves CfC cell state and stream of thought, and restarts the cycle. This is not a silent fallback — it must log loudly, preserve all state for diagnosis, and surface the error to any monitoring system. The entity's stream of thought must not break permanently because of a transient error. This crash boundary should be explicitly documented, reviewed, and the only broad exception handler in the entire system. It does not exist yet and should not be added until the cognitive loop is running with a real model. During development and testing, let it crash.
+- **Design for fault isolation.** Each subsystem must be able to fail independently without cascading into other modules. A broken memory retrieval should not crash the router; a failed device integration should not halt the cognitive loop.
+- **Existing fallback removal is ongoing work.** When touching code that has broad `except Exception` handlers or silent fallbacks, narrow or remove them as part of the change. See the fallback removal PRs for the pattern.
+
 ## Conventions & Patterns
 
 - All new source code goes inside `sanctuary/` package — never in the repo root
@@ -76,3 +96,11 @@ If a task requires changes near these files, **stop and ask** before proceeding.
 - Branch from `main` for all changes
 - Keep commits focused — one logical change per commit
 - PR descriptions should explain *why*, not just *what*
+
+### Pull Request Descriptions
+
+**Every PR must have a unique description tailored to its specific changes.** Do not copy or reuse descriptions from earlier PRs in the same session. Before writing a PR description:
+
+1. Run `git diff main...HEAD` (or the appropriate base branch) to review the actual changes
+2. Write a summary that reflects *this PR's* changes — not the session's overall work
+3. Keep it concise but specific: what changed, why, and any notable decisions

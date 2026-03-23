@@ -7,7 +7,7 @@ natural language and internal representations.
 import pytest
 import asyncio
 from mind.cognitive_core.workspace import GlobalWorkspace, GoalType, Goal, Percept
-from mind.cognitive_core.perception import PerceptionSubsystem
+from mind.cognitive_core.mock_perception import MockPerceptionSubsystem
 from mind.cognitive_core.language_input import LanguageInputParser
 from mind.cognitive_core.language_output import LanguageOutputGenerator
 
@@ -20,15 +20,15 @@ class TestLanguageInputParsing:
     async def test_language_input_creates_goals_from_text(self):
         """Test that LanguageInputParser creates goals from user text."""
         # Create perception subsystem (required by parser)
-        perception = PerceptionSubsystem(config={"use_real_model": False})
-        
+        perception = MockPerceptionSubsystem(config={"use_real_model": False, "mock_mode": True})
+
         # Create parser without LLM (uses fallback)
         parser = LanguageInputParser(
             perception_subsystem=perception,
             llm_client=None,
             config={"use_fallback_on_error": True}
         )
-        
+
         # Parse user input
         result = await parser.parse("Hello, how are you today?")
         
@@ -44,7 +44,7 @@ class TestLanguageInputParsing:
     @pytest.mark.asyncio
     async def test_language_input_creates_percept(self):
         """Test that LanguageInputParser creates percepts from text."""
-        perception = PerceptionSubsystem(config={"use_real_model": False})
+        perception = MockPerceptionSubsystem(config={"use_real_model": False, "mock_mode": True})
         parser = LanguageInputParser(
             perception_subsystem=perception,
             llm_client=None,
@@ -62,7 +62,7 @@ class TestLanguageInputParsing:
     @pytest.mark.asyncio
     async def test_language_input_detects_intent(self):
         """Test that LanguageInputParser detects user intent."""
-        perception = PerceptionSubsystem(config={"use_real_model": False})
+        perception = MockPerceptionSubsystem(config={"use_real_model": False, "mock_mode": True})
         parser = LanguageInputParser(
             perception_subsystem=perception,
             llm_client=None,
@@ -82,7 +82,7 @@ class TestLanguageInputParsing:
     @pytest.mark.asyncio
     async def test_language_input_tracks_context(self):
         """Test that parser maintains conversation context."""
-        perception = PerceptionSubsystem(config={"use_real_model": False})
+        perception = MockPerceptionSubsystem(config={"use_real_model": False, "mock_mode": True})
         parser = LanguageInputParser(
             perception_subsystem=perception,
             llm_client=None,
@@ -218,7 +218,7 @@ class TestRoundTripLanguageProcessing:
         workspace = GlobalWorkspace()
         
         # Set up perception and parser
-        perception = PerceptionSubsystem(config={"use_real_model": False})
+        perception = MockPerceptionSubsystem(config={"use_real_model": False, "mock_mode": True})
         parser = LanguageInputParser(
             perception_subsystem=perception,
             llm_client=None,
@@ -248,7 +248,7 @@ class TestRoundTripLanguageProcessing:
     @pytest.mark.asyncio
     async def test_parse_result_structure(self):
         """Test that parse result has expected structure."""
-        perception = PerceptionSubsystem(config={"use_real_model": False})
+        perception = MockPerceptionSubsystem(config={"use_real_model": False, "mock_mode": True})
         parser = LanguageInputParser(
             perception_subsystem=perception,
             llm_client=None
@@ -278,7 +278,7 @@ class TestLanguageInterfaceEdgeCases:
     @pytest.mark.asyncio
     async def test_empty_input_handling(self):
         """Test handling of empty string input."""
-        perception = PerceptionSubsystem(config={"use_real_model": False})
+        perception = MockPerceptionSubsystem(config={"use_real_model": False, "mock_mode": True})
         parser = LanguageInputParser(
             perception_subsystem=perception,
             llm_client=None
@@ -294,7 +294,7 @@ class TestLanguageInterfaceEdgeCases:
     @pytest.mark.asyncio
     async def test_very_long_input_handling(self):
         """Test handling of very long input text."""
-        perception = PerceptionSubsystem(config={"use_real_model": False})
+        perception = MockPerceptionSubsystem(config={"use_real_model": False, "mock_mode": True})
         parser = LanguageInputParser(
             perception_subsystem=perception,
             llm_client=None

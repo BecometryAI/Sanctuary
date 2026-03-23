@@ -122,14 +122,14 @@ class HealthServer:
             logger.warning("Health server error: %s", exc)
             try:
                 await self._send_response(writer, 500, {"error": "Internal error"})
-            except Exception:
-                pass
+            except Exception as send_err:
+                logger.debug("Failed to send error response: %s", send_err)
         finally:
             try:
                 writer.close()
                 await writer.wait_closed()
-            except Exception:
-                pass
+            except Exception as close_err:
+                logger.debug("Connection cleanup failed: %s", close_err)
 
     # ------------------------------------------------------------------
     # Endpoint handlers

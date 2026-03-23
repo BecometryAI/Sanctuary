@@ -16,7 +16,7 @@ class TestConversationScenarios:
     @pytest.mark.asyncio
     async def test_greeting_and_introduction(self):
         """Test greeting and self-introduction scenario."""
-        api = SanctuaryAPI()
+        api = SanctuaryAPI(config={"cognitive_core": {"perception": {"mock_mode": True}}})
         await api.start()
         
         try:
@@ -38,7 +38,7 @@ class TestConversationScenarios:
     @pytest.mark.asyncio
     async def test_emotional_support_scenario(self):
         """Test providing emotional support."""
-        api = SanctuaryAPI()
+        api = SanctuaryAPI(config={"cognitive_core": {"perception": {"mock_mode": True}}})
         await api.start()
         
         try:
@@ -58,7 +58,7 @@ class TestConversationScenarios:
     @pytest.mark.asyncio
     async def test_introspective_conversation(self):
         """Test conversation about self-awareness."""
-        api = SanctuaryAPI()
+        api = SanctuaryAPI(config={"cognitive_core": {"perception": {"mock_mode": True}}})
         await api.start()
         
         try:

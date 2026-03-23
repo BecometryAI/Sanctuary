@@ -60,8 +60,7 @@ class MemoryRetriever:
             return []
         
         if k <= 0:
-            logger.warning(f"Invalid k value: {k}, using default of 5")
-            k = 5
+            raise ValueError(f"k must be positive, got {k}")
         
         try:
             memories = self._retrieve_with_rag(query, k) if use_rag else self._retrieve_direct(query, k)
@@ -72,8 +71,7 @@ class MemoryRetriever:
             return memories[:k]
             
         except Exception as e:
-            logger.error(f"Memory retrieval failed: {e}", exc_info=True)
-            return []  # Return empty list instead of raising to maintain system stability
+            raise RuntimeError(f"Memory retrieval failed: {e}") from e
     
     def retrieve_with_cues(
         self,

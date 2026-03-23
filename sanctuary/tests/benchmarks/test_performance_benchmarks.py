@@ -50,6 +50,7 @@ class TestPerformanceBenchmarks:
             "input_llm": {"use_real_model": False},
             "output_llm": {"use_real_model": False},
             "log_interval_cycles": 1000,  # Don't spam logs
+            "perception": {"mock_mode": True},
             "memory": {
                 "memory_config": {
                     "base_dir": str(temp_data_dir / "memories"),
@@ -241,6 +242,7 @@ class TestPerformanceBenchmarks:
             "input_llm": {"use_real_model": False},
             "output_llm": {"use_real_model": False},
             "log_interval_cycles": 1000,
+            "perception": {"mock_mode": True},
             "memory": {
                 "memory_config": {
                     "base_dir": str(temp_data_dir / "memories"),

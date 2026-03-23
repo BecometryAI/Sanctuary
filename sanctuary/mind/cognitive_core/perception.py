@@ -111,23 +111,15 @@ class PerceptionSubsystem:
         
         # Load embedding model
         model_name = self.config.get("text_model", "all-MiniLM-L6-v2")
-        self._using_fallback = False
-
         try:
             from sentence_transformers import SentenceTransformer
             self.text_encoder = SentenceTransformer(model_name)
             self.embedding_dim = self.text_encoder.get_sentence_embedding_dimension()
         except ImportError:
-            logger.warning(
-                "sentence-transformers not installed — using hash-based fallback embeddings. "
+            raise ImportError(
+                "sentence-transformers is required for the perception subsystem. "
                 "Install with: pip install sentence-transformers"
             )
-            self.text_encoder = None
-            self.embedding_dim = 384  # Match all-MiniLM-L6-v2 default
-            self._using_fallback = True
-        except Exception as e:
-            logger.error(f"Failed to load text encoder '{model_name}': {e}")
-            raise
         
         # Cache for embeddings (OrderedDict for LRU)
         self.embedding_cache: OrderedDict[str, List[float]] = OrderedDict()
@@ -150,23 +142,19 @@ class PerceptionSubsystem:
         logger.info(f"✅ PerceptionSubsystem initialized with {model_name} "
                    f"(dim={self.embedding_dim})")
     
-    def _load_image_encoder(self) -> bool:
-        """Load CLIP for image encoding."""
-        try:
-            import torch
-            from transformers import CLIPProcessor, CLIPModel
-            
-            self.image_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-            self.image_encoder = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-            
-            logger.info("✅ CLIP image encoder loaded")
-            return True
-        except ImportError:
-            logger.warning("CLIP not available (transformers/torch not installed)")
-            return False
-        except Exception as e:
-            logger.warning(f"Failed to load CLIP: {e}")
-            return False
+    def _load_image_encoder(self) -> None:
+        """Load CLIP for image encoding.
+
+        Raises:
+            ImportError: If transformers/torch not installed.
+        """
+        import torch
+        from transformers import CLIPProcessor, CLIPModel
+
+        self.image_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.image_encoder = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+
+        logger.info("CLIP image encoder loaded")
     
     async def encode(self, raw_input: Any, modality: str) -> 'Percept':
         """
@@ -254,19 +242,15 @@ class PerceptionSubsystem:
         self.stats["cache_misses"] += 1
         start_time = time.time()
 
-        if self._using_fallback:
-            # Deterministic hash-based embedding (not semantically meaningful)
-            raw_embedding = self._hash_embedding(text)
-        else:
-            raw_embedding = self.text_encoder.encode(
-                text,
-                convert_to_numpy=True,
-                normalize_embeddings=True
-            )
-            # SentenceTransformer.encode() may return 2D array for single string;
-            # squeeze to 1D before converting to list of floats
-            if hasattr(raw_embedding, 'ndim') and raw_embedding.ndim == 2:
-                raw_embedding = raw_embedding[0]
+        raw_embedding = self.text_encoder.encode(
+            text,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+        )
+        # SentenceTransformer.encode() may return 2D array for single string;
+        # squeeze to 1D before converting to list of floats
+        if hasattr(raw_embedding, 'ndim') and raw_embedding.ndim == 2:
+            raw_embedding = raw_embedding[0]
         embedding = raw_embedding.tolist()
         
         encoding_time = time.time() - start_time
@@ -283,18 +267,6 @@ class PerceptionSubsystem:
         self.embedding_cache[cache_key] = embedding
         return embedding
     
-    def _hash_embedding(self, text: str) -> np.ndarray:
-        """Deterministic hash-based embedding fallback when sentence-transformers is unavailable."""
-        # Use hash as seed for reproducible random vector (avoids NaN from raw bytes)
-        seed = int(hashlib.sha256(text.encode()).hexdigest(), 16) % (2**32)
-        rng = np.random.RandomState(seed)
-        vec = rng.randn(self.embedding_dim).astype(np.float32)
-        # Normalize to unit length
-        norm = np.linalg.norm(vec)
-        if norm > 0:
-            vec /= norm
-        return vec
-
     def _encode_image(self, image: Any) -> List[float]:
         """
         Encode image to embedding using CLIP.
@@ -312,8 +284,10 @@ class PerceptionSubsystem:
             Normalized embedding vector
         """
         if self.image_encoder is None:
-            logger.warning("Image encoding requested but CLIP not loaded")
-            return [0.0] * self.embedding_dim
+            raise RuntimeError(
+                "Image encoding requested but CLIP not loaded. "
+                "Enable with config: {'enable_image': True}"
+            )
 
         try:
             from PIL import Image as PILImage
@@ -357,8 +331,7 @@ class PerceptionSubsystem:
             return embedding.tolist()
 
         except Exception as e:
-            logger.error(f"Error encoding image: {e}")
-            return [0.0] * self.embedding_dim
+            raise RuntimeError(f"Image encoding failed: {e}") from e
     
     def _encode_audio(self, audio: Any) -> List[float]:
         """
@@ -417,13 +390,12 @@ class PerceptionSubsystem:
                 embedding = self._audio_features_to_embedding(audio_features)
                 return embedding
 
-            # Fallback: return zero embedding
-            logger.warning(f"Unsupported audio format: {type(audio)}")
-            return [0.0] * self.embedding_dim
+            raise TypeError(f"Unsupported audio format: {type(audio)}")
 
+        except (TypeError, ValueError):
+            raise
         except Exception as e:
-            logger.error(f"Error encoding audio: {e}")
-            return [0.0] * self.embedding_dim
+            raise RuntimeError(f"Audio encoding failed: {e}") from e
 
     def _compute_audio_features(self, audio: np.ndarray, sample_rate: int) -> Dict[str, Any]:
         """

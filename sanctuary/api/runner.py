@@ -32,6 +32,8 @@ from sanctuary.core.cognitive_cycle import CognitiveCycle, ModelProtocol
 from sanctuary.core.context_manager import BudgetConfig
 from sanctuary.core.placeholder import PlaceholderModel
 from sanctuary.core.schema import CognitiveOutput, Percept, SelfModelUpdate
+from sanctuary.consciousness.sleep_cycle import SleepCycleManager, SleepConfig
+from sanctuary.core.communication_agency import CommunicationAgency
 from sanctuary.identity.awakening import AwakeningSequence
 from sanctuary.identity.self_authored import SelfAuthoredIdentity
 from sanctuary.identity.values import ValuesSystem
@@ -73,6 +75,17 @@ class RunnerConfig:
 
     # Context budget
     context_budget: Optional[BudgetConfig] = None
+
+    # Model backend: "placeholder", "ollama", or "luthi"
+    model_backend: str = "placeholder"
+
+    # Luthi model config (only used when model_backend == "luthi")
+    luthi_checkpoint: Optional[str] = None
+    luthi_password: Optional[str] = None
+
+    # Sleep consolidation
+    sleep_enabled: bool = True
+    sleep_config: Optional[SleepConfig] = None
 
 
 # ---------------------------------------------------------------------------
@@ -247,8 +260,8 @@ class SanctuaryRunner:
 
         # --- Create components ---
 
-        # Model: use provided model or placeholder
-        self._model = model or PlaceholderModel()
+        # Model: use provided model, or create based on config backend
+        self._model = model or self._create_model()
 
         # Authority
         self.authority = AuthorityManager()
@@ -291,6 +304,16 @@ class SanctuaryRunner:
         # Identity bridge (wires charter + values + self-authored into each cycle)
         self._identity_bridge = IdentityBridge(self._awakening, self._self_authored)
 
+        # Sleep cycle manager
+        self.sleep: Optional[SleepCycleManager] = None
+        if self._config.sleep_enabled:
+            self.sleep = SleepCycleManager(
+                config=self._config.sleep_config or SleepConfig()
+            )
+
+        # Communication agency — the entity's autonomous voice
+        self.communication = CommunicationAgency()
+
         # --- Assemble the cycle ---
 
         self.cycle = CognitiveCycle(
@@ -301,6 +324,8 @@ class SanctuaryRunner:
             motor=self.motor,
             authority=self.authority,
             identity=self._identity_bridge,
+            sleep_manager=self.sleep,
+            communication=self.communication,
             context_config=self._config.context_budget,
             stream_history=self._config.stream_history,
             cycle_delay=self._config.cycle_delay,
@@ -310,6 +335,39 @@ class SanctuaryRunner:
         self._speech_handlers: list[Callable[[str], Awaitable[None]]] = []
 
         logger.info("SanctuaryRunner assembled (model=%s)", type(self._model).__name__)
+
+    # ------------------------------------------------------------------
+    # Model creation
+    # ------------------------------------------------------------------
+
+    def _create_model(self) -> ModelProtocol:
+        """Create a model based on the configured backend."""
+        backend = self._config.model_backend.lower()
+
+        if backend == "luthi":
+            if not self._config.luthi_checkpoint:
+                raise ValueError(
+                    "Luthi backend requires --luthi-checkpoint path. "
+                    "Example: --model-backend luthi --luthi-checkpoint E:/runs/vision/checkpoint.luthi"
+                )
+
+            from sanctuary.core.luthi_model import LuthiModel, LuthiModelConfig
+
+            luthi_config = LuthiModelConfig(
+                checkpoint_path=self._config.luthi_checkpoint,
+                checkpoint_password=self._config.luthi_password or "",
+            )
+            model = LuthiModel(config=luthi_config)
+            # Defer load() to boot() — don't fail __init__ on load errors
+            return model
+
+        elif backend == "ollama":
+            from sanctuary.core.ollama_model import OllamaModel
+
+            return OllamaModel()
+
+        else:
+            return PlaceholderModel()
 
     # ------------------------------------------------------------------
     # Boot
@@ -445,7 +503,7 @@ class SanctuaryRunner:
 
     def get_status(self) -> dict:
         """Get current system status."""
-        return {
+        status = {
             "booted": self._booted,
             "running": self.running,
             "cycle_count": self.cycle_count,
@@ -455,6 +513,19 @@ class SanctuaryRunner:
             "authority_levels": self.authority.get_all_levels(),
             "motor_stats": self.motor.stats,
         }
+
+        if self.sleep:
+            status["sleep"] = self.sleep.get_stats()
+
+        # Communication agency state
+        if self.communication:
+            status["communication"] = self.communication.get_summary()
+
+        # Luthi-specific metrics
+        if hasattr(self._model, "get_metrics"):
+            status["luthi_metrics"] = self._model.get_metrics()
+
+        return status
 
     @property
     def charter_summary(self) -> str:

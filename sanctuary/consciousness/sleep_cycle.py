@@ -126,6 +126,12 @@ class SleepCycleManager:
         """Advance the sleep cycle by one tick. Returns current stage."""
         if self._forced_wake:
             self._forced_wake = False
+            # Finalize any in-progress consolidation before waking
+            if self._current_consolidation:
+                self._consolidation_history.append(self._current_consolidation)
+                self._current_consolidation = None
+            # Reset sleep pressure so we don't immediately re-enter sleep
+            self._cycles_since_sleep = 0
             self._transition_to(SleepStage.AWAKE)
             return self._stage
 

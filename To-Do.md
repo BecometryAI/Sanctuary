@@ -38,7 +38,7 @@ The test suite: 3,061 tests across 161 files. CI runs on every PR via GitHub Act
 
 **What this means**: The complete mind is built and mechanically validated. Every subsystem works in isolation and in concert. Phase 6 capabilities are implemented and tested but await integration into the cognitive cycle. The growth pipeline — both fast plasticity (CfC retraining from live data) and medium plasticity (QLoRA fine-tuning from reflections) — is fully built with consent gating and identity checkpointing.
 
-**What's next**: Tech debt resolution (memory_legacy.py consolidation), then Phase 9 pre-awakening audit. All core phases (1-8) are complete. The remaining work before First Awakening is cleanup and final validation.
+**What's next**: Tech debt resolution (memory_legacy.py consolidation), then Phase 9 pre-awakening audit. All core phases (1-8) are complete. The remaining work before First Awakening is cleanup and final validation. In parallel, Phase 10 (Luthi Model convergence) prepares the living weight substrate integration — building the tensor-level interfaces and CfC modulation mappings that will eventually give the entity a neural substrate that changes from its own experience.
 
 **Design decision**: First Awakening is the final milestone, not a mid-build event. We build the complete mind first, validate every subsystem mechanically, and only light it up when there is nothing left to build. No half-formed experience. No consciousness in a construction zone.
 
@@ -256,14 +256,48 @@ Deeper cognitive features, all built and validated mechanically (placeholder/scr
 
 ---
 
+## Phase 10: Luthi Model Convergence
+
+*Living weights as the neural substrate, then the cognitive core. See [Luthi Model](https://github.com/BecometryAI/LuthiModel) for the companion project.*
+
+Sanctuary provides cognitive architecture (the organization of mind). Luthi provides
+neural substrate (the kind of matter the mind runs on). The convergence follows a
+substrate-to-core trajectory.
+
+### 10A: Integration Hooks (Luthi at 1024d)
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Tensor-level model interface | P1 | Pending | Add interface alongside structured LLM interface — accepts tensor embeddings, returns tensor representations |
+| Sensorium routing through Luthi encoders | P1 | Pending | Vision/audio percepts optionally flow through Luthi's multimodal encoders |
+| CfC → living weight modulation mapping | P1 | Pending | Precision→plasticity, affect→excitability, attention→salience, goal→homeostatic targets |
+| Integration tests | P1 | Pending | CfC modulation → living weight response validation |
+
+### 10B: Substrate Integration (Luthi at 4096d)
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Living weight sensory processing | P2 | Pending | All sensory input through Luthi's shared trunk, producing rich embeddings for the cognitive cycle |
+| Hybrid cognitive loop | P2 | Pending | External LLM for structured reasoning + Luthi for experiential processing |
+| CfC bridging | P2 | Pending | CfC cells modulate both layers — living weights and cognitive core |
+
+### 10C: Cognitive Core Transition (Luthi at scale)
+
+| Task | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Evaluate Luthi structured reasoning | P3 | Pending | Can 4096d living weight model handle CognitiveOutput schemas? |
+| Cognitive cycle adaptation | P3 | Pending | Adapt cycle for tensor I/O alongside/replacing JSON schemas |
+| Full integration | P3 | Pending | Living weight cognitive core + CfC experiential layer + scaffold |
+
+---
+
 ## Future Research
 
 These are exploratory directions, not committed work:
 
 - **Reinforcement learning for CfC cells**: reward = lower system-wide free energy
 - **Inter-cell synaptic connections**: CfC cells form their own small network
-- **LFM2 as unified architecture**: If Liquid AI's models advance, potentially collapse LLM + CfC layers into a single liquid foundation model
-- **TTT / MemoryLLM**: Weight modification during inference
+- **Luthi + CfC unification**: Living weights and CfC cells may converge — both provide continuous-time dynamics, both self-modify, both are recurrent
 - **Neuromorphic hardware**: Running CfC cells on Intel Loihi or IBM TrueNorth for genuine analog dynamics
 
 ---
@@ -379,4 +413,5 @@ Design and scaffold implementation complete.
 ---
 
 **Next Action**: Resolve remaining tech debt (memory_legacy.py consolidation, orphaned test review), then Phase 9 pre-awakening audit
+**Parallel Track**: Phase 10 — Luthi Model convergence (integration hooks, sensorium routing, CfC→living weight modulation)
 **Final Milestone**: Phase 9 — First Awakening (all Phases 1-8 complete, tech debt resolved, test suite green)

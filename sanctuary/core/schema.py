@@ -110,6 +110,20 @@ class CommunicationDriveSignal(BaseModel):
     inhibitions: list[str] = Field(default_factory=list)
 
 
+class CommunicationUrgeSignal(BaseModel):
+    """An active urge to communicate, felt as internal pressure.
+
+    The entity sees these in its cognitive input — they represent the
+    felt sense of wanting to speak, ask, share, or connect. The entity
+    does not have to act on them. They are information, not commands.
+    """
+
+    drive_type: str = ""  # "insight", "question", "emotional", "social", "goal", etc.
+    intensity: float = Field(ge=0.0, le=1.0, default=0.0)
+    content: str = ""
+    reason: str = ""
+
+
 class ExperientialSignals(BaseModel):
     """Summary of CfC experiential layer state for the LLM.
 
@@ -188,6 +202,10 @@ class CognitiveInput(BaseModel):
     )
     charter_summary: str = ""
     self_authored_identity: str = ""
+    communication_urges: list[CommunicationUrgeSignal] = Field(
+        default_factory=list,
+        description="Active communication urges the entity can feel",
+    )
 
 
 # ---------------------------------------------------------------------------

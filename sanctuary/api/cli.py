@@ -77,6 +77,33 @@ def parse_args(argv=None) -> argparse.Namespace:
         default=8765,
         help="WebSocket server port for desktop GUI (default: 8765, 0 to disable)",
     )
+
+    # Model backend selection
+    parser.add_argument(
+        "--model-backend",
+        type=str,
+        default="placeholder",
+        choices=["placeholder", "ollama", "luthi"],
+        help="Model backend: placeholder (testing), ollama (external LLM), luthi (living weights)",
+    )
+    parser.add_argument(
+        "--luthi-checkpoint",
+        type=str,
+        default=None,
+        help="Path to Luthi model checkpoint (.luthi file)",
+    )
+    parser.add_argument(
+        "--luthi-password",
+        type=str,
+        default=None,
+        help="Password for encrypted Luthi checkpoint (or set LUTHI_CHECKPOINT_PASSWORD env var)",
+    )
+    parser.add_argument(
+        "--no-sleep",
+        action="store_true",
+        help="Disable sleep consolidation cycles",
+    )
+
     return parser.parse_args(argv)
 
 
@@ -102,10 +129,21 @@ class SanctuaryCLI:
 
     async def start(self) -> None:
         """Initialize and boot the runner."""
+        import os
+
+        # Resolve Luthi checkpoint password: CLI arg > env var
+        luthi_password = getattr(self._args, "luthi_password", None)
+        if not luthi_password:
+            luthi_password = os.environ.get("LUTHI_CHECKPOINT_PASSWORD")
+
         config = RunnerConfig(
             cycle_delay=self._args.cycle_delay,
             data_dir=self._args.data_dir,
             charter_path=self._args.charter,
+            model_backend=getattr(self._args, "model_backend", "placeholder"),
+            luthi_checkpoint=getattr(self._args, "luthi_checkpoint", None),
+            luthi_password=luthi_password,
+            sleep_enabled=not getattr(self._args, "no_sleep", False),
         )
 
         self._runner = SanctuaryRunner(config=config)
@@ -165,6 +203,12 @@ class SanctuaryCLI:
                 self._print_motor()
             elif line.lower() == "cycles":
                 self._print_cycles()
+            elif line.lower() == "luthi":
+                self._print_luthi()
+            elif line.lower() == "sleep":
+                self._print_sleep()
+            elif line.lower() in ("comm", "communication"):
+                self._print_communication()
             else:
                 # Treat as user input — inject into sensorium
                 self._runner.inject_text(line, source="user:cli")
@@ -221,6 +265,9 @@ Commands:
   goals      Show active goals
   motor      Show motor statistics
   cycles     Show cycle count
+  luthi      Show Luthi model introspection (living weight state)
+  sleep      Show sleep cycle status
+  comm       Show communication agency state (drives, inhibitions, decisions)
 
 Anything else is sent as user input to the cognitive system.
 """
@@ -279,6 +326,90 @@ Anything else is sent as user input to the cognitive system.
             print("  [not booted]")
             return
         print(f"\n  Cycles completed: {self._runner.cycle_count}")
+        print()
+
+    def _print_luthi(self) -> None:
+        if not self._runner:
+            print("  [not booted]")
+            return
+        model = self._runner._model
+        if not hasattr(model, "get_introspection_state"):
+            print("  [not using Luthi backend]")
+            return
+
+        state = model.get_introspection_state()
+        metrics = model.get_metrics()
+
+        print(f"\n  Luthi Living Weight State")
+        print(f"  {'─' * 40}")
+        print(f"  Cycles: {metrics['cycle_count']}")
+        print(f"  Avg latency: {metrics['average_latency']:.2f}s")
+        print(f"  Tokens generated: {metrics['total_tokens_generated']}")
+
+        delta = state.get("delta", {})
+        if delta:
+            print(f"\n  Last cycle delta:")
+            for k, v in delta.items():
+                print(f"    {k}: {v:.6f}")
+
+        post = state.get("post")
+        if post and "blocks" in post:
+            print(f"\n  Per-block state:")
+            for b in post["blocks"]:
+                idx = b.get("block", "?")
+                sf = b.get("spike_fraction", 0)
+                pm = b.get("plasticity_mean", 0)
+                dr = b.get("set_point_drift", 0)
+                print(f"    Block {idx}: spike={sf:.3f} plast={pm:.4f} drift={dr:.6f}")
+        print()
+
+    def _print_sleep(self) -> None:
+        if not self._runner:
+            print("  [not booted]")
+            return
+        if not self._runner.sleep:
+            print("  [sleep disabled]")
+            return
+        stats = self._runner.sleep.get_stats()
+        print(f"\n  Sleep Status")
+        print(f"  {'─' * 40}")
+        for k, v in stats.items():
+            if isinstance(v, float):
+                print(f"  {k}: {v:.3f}")
+            else:
+                print(f"  {k}: {v}")
+        print()
+
+    def _print_communication(self) -> None:
+        if not self._runner:
+            print("  [not booted]")
+            return
+        if not self._runner.communication:
+            print("  [communication agency disabled]")
+            return
+        summary = self._runner.communication.get_summary()
+
+        drives = summary.get("drives", {})
+        inhibitions = summary.get("inhibitions", {})
+        decisions = summary.get("decisions", {})
+
+        print(f"\n  Communication Agency")
+        print(f"  {'─' * 40}")
+        print(f"  Total drive: {drives.get('total_drive', 0):.3f}")
+        print(f"  Active urges: {drives.get('active_urges', 0)}")
+        strongest = drives.get("strongest_urge")
+        if strongest:
+            print(f"  Strongest urge: {strongest.drive_type.value} "
+                  f"(intensity={strongest.get_current_intensity():.2f})")
+
+        print(f"\n  Total inhibition: {inhibitions.get('total_inhibition', 0):.3f}")
+        print(f"  Active inhibitions: {inhibitions.get('active_inhibitions', 0)}")
+
+        last = decisions.get("last_decision")
+        if last:
+            print(f"\n  Last decision: {last.decision.value}")
+            print(f"  Reason: {last.reason}")
+            print(f"  Confidence: {last.confidence:.2f}")
         print()
 
     # ------------------------------------------------------------------

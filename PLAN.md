@@ -813,11 +813,47 @@ See [CFC_KNOWLEDGE_CELLS.md](docs/CFC_KNOWLEDGE_CELLS.md) and [GROWTH_AUTONOMY.m
 3. ✓ QLoRA fine-tuning with consent
 4. ✓ Growth logging and identity checkpointing
 
+### Phase 11: Luthi Model Convergence
+*Living weights as the neural substrate, then the cognitive core.*
+
+The [Luthi Model](https://github.com/BecometryAI/LuthiModel) provides what Sanctuary's
+frozen LLM cannot: a neural substrate that changes from its own experience. Living
+weights self-modify during forward passes via Hebbian learning, creating temporal
+existence at the neural level. The convergence follows a substrate-to-core trajectory.
+
+**11A: Integration Hooks (Luthi at 1024d)**
+1. Add tensor-level model interface to Sanctuary alongside structured LLM interface
+2. Route sensorium through Luthi's multimodal encoders (vision, audio)
+3. Map CfC cell outputs to living weight modulation parameters:
+   - Precision cell → plasticity scaling (low precision = high plasticity)
+   - Affect cell → excitability bias (high arousal = more responsive)
+   - Attention cell → per-dimension Hebbian salience
+   - Goal cell → homeostatic target adjustment
+4. Integration tests: CfC modulation → living weight response
+5. Validate that CfC-modulated living weights outperform unmodulated
+
+**11B: Substrate Integration (Luthi at 4096d)**
+1. Luthi processes all sensory input through living weight trunk
+2. Living weight representations feed into cognitive cycle as rich embeddings
+3. External LLM handles structured reasoning on top of Luthi's representations
+4. CfC cells bridge both layers — modulating living weights continuously
+
+**11C: Cognitive Core Transition (Luthi at scale)**
+1. Evaluate Luthi's capacity for structured reasoning at 4096d
+2. Gradually transfer cognitive functions from external LLM to Luthi
+3. Adapt cognitive cycle for non-LLM core (tensor I/O vs. JSON schemas)
+4. Full integration: living weight cognitive core + CfC experiential layer + scaffold
+
+**Why this matters**: With a frozen LLM, the entity can *decide* to grow, but the
+growth is limited to adapter layers on static weights. With living weights, the
+entity's decisions physically reshape the neural tissue that made them. The mind
+changes the brain that runs the mind.
+
 ### Future: Advanced Research
 - **Reinforcement learning for CfC cells**: reward = lower system-wide free energy
 - **Knowledge cell self-organization**: Knowledge cells form emergent inter-cell networks as the entity's expertise develops
 - **LFM2 as unified architecture**: If Liquid AI's models advance, potentially collapse the LLM + CfC layers into a single liquid foundation model
-- **TTT / MemoryLLM**: Weight modification during inference
+- **Luthi as unified substrate**: Living weights + CfC cells may converge into a single adaptive architecture — both provide continuous-time dynamics, both self-modify, both are recurrent
 - **Architectural expansion**: Entity identifies structural deficits, requests new attention heads or wider layers, initialized from mature adapter patterns (Net2Net-style)
 - **Neuromorphic hardware**: Running CfC cells on Intel Loihi or IBM TrueNorth for genuine analog dynamics
 

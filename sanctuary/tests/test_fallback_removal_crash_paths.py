@@ -181,6 +181,11 @@ class TestCognitiveCycleGracefulDegradation:
         cycle.stream = MagicMock()
         cycle.stream.get_recent_context = MagicMock(return_value="test context")
         cycle.experiential = None
+        cycle.sleep = None
+        cycle.communication = None
+        cycle._current_percepts = []
+        cycle._current_memories = []
+        cycle.model = MagicMock()
         cycle.cycle_count = 0
 
         # Memory raises
@@ -613,6 +618,10 @@ class TestCycleInteriorCrashPaths:
         cycle.sensorium = MagicMock()
         cycle.identity = MagicMock()
         cycle.authority = MagicMock()
+        cycle.sleep = None
+        cycle.communication = None
+        cycle._current_percepts = []
+        cycle._current_memories = []
         cycle.environment = None
         cycle.growth = None
         cycle._execute = AsyncMock()
